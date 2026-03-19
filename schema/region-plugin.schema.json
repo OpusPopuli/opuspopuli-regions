@@ -1,0 +1,231 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/OpusPopuli/opuspopuli-regions/schema/region-plugin.schema.json",
+  "title": "Region Plugin File",
+  "description": "A declarative region configuration file for the Opus Populi civic data platform",
+  "type": "object",
+  "required": ["name", "displayName", "description", "version", "config"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Region identifier (e.g., 'california')"
+    },
+    "displayName": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable region name (e.g., 'California')"
+    },
+    "description": {
+      "type": "string",
+      "description": "Brief description of this region's data coverage"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of this config file"
+    },
+    "config": {
+      "$ref": "#/definitions/DeclarativeRegionConfig"
+    }
+  },
+  "definitions": {
+    "DeclarativeRegionConfig": {
+      "type": "object",
+      "required": ["regionId", "regionName", "description", "timezone", "dataSources"],
+      "additionalProperties": false,
+      "properties": {
+        "regionId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Region identifier (e.g., 'california')"
+        },
+        "regionName": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable region name (e.g., 'California')"
+        },
+        "description": {
+          "type": "string",
+          "description": "Region description"
+        },
+        "timezone": {
+          "type": "string",
+          "description": "IANA timezone (e.g., 'America/Los_Angeles')"
+        },
+        "stateCode": {
+          "type": "string",
+          "pattern": "^[A-Z]{2}$",
+          "description": "Two-letter US state code (e.g., 'CA')"
+        },
+        "dataSources": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/DataSourceConfig"
+          },
+          "description": "Data sources to scrape"
+        },
+        "rateLimit": {
+          "type": "object",
+          "properties": {
+            "requestsPerSecond": { "type": "number", "minimum": 0 },
+            "burstSize": { "type": "integer", "minimum": 1 }
+          },
+          "required": ["requestsPerSecond", "burstSize"],
+          "additionalProperties": false,
+          "description": "Rate limiting defaults"
+        },
+        "cacheTtlMs": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Cache TTL in milliseconds"
+        },
+        "requestTimeoutMs": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Request timeout in milliseconds"
+        }
+      }
+    },
+    "DataSourceConfig": {
+      "type": "object",
+      "required": ["url", "dataType", "contentGoal"],
+      "additionalProperties": false,
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to fetch data from"
+        },
+        "dataType": {
+          "type": "string",
+          "enum": ["propositions", "meetings", "representatives", "campaign_finance", "lobbying"],
+          "description": "What type of content this source provides"
+        },
+        "contentGoal": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Natural language description of what to find/extract"
+        },
+        "category": {
+          "type": "string",
+          "description": "Sub-category for grouping (e.g., 'Assembly', 'Senate')"
+        },
+        "hints": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Hints to help the AI find the right content"
+        },
+        "rateLimitOverride": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Override rate limit for this specific source"
+        },
+        "sourceType": {
+          "type": "string",
+          "enum": ["html_scrape", "bulk_download", "api"],
+          "description": "Source type determines the extraction strategy (default: html_scrape)"
+        },
+        "bulk": {
+          "$ref": "#/definitions/BulkDownloadConfig"
+        },
+        "api": {
+          "$ref": "#/definitions/ApiSourceConfig"
+        }
+      }
+    },
+    "BulkDownloadConfig": {
+      "type": "object",
+      "required": ["format", "columnMappings"],
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "type": "string",
+          "enum": ["tsv", "csv", "zip_tsv", "zip_csv"],
+          "description": "File format"
+        },
+        "filePattern": {
+          "type": "string",
+          "description": "For ZIP archives: path/glob of target file(s) within the ZIP"
+        },
+        "delimiter": {
+          "type": "string",
+          "description": "Column delimiter override"
+        },
+        "headerLines": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of header lines to skip"
+        },
+        "columnMappings": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Column name mappings: source column name -> domain field name"
+        },
+        "filters": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Filter expressions applied during parse"
+        }
+      }
+    },
+    "ApiSourceConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": ["GET", "POST"],
+          "description": "HTTP method (default: GET)"
+        },
+        "apiKeyEnvVar": {
+          "type": "string",
+          "description": "Environment variable name containing the API key"
+        },
+        "apiKeyHeader": {
+          "type": "string",
+          "description": "Header name for the API key"
+        },
+        "pagination": {
+          "$ref": "#/definitions/ApiPaginationConfig"
+        },
+        "resultsPath": {
+          "type": "string",
+          "description": "JSON path to the items array in the response"
+        },
+        "queryParams": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Static query parameters appended to every request"
+        }
+      }
+    },
+    "ApiPaginationConfig": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["offset", "cursor", "page"],
+          "description": "Pagination strategy type"
+        },
+        "pageParam": {
+          "type": "string",
+          "description": "Query parameter name for page/offset"
+        },
+        "limitParam": {
+          "type": "string",
+          "description": "Query parameter name for page size"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of items per page"
+        }
+      }
+    }
+  }
+}

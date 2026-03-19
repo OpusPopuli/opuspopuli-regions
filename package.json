@@ -1,0 +1,47 @@
+{
+  "name": "@opuspopuli/regions",
+  "version": "1.0.0",
+  "description": "Declarative region configuration files for Opus Populi civic data platform",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./regions/*": "./regions/*"
+  },
+  "files": [
+    "dist",
+    "regions",
+    "schema"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "jest --testPathIgnorePatterns=connectivity",
+    "test:connectivity": "jest --testPathPattern=connectivity",
+    "test:all": "jest",
+    "lint": "eslint ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/OpusPopuli/opuspopuli-regions.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "license": "AGPL-3.0",
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@types/jest": "^29.5.0",
+    "@types/node": "^25.5.0",
+    "ajv": "^8.17.0",
+    "ajv-formats": "^3.0.0",
+    "eslint": "^9.0.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.0.0"
+  }
+}
