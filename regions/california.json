@@ -23,7 +23,7 @@
         ]
       },
       {
-        "url": "https://www.assembly.ca.gov/dailyfile",
+        "url": "https://www.assembly.ca.gov/schedules-publications/daily-file",
         "dataType": "meetings",
         "contentGoal": "Extract scheduled Assembly committee meetings with date, time, location, and committee name",
         "category": "Assembly",
