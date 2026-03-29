@@ -61,10 +61,12 @@
         "contentGoal": "Extract Senators with name, district number, party affiliation, photo, and Capitol/district office contact information",
         "category": "Senate",
         "hints": [
-          "Senator cards with expandable details including office addresses and phone numbers",
-          "Each has name, district, party, photo, Capitol office, and district office(s)",
+          "Each senator card is a .page-members__member element inside .page-members__listing",
+          "District number is in .page-members__district-num (NOT .member__district-num)",
+          "Name is in .member__name, party in .member__party, photo in .member__portrait img",
+          "Use district number prefixed with 'ca-senate-' as externalId (e.g. ca-senate-24)",
           "40 Senators total",
-          "Page uses lazy-loading for images"
+          "Page uses lazy-loading for images — portrait src may be a placeholder GIF"
         ]
       }
     ],
