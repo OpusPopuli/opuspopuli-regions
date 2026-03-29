@@ -27,7 +27,8 @@
           "queryParams": {
             "sort": "-contribution_receipt_date",
             "is_individual": "true",
-            "contributor_state": "${stateCode}"
+            "contributor_state": "${stateCode}",
+            "two_year_transaction_period": "2026"
           }
         },
         "hints": [
