@@ -16,9 +16,11 @@
         "contentGoal": "Extract qualified ballot measures with measure ID, title, brief description, and election date",
         "category": "Secretary of State",
         "hints": [
-          "Measures are grouped under election date headings",
-          "Each measure has an identifier like ACA 13 or SB 1234",
-          "Link text contains the measure title",
+          "Only <p> elements containing bill identifiers (ACA, SCA, SB, AB) are actual measures",
+          "There are only 3-5 qualified measures on the page — do NOT extract navigation links or informational paragraphs",
+          "Use the bill identifier (e.g. 'ACA 13', 'SCA 1', 'SB 42') as externalId",
+          "Measures are grouped under an election date heading like 'November 3, 2026'",
+          "Each measure format: 'ACA 13 (Ward) Voting thresholds. (Res. Ch. 176, 2023) (PDF)'",
           "Full descriptions are in linked PDFs; the page only shows brief titles and legislative designations"
         ]
       },
@@ -31,17 +33,6 @@
           "Data is in structured HTML tables with embedded JSON metadata",
           "Content is divided into committee hearings and floor calendar sections",
           "Tables include date, time, committee name, and room location columns"
-        ]
-      },
-      {
-        "url": "https://www.senate.ca.gov/publications/senate-daily-file",
-        "dataType": "meetings",
-        "contentGoal": "Extract scheduled Senate committee meetings with date, time, location, and committee name",
-        "category": "Senate",
-        "hints": [
-          "This is a gateway page — actual schedule data is in a linked PDF download, not inline HTML",
-          "The page provides a link to the current Senate Daily File PDF",
-          "Alternative: https://www.senate.ca.gov/committees may have HTML committee schedules"
         ]
       },
       {
