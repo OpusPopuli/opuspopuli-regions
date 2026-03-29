@@ -29,6 +29,19 @@
             "is_individual": "true",
             "contributor_state": "${stateCode}",
             "two_year_transaction_period": "2026"
+          },
+          "fieldMappings": {
+            "sub_id": "externalId",
+            "committee_id": "committeeId",
+            "contributor_name": "donorName",
+            "contributor_employer": "donorEmployer",
+            "contributor_occupation": "donorOccupation",
+            "contributor_city": "donorCity",
+            "contributor_state": "donorState",
+            "contributor_zip": "donorZip",
+            "contribution_receipt_amount": "amount",
+            "contribution_receipt_date": "date",
+            "entity_type": "donorType"
           }
         },
         "hints": [
@@ -56,6 +69,16 @@
           "queryParams": {
             "sort": "-expenditure_date",
             "two_year_transaction_period": "2026"
+          },
+          "fieldMappings": {
+            "sub_id": "externalId",
+            "committee_id": "committeeId",
+            "committee_name": "committeeName",
+            "candidate_name": "candidateName",
+            "expenditure_amount": "amount",
+            "expenditure_date": "date",
+            "support_oppose_indicator": "supportOrOppose",
+            "expenditure_description": "description"
           }
         },
         "hints": [

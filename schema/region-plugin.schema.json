@@ -199,6 +199,11 @@
           "type": "object",
           "additionalProperties": { "type": "string" },
           "description": "Static query parameters appended to every request"
+        },
+        "fieldMappings": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Field name mappings: API response field -> domain model field (e.g., committee_id -> committeeId)"
         }
       }
     },
