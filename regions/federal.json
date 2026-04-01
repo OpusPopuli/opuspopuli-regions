@@ -86,6 +86,39 @@
           "support_oppose_indicator: S=support, O=oppose",
           "Note: IEs are harder to filter by state — they target candidates who represent a state"
         ]
+      },
+      {
+        "url": "https://www.fec.gov/files/bulk-downloads/2026/indiv26.zip",
+        "dataType": "campaign_finance",
+        "sourceType": "bulk_download",
+        "contentGoal": "Bulk download of individual contributions for the 2025-2026 election cycle, filtered to the local region's state",
+        "category": "FEC Bulk Contributions",
+        "bulk": {
+          "format": "zip_csv",
+          "filePattern": "itcont.txt",
+          "delimiter": "|",
+          "columnMappings": {
+            "CMTE_ID": "committeeId",
+            "NAME": "donorName",
+            "CITY": "donorCity",
+            "STATE": "donorState",
+            "ZIP_CODE": "donorZip",
+            "EMPLOYER": "donorEmployer",
+            "OCCUPATION": "donorOccupation",
+            "TRANSACTION_DT": "date",
+            "TRANSACTION_AMT": "amount",
+            "SUB_ID": "externalId"
+          },
+          "filters": {
+            "STATE": "${stateCode}"
+          }
+        },
+        "hints": [
+          "Very large file (~4GB for a full cycle) but filtered by STATE during parse",
+          "Pipe-delimited, not comma-delimited",
+          "${stateCode} placeholder is resolved at runtime from the active local region's stateCode",
+          "SUB_ID is the unique transaction identifier"
+        ]
       }
     ],
     "rateLimit": {

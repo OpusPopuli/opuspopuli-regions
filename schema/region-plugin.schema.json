@@ -125,7 +125,7 @@
         },
         "sourceType": {
           "type": "string",
-          "enum": ["html_scrape", "bulk_download", "api"],
+          "enum": ["html_scrape", "bulk_download", "api", "pdf"],
           "description": "Source type determines the extraction strategy (default: html_scrape)"
         },
         "bulk": {
@@ -133,6 +133,9 @@
         },
         "api": {
           "$ref": "#/definitions/ApiSourceConfig"
+        },
+        "pdf": {
+          "$ref": "#/definitions/PdfSourceConfig"
         }
       }
     },
@@ -229,6 +232,26 @@
           "type": "integer",
           "minimum": 1,
           "description": "Number of items per page"
+        }
+      }
+    },
+    "PdfSourceConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "skipPages": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Skip first N pages (e.g., skip cover page)"
+        },
+        "maxPages": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum pages to process (default: all)"
+        },
+        "followPdfLink": {
+          "type": "boolean",
+          "description": "If true, treats the URL as a gateway page and follows the first PDF link"
         }
       }
     }

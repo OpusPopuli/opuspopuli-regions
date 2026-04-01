@@ -59,6 +59,113 @@
           "40 Senators total",
           "Page uses lazy-loading for images — portrait src may be a placeholder GIF"
         ]
+      },
+      {
+        "url": "https://www.senate.ca.gov/publications/senate-daily-file",
+        "dataType": "meetings",
+        "sourceType": "pdf",
+        "contentGoal": "Extract scheduled Senate committee meetings with date, time, location, and committee name from the linked PDF",
+        "category": "Senate",
+        "pdf": {
+          "followPdfLink": true
+        },
+        "hints": [
+          "This page links to a PDF — download the first .PDF link",
+          "The PDF contains committee hearing schedules organized by date",
+          "Each entry has: committee name, date, time, room/location",
+          "Use committee name + date as externalId"
+        ]
+      },
+      {
+        "url": "https://campaignfinance.cdn.sos.ca.gov/dbwebexport.zip",
+        "dataType": "campaign_finance",
+        "sourceType": "bulk_download",
+        "contentGoal": "Extract campaign contributions from the RCPT_CD table",
+        "category": "CAL-ACCESS Contributions",
+        "bulk": {
+          "format": "zip_tsv",
+          "filePattern": "RCPT_CD.TSV",
+          "delimiter": "|",
+          "columnMappings": {
+            "FILING_ID": "externalId",
+            "FILER_ID": "committeeId",
+            "ENTITY_CD": "donorType",
+            "CTRIB_NAMF": "donorFirstName",
+            "CTRIB_NAML": "donorLastName",
+            "CTRIB_EMP": "donorEmployer",
+            "CTRIB_OCC": "donorOccupation",
+            "CTRIB_CITY": "donorCity",
+            "CTRIB_ST": "donorState",
+            "CTRIB_ZIP4": "donorZip",
+            "AMOUNT": "amount",
+            "RCPT_DATE": "date",
+            "CAND_NAML": "candidateName",
+            "OFFICE_CD": "candidateOffice",
+            "BAL_NAME": "propositionTitle",
+            "SUP_OPP_CD": "supportOrOppose"
+          }
+        },
+        "hints": [
+          "ZIP file updated daily from CA Secretary of State, ~1GB uncompressed",
+          "RCPT_CD has 64 columns; map only the essential ones",
+          "ENTITY_CD values: IND=individual, COM=committee, OTH=other, PTY=party, SCC=small contributor",
+          "Filter to recent election cycles to manage data volume"
+        ]
+      },
+      {
+        "url": "https://campaignfinance.cdn.sos.ca.gov/dbwebexport.zip",
+        "dataType": "campaign_finance",
+        "sourceType": "bulk_download",
+        "contentGoal": "Extract campaign expenditures from the EXPN_CD table",
+        "category": "CAL-ACCESS Expenditures",
+        "bulk": {
+          "format": "zip_tsv",
+          "filePattern": "EXPN_CD.TSV",
+          "delimiter": "|",
+          "columnMappings": {
+            "FILING_ID": "externalId",
+            "FILER_ID": "committeeId",
+            "PAYEE_NAML": "payeeName",
+            "AMOUNT": "amount",
+            "EXPN_DATE": "date",
+            "EXPN_DSCR": "purposeDescription",
+            "EXPN_CODE": "expenditureCode",
+            "CAND_NAML": "candidateName",
+            "BAL_NAME": "propositionTitle",
+            "SUP_OPP_CD": "supportOrOppose"
+          }
+        },
+        "hints": [
+          "Same ZIP archive as contributions — download once, extract both tables",
+          "EXPN_CODE values: CMP=campaign paraphernalia, CNS=consulting, CTB=contribution to other committee, FIL=candidate filing fees, FND=fundraising, LIT=campaign literature, etc."
+        ]
+      },
+      {
+        "url": "https://campaignfinance.cdn.sos.ca.gov/dbwebexport.zip",
+        "dataType": "campaign_finance",
+        "sourceType": "bulk_download",
+        "contentGoal": "Extract late independent expenditures from S496_CD",
+        "category": "CAL-ACCESS Independent Expenditures",
+        "bulk": {
+          "format": "zip_tsv",
+          "filePattern": "S496_CD.TSV",
+          "delimiter": "|",
+          "columnMappings": {
+            "FILING_ID": "externalId",
+            "FILER_ID": "committeeId",
+            "FILER_NAML": "committeeName",
+            "CAND_NAML": "candidateName",
+            "BAL_NAME": "propositionTitle",
+            "SUP_OPP_CD": "supportOrOppose",
+            "AMOUNT": "amount",
+            "EXP_DATE": "date",
+            "ELEC_DATE": "electionDate"
+          }
+        },
+        "hints": [
+          "S496 = Form 496 late independent expenditure reports",
+          "Filed within 24 hours of making an IE of $1,000+ in the 90 days before an election"
+        ]
       }
     ],
     "rateLimit": {
