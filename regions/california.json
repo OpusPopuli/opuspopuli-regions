@@ -21,7 +21,8 @@
           "Use the bill identifier (e.g. 'ACA 13', 'SCA 1', 'SB 42') as externalId",
           "Measures are grouped under an election date heading like 'November 3, 2026'",
           "Each measure format: 'ACA 13 (Ward) Voting thresholds. (Res. Ch. 176, 2023) (PDF)'",
-          "Full descriptions are in linked PDFs; the page only shows brief titles and legislative designations"
+          "Extract the PDF link as 'detailUrl' — each measure links to a PDF with the full bill text",
+          "PDF URLs follow the pattern: elections.cdn.sos.ca.gov/ballot-measures/pdf/{measure-id}.pdf"
         ]
       },
       {
@@ -56,6 +57,8 @@
           "District number is in .page-members__district-num (NOT .member__district-num)",
           "Name is in .member__name, party in .member__party, photo in .member__portrait img",
           "Use district number prefixed with 'ca-senate-' as externalId (e.g. ca-senate-24)",
+          "Extract the senator's profile link as 'detailUrl' — pattern: https://sd{district}.senate.ca.gov/",
+          "The profile link is in .member__link with href containing 'senate.ca.gov'",
           "40 Senators total",
           "Page uses lazy-loading for images — portrait src may be a placeholder GIF"
         ]
