@@ -88,7 +88,6 @@
         "bulk": {
           "format": "zip_tsv",
           "filePattern": "RCPT_CD.TSV",
-          "delimiter": "|",
           "columnMappings": {
             "FILING_ID": "externalId",
             "FILER_ID": "committeeId",
@@ -124,7 +123,6 @@
         "bulk": {
           "format": "zip_tsv",
           "filePattern": "EXPN_CD.TSV",
-          "delimiter": "|",
           "columnMappings": {
             "FILING_ID": "externalId",
             "FILER_ID": "committeeId",
@@ -152,7 +150,6 @@
         "bulk": {
           "format": "zip_tsv",
           "filePattern": "S496_CD.TSV",
-          "delimiter": "|",
           "columnMappings": {
             "FILING_ID": "externalId",
             "FILER_ID": "committeeId",
