@@ -162,6 +162,11 @@
           "minimum": 0,
           "description": "Number of header lines to skip"
         },
+        "headers": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Explicit column headers for files without a header row (e.g., FEC bulk files)"
+        },
         "columnMappings": {
           "type": "object",
           "additionalProperties": { "type": "string" },
