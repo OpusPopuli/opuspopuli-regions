@@ -90,7 +90,7 @@
           "filePattern": "RCPT_CD.TSV",
           "columnMappings": {
             "FILING_ID": "externalId",
-            "FILER_ID": "committeeId",
+            "CMTE_ID": "committeeId",
             "ENTITY_CD": "donorType",
             "CTRIB_NAMF": "donorFirstName",
             "CTRIB_NAML": "donorLastName",
@@ -125,7 +125,7 @@
           "filePattern": "EXPN_CD.TSV",
           "columnMappings": {
             "FILING_ID": "externalId",
-            "FILER_ID": "committeeId",
+            "CMTE_ID": "committeeId",
             "PAYEE_NAML": "payeeName",
             "AMOUNT": "amount",
             "EXPN_DATE": "date",
@@ -152,14 +152,9 @@
           "filePattern": "S496_CD.TSV",
           "columnMappings": {
             "FILING_ID": "externalId",
-            "FILER_ID": "committeeId",
-            "FILER_NAML": "committeeName",
-            "CAND_NAML": "candidateName",
-            "BAL_NAME": "propositionTitle",
-            "SUP_OPP_CD": "supportOrOppose",
             "AMOUNT": "amount",
             "EXP_DATE": "date",
-            "ELEC_DATE": "electionDate"
+            "EXPN_DSCR": "description"
           }
         },
         "hints": [
