@@ -16,13 +16,14 @@
         "contentGoal": "Extract qualified ballot measures with measure ID, title, brief description, and election date",
         "category": "Secretary of State",
         "hints": [
-          "Only <p> elements containing bill identifiers (ACA, SCA, SB, AB) are actual measures",
-          "There are only 3-5 qualified measures on the page — do NOT extract navigation links or informational paragraphs",
-          "Use the bill identifier (e.g. 'ACA 13', 'SCA 1', 'SB 42') as externalId",
-          "Measures are grouped under an election date heading like 'November 3, 2026'",
-          "Each measure format: 'ACA 13 (Ward) Voting thresholds. (Res. Ch. 176, 2023) (PDF)'",
-          "Extract the PDF link as 'detailUrl' — each measure links to a PDF with the full bill text",
-          "PDF URLs follow the pattern: elections.cdn.sos.ca.gov/ballot-measures/pdf/{measure-id}.pdf"
+          "Measures are <p> tags containing <a> links to ballot-measures/pdf/*.pdf",
+          "Use CSS selector 'p > a[href*=\"ballot-measures/pdf\"]' to find measure links — the parent <p> is the item",
+          "The container is the main content area — no specific wrapper div exists",
+          "There are only 3 measures — do NOT match navigation links, notes, or other paragraphs",
+          "Extract externalId by parsing the bill identifier from link text (e.g. 'ACA 13', 'SCA 1', 'SB 42')",
+          "Extract title from the full link text (e.g. 'ACA 13 (Ward) Voting thresholds. (Res. Ch. 176, 2023)')",
+          "Extract detailUrl from the <a> href attribute (PDF link)",
+          "The election date 'November 3, 2026' is in the <h2> heading above the measures"
         ]
       },
       {
