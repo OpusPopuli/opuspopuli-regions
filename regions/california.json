@@ -40,11 +40,13 @@
       {
         "url": "https://www.assembly.ca.gov/assemblymembers",
         "dataType": "representatives",
-        "contentGoal": "Extract Assembly members with name, district number, party affiliation, and photo",
+        "contentGoal": "Extract Assembly members with name, district number, party affiliation, photo, and profile page link",
         "category": "Assembly",
         "hints": [
-          "Member cards in a grid layout",
+          "Member cards are in a grid layout, each linking to /assemblymembers/{district}",
           "Each card has a photo, name, district, and party",
+          "Extract the member's profile page link as 'detailUrl' from the card's anchor href (e.g. /assemblymembers/30)",
+          "Use the full URL with https://www.assembly.ca.gov prefix for detailUrl if href is relative",
           "80 Assembly members total"
         ]
       },
@@ -56,12 +58,11 @@
         "hints": [
           "Each senator card is a .page-members__member element inside .page-members__listing",
           "District number is in .page-members__district-num (NOT .member__district-num)",
-          "Name is in .member__name, party in .member__party, photo in .member__portrait img",
+          "Name is in h3.member__name, party in span.member__party",
           "Use district number prefixed with 'ca-senate-' as externalId (e.g. ca-senate-24)",
-          "Extract the senator's profile link as 'detailUrl' — pattern: https://sd{district}.senate.ca.gov/",
-          "The profile link is in .member__link with href containing 'senate.ca.gov'",
-          "40 Senators total",
-          "Page uses lazy-loading for images — portrait src may be a placeholder GIF"
+          "PHOTO: Images are lazy-loaded — the src attribute is a placeholder GIF. Use the 'data-src' attribute on .member__portrait img to get the real photo URL (extractionMethod: 'attribute', attribute: 'data-src')",
+          "DETAIL URL: Extract the senator's homepage link as 'detailUrl' from a.member__link[title^='Homepage'] using the href attribute",
+          "40 Senators total"
         ]
       },
       {
