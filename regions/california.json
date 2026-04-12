@@ -60,8 +60,8 @@
           "District number is in .page-members__district-num (NOT .member__district-num)",
           "Name is in h3.member__name, party in span.member__party",
           "Use district number prefixed with 'ca-senate-' as externalId (e.g. ca-senate-24)",
-          "PHOTO: Images are lazy-loaded — the src attribute is a placeholder GIF. Use the 'data-src' attribute on .member__portrait img to get the real photo URL (extractionMethod: 'attribute', attribute: 'data-src')",
-          "DETAIL URL: Extract the senator's homepage link as 'detailUrl' from a.member__link[title^='Homepage'] using the href attribute",
+          "PHOTO: Images are lazy-loaded — use 'data-src' attribute (NOT 'src') on .member__portrait img. Apply url_resolve transform to make absolute URLs",
+          "DETAIL URL: The field MUST be named 'detailUrl' (not contactInfo.website). Extract from a.member__link[title^='Homepage'] href attribute. Apply url_resolve transform",
           "40 Senators total"
         ]
       },
