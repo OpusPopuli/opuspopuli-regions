@@ -136,6 +136,11 @@
         },
         "pdf": {
           "$ref": "#/definitions/PdfSourceConfig"
+        },
+        "detailFields": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Detail page extraction plan: maps domain field names to CSS selectors. Supports dot notation for nested fields (e.g., 'contactInfo.phone') and '|attr:name' suffix for attribute extraction."
         }
       }
     },
@@ -176,6 +181,11 @@
           "type": "object",
           "additionalProperties": { "type": "string" },
           "description": "Filter expressions applied during parse"
+        },
+        "batchSize": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Records per batch for streaming processing (default: 10000)"
         }
       }
     },
