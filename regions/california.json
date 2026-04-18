@@ -50,10 +50,16 @@
           "80 Assembly members total"
         ],
         "detailFields": {
-          "contactInfo.phone": ".member-page__card-phone",
-          "contactInfo.address": ".member-page__card-address",
           "contactInfo.website": "a.member-page__link.--website|attr:href",
-          "committees": ".member-page__committees"
+          "contactInfo.offices": {
+            "selector": ".member-page__section-card",
+            "children": {
+              "name": ".member-page__card-header",
+              "address": ".member-page__card-address",
+              "phone": ".member-page__card-phone"
+            },
+            "multiple": true
+          }
         }
       },
       {
