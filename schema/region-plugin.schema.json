@@ -139,8 +139,13 @@
         },
         "detailFields": {
           "type": "object",
-          "additionalProperties": { "type": "string" },
-          "description": "Detail page extraction plan: maps domain field names to CSS selectors. Supports dot notation for nested fields (e.g., 'contactInfo.phone') and '|attr:name' suffix for attribute extraction."
+          "additionalProperties": {
+            "oneOf": [
+              { "type": "string" },
+              { "$ref": "#/definitions/StructuredFieldConfig" }
+            ]
+          },
+          "description": "Detail page extraction plan: maps domain field names to CSS selectors (string) or structured array configs (object). Supports dot notation and '|attr:name' suffix."
         }
       }
     },
@@ -267,6 +272,26 @@
         "followPdfLink": {
           "type": "boolean",
           "description": "If true, treats the URL as a gateway page and follows the first PDF link"
+        }
+      }
+    },
+    "StructuredFieldConfig": {
+      "type": "object",
+      "required": ["selector", "children"],
+      "additionalProperties": false,
+      "properties": {
+        "selector": {
+          "type": "string",
+          "description": "CSS selector matching each repeating item (e.g., '.office-card')"
+        },
+        "children": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Child field selectors relative to each item (e.g., { name: 'h3', phone: '.phone' })"
+        },
+        "multiple": {
+          "type": "boolean",
+          "description": "If true, extracts all matches as an array (default: true)"
         }
       }
     }
