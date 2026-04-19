@@ -52,11 +52,20 @@
         "detailFields": {
           "contactInfo.website": "a.member-page__link.--website|attr:href",
           "contactInfo.offices": {
-            "selector": ".member-page__section-card",
+            "selector": ".member-page__section.--office-capitol .member-page__section-card, .member-page__section.--office-district .member-page__section-card",
             "children": {
               "name": ".member-page__card-header",
               "address": ".member-page__card-address",
               "phone": ".member-page__card-phone"
+            },
+            "multiple": true
+          },
+          "committees": {
+            "selector": ".member-page__section.--committees .member-page__section-card",
+            "children": {
+              "role": "p",
+              "name": "a",
+              "url": "a|attr:href"
             },
             "multiple": true
           }
