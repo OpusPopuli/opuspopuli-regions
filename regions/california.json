@@ -83,6 +83,8 @@
           "Use district number prefixed with 'ca-senate-' as externalId (e.g. ca-senate-24)",
           "PHOTO: Images are lazy-loaded — use 'data-src' attribute (NOT 'src') on .member__portrait img. Apply url_resolve transform to make absolute URLs",
           "DETAIL URL: The field MUST be named 'detailUrl' (not contactInfo.website). Extract from a.member__link[title^='Homepage'] href attribute. Apply url_resolve transform",
+          "OFFICES: Each senator card on the listing page (senate.ca.gov/senators) has .member__office.--capitol and .member__office.--district divs with h4.member__office-title and p.member__address containing 'address; phone'. Extract offices from the listing page — do NOT rely on individual senator detail sites for office data.",
+          "NOTE: Individual senator sites (sr/sd{NN}.senate.ca.gov) use different Drupal themes per-senator — CSS selectors vary across sites. The listing page at senate.ca.gov/senators has consistent structure for all 40 senators.",
           "40 Senators total"
         ]
       },
