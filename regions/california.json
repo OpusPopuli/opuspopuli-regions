@@ -17,9 +17,9 @@
         "category": "Secretary of State",
         "hints": [
           "Measures are <p> tags containing <a> links to ballot-measures/pdf/*.pdf",
-          "Use CSS selector 'p > a[href*=\"ballot-measures/pdf\"]' to find measure links — the parent <p> is the item",
-          "The container is the main content area — no specific wrapper div exists",
-          "There are only 3 measures — do NOT match navigation links, notes, or other paragraphs",
+          "Use CSS selector 'p > a[href*=\"ballot-measures/pdf\"]' to find measure links \u2014 the parent <p> is the item",
+          "The container is the main content area \u2014 no specific wrapper div exists",
+          "There are only 3 measures \u2014 do NOT match navigation links, notes, or other paragraphs",
           "Extract externalId by parsing the bill identifier from link text (e.g. 'ACA 13', 'SCA 1', 'SB 42')",
           "Extract title from the full link text (e.g. 'ACA 13 (Ward) Voting thresholds. (Res. Ch. 176, 2023)')",
           "Extract detailUrl from the <a> href attribute (PDF link)",
@@ -81,10 +81,10 @@
           "District number is in .page-members__district-num (NOT .member__district-num)",
           "Name is in h3.member__name, party in span.member__party",
           "Use district number prefixed with 'ca-senate-' as externalId (e.g. ca-senate-24)",
-          "PHOTO: Images are lazy-loaded — use 'data-src' attribute (NOT 'src') on .member__portrait img. Apply url_resolve transform to make absolute URLs",
+          "PHOTO: Images are lazy-loaded \u2014 use 'data-src' attribute (NOT 'src') on .member__portrait img. Apply url_resolve transform to make absolute URLs",
           "DETAIL URL: The field MUST be named 'detailUrl' (not contactInfo.website). Extract from a.member__link[title^='Homepage'] href attribute. Apply url_resolve transform",
-          "OFFICES: Extract a structured array for 'contactInfo.offices' using this EXACT fieldMapping (required for the array to populate correctly): {\"fieldName\": \"contactInfo.offices\", \"selector\": \".member__office\", \"extractionMethod\": \"structured\", \"required\": false, \"children\": {\"name\": \"h4.member__office-title\", \"address\": \"p.member__address\"}}. The .member__address text contains both address and phone separated by '; '. Extract offices ONLY from this listing page — do NOT rely on individual senator detail sites.",
-          "NOTE: Individual senator sites (sr/sd{NN}.senate.ca.gov) use different Drupal themes per-senator — CSS selectors vary across sites. The listing page at senate.ca.gov/senators has consistent structure for all 40 senators.",
+          "OFFICES: Extract a structured array for 'contactInfo.offices' using this EXACT fieldMapping (required for the array to populate correctly): {\"fieldName\": \"contactInfo.offices\", \"selector\": \".member__office\", \"extractionMethod\": \"structured\", \"required\": false, \"children\": {\"name\": \"h4.member__office-title\", \"address\": \"p.member__address\"}}. The .member__address text contains both address and phone separated by '; '. Extract offices ONLY from this listing page \u2014 do NOT rely on individual senator detail sites.",
+          "NOTE: Individual senator sites (sr/sd{NN}.senate.ca.gov) use different Drupal themes per-senator \u2014 CSS selectors vary across sites. The listing page at senate.ca.gov/senators has consistent structure for all 40 senators.",
           "40 Senators total"
         ]
       },
@@ -98,7 +98,7 @@
           "followPdfLink": true
         },
         "hints": [
-          "This page links to a PDF — download the first .PDF link",
+          "This page links to a PDF \u2014 download the first .PDF link",
           "The PDF contains committee hearing schedules organized by date",
           "Each entry has: committee name, date, time, room/location",
           "Use committee name + date as externalId"
@@ -162,7 +162,7 @@
           }
         },
         "hints": [
-          "Same ZIP archive as contributions — download once, extract both tables",
+          "Same ZIP archive as contributions \u2014 download once, extract both tables",
           "EXPN_CODE values: CMP=campaign paraphernalia, CNS=consulting, CTB=contribution to other committee, FIL=candidate filing fees, FND=fundraising, LIT=campaign literature, etc."
         ]
       },
@@ -185,6 +185,32 @@
         "hints": [
           "S496 = Form 496 late independent expenditure reports",
           "Filed within 24 hours of making an IE of $1,000+ in the 90 days before an election"
+        ]
+      },
+      {
+        "url": "https://campaignfinance.cdn.sos.ca.gov/dbwebexport.zip",
+        "dataType": "campaign_finance",
+        "sourceType": "bulk_download",
+        "contentGoal": "Extract ballot-measure committee declarations (Form 410) from CVR2_CAMPAIGN_DISCLOSURE_CD \u2014 links a filing (and therefore a committee) to a specific ballot measure with a support/oppose position",
+        "category": "CAL-ACCESS Committee Positions",
+        "bulk": {
+          "format": "zip_tsv",
+          "filePattern": "CVR2_CAMPAIGN_DISCLOSURE_CD.TSV",
+          "columnMappings": {
+            "TRAN_ID": "externalId",
+            "FILING_ID": "filingId",
+            "BAL_NAME": "ballotName",
+            "BAL_NUM": "ballotNumber",
+            "BAL_JURIS": "ballotJurisdiction",
+            "SUP_OPP_CD": "supportOrOppose"
+          }
+        },
+        "hints": [
+          "Same dbwebexport.zip as RCPT_CD/EXPN_CD/S496_CD \u2014 only one download per sync cycle",
+          "Most CVR2 rows are entity declarations on non-ballot-measure filings; the linker filters at resolve time by ballotName/ballotNumber being non-empty and supportOrOppose being S or O",
+          "TRAN_ID is unique per record; FILING_ID + LINE_ITEM is a composite alternative if TRAN_ID ever proves unstable",
+          "SUP_OPP_CD values: S = support, O = oppose. Other values (N = neutral, blank) are skipped by the linker",
+          "Joins to existing Contribution/Expenditure rows by FILING_ID \u2014 relies on those scrapes having run first to know which committee owns each filing"
         ]
       }
     ],
