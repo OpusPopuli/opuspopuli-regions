@@ -20,12 +20,14 @@
           "Use CSS selector 'p > a[href*=\"ballot-measures/pdf\"]' to find measure links \u2014 the parent <p> is the item",
           "The container is the main content area \u2014 no specific wrapper div exists",
           "There are only 3 measures \u2014 do NOT match navigation links, notes, or other paragraphs",
-          "Extract externalId by parsing the bill identifier from link text (e.g. 'ACA 13', 'SCA 1', 'SB 42')",
-          "Extract title from the full link text (e.g. 'ACA 13 (Ward) Voting thresholds. (Res. Ch. 176, 2023)')",
-          "Extract detailUrl from the <a> href attribute (PDF link)",
-          "The election date 'November 3, 2026' is in the <h2> heading above the measures",
-          "Use these EXACT field names: externalId, title, detailUrl, electionDate. The consuming code expects these literal names — synonyms (id, name, link, date) will be ignored.",
-          "For title and externalId: use extractionMethod 'text', NOT regex — capture the full anchor text as-is and let the consumer clean it. Regex extraction here has historically produced empty results due to lazy/greedy interactions on real anchor text."
+          "containerSelector MUST be 'body' (this page has no wrapper div); itemSelector MUST be 'p > a[href*=\"ballot-measures/pdf\"]'",
+          "Each item is the <a> element itself. For item-scoped fieldMappings, use selector 'a' so .find()/.filter() matches the item element. Do NOT use selector 'text' or 'href' — those are interpreted as CSS tag selectors and match nothing.",
+          "Use these EXACT field names: externalId, title, detailUrl, electionDate. The consuming code ignores synonyms (id, name, link, date).",
+          "externalId (the bill code, e.g. 'ACA 13'): produce this fieldMapping verbatim — { fieldName: 'externalId', scope: 'item', selector: 'a', extractionMethod: 'regex', regexPattern: '^([A-Z]+\\\\s*\\\\d+)', regexGroup: 1, required: true }. Do NOT add a transform on this field.",
+          "title: { fieldName: 'title', scope: 'item', selector: 'a', extractionMethod: 'text', required: true }. Captures the full anchor text. Cleanup is the consumer's job; do NOT add a transform.",
+          "detailUrl: { fieldName: 'detailUrl', scope: 'item', selector: 'a', attribute: 'href', extractionMethod: 'attribute', required: true }.",
+          "electionDate: { fieldName: 'electionDate', scope: 'container', selector: 'h2', extractionMethod: 'text', transform: { type: 'date_parse', params: { format: 'MMMM D, YYYY' } } } — extracts 'November 3, 2026' from the <h2> heading above the measures.",
+          "TRANSFORMS: the only valid transform.type values are: trim, lowercase, uppercase, strip_html, url_resolve, regex_replace, name_format, date_parse. NEVER use type 'regex' — that string is not a transform. For regex-based extraction, set extractionMethod 'regex' on the field mapping itself (with regexPattern + regexGroup), as shown for externalId above."
         ]
       },
       {
@@ -38,7 +40,8 @@
           "Content is divided into committee hearings and floor calendar sections",
           "Tables include date, time, committee name, and room location columns",
           "Use these EXACT field names: externalId (composite e.g. 'assembly-{committee-slug}-{YYYY-MM-DD}'), title (committee name + session label), body (literal 'Assembly'), scheduledAt (combined date + time), location (room), agendaUrl (if present, otherwise omit).",
-          "Prefer extractionMethod 'text' for plain values, 'attribute' for href/src, 'structured' with children for nested arrays. Avoid regex unless a hint explicitly requires it."
+          "Prefer extractionMethod 'text' for plain values, 'attribute' for href/src, 'structured' with children for nested arrays. For substring-via-regex use extractionMethod 'regex' with regexPattern + regexGroup on the field mapping.",
+          "TRANSFORMS: the only valid transform.type values are exactly these strings: trim, lowercase, uppercase, strip_html, url_resolve, regex_replace, name_format, date_parse. NEVER invent other types (e.g., 'regex', 'extract', 'parse') — they are silently dropped at runtime."
         ]
       },
       {
@@ -53,7 +56,8 @@
           "Use the full URL with https://www.assembly.ca.gov prefix for detailUrl if href is relative",
           "80 Assembly members total",
           "Use these EXACT field names: externalId ('ca-assembly-{N}'), name, district (numeric string, no 'District:' prefix), party, photoUrl, detailUrl. The consuming code expects these literal names — past regenerations have stored 'District:' label text in the district field instead of the number.",
-          "Prefer extractionMethod 'text' for plain values, 'attribute' for href/src. Avoid regex unless a hint explicitly requires it."
+          "Prefer extractionMethod 'text' for plain values, 'attribute' for href/src. For substring-via-regex use extractionMethod 'regex' with regexPattern + regexGroup on the field mapping.",
+          "TRANSFORMS: the only valid transform.type values are exactly these strings: trim, lowercase, uppercase, strip_html, url_resolve, regex_replace, name_format, date_parse. NEVER invent other types (e.g., 'regex', 'extract', 'parse') — they are silently dropped at runtime."
         ],
         "detailFields": {
           "contactInfo.website": "a.member-page__link.--website|attr:href",
@@ -93,7 +97,8 @@
           "NOTE: Individual senator sites (sr/sd{NN}.senate.ca.gov) use different Drupal themes per-senator \u2014 CSS selectors vary across sites. The listing page at senate.ca.gov/senators has consistent structure for all 40 senators.",
           "40 Senators total",
           "Use these EXACT field names: externalId ('ca-senate-{N}'), name, district (numeric string), party, photoUrl, detailUrl, contactInfo.offices.",
-          "Prefer extractionMethod 'text' for plain values, 'attribute' for href/src/data-src, 'structured' with children for nested arrays. The OFFICES hint above is the one place regex/structured-array detail is required \u2014 follow it verbatim."
+          "Prefer extractionMethod 'text' for plain values, 'attribute' for href/src/data-src, 'structured' with children for nested arrays. The OFFICES hint above is the one place regex/structured-array detail is required \u2014 follow it verbatim.",
+          "TRANSFORMS: the only valid transform.type values are exactly these strings: trim, lowercase, uppercase, strip_html, url_resolve, regex_replace, name_format, date_parse. NEVER invent other types (e.g., 'regex', 'extract', 'parse') \u2014 they are silently dropped at runtime."
         ]
       },
       {
@@ -110,7 +115,8 @@
           "The PDF contains committee hearing schedules organized by date",
           "Each entry has: committee name, date, time, room/location",
           "Use these EXACT field names: externalId ('senate-{committee-slug}-{YYYY-MM-DD}', lowercase + hyphens, no spaces), title (committee name + session label), body (literal 'Senate'), scheduledAt (combined date + time), location (room).",
-          "Prefer extractionMethod 'text'. Avoid regex unless a hint explicitly requires it."
+          "Prefer extractionMethod 'text'. For substring-via-regex use extractionMethod 'regex' with regexPattern + regexGroup on the field mapping.",
+          "TRANSFORMS: the only valid transform.type values are exactly these strings: trim, lowercase, uppercase, strip_html, url_resolve, regex_replace, name_format, date_parse. NEVER invent other types (e.g., 'regex', 'extract', 'parse') — they are silently dropped at runtime."
         ]
       },
       {
