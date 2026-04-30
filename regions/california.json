@@ -21,9 +21,11 @@
           "The container is the main content area \u2014 no specific wrapper div exists",
           "There are only 3 measures \u2014 do NOT match navigation links, notes, or other paragraphs",
           "Extract externalId by parsing the bill identifier from link text (e.g. 'ACA 13', 'SCA 1', 'SB 42')",
-          "Extract title as ONLY the measure-name portion of the link text — strip the leading bill identifier and author parenthetical, the trailing chapter reference, and the (PDF) suffix. Example: link text 'ACA 13 (Ward) Voting thresholds. (Res. Ch. 176, 2023) (PDF)' → title 'Voting thresholds'. Example: 'SB 42 (Umberg) California Fair Elections Act of 2026. (Ch. 245, 2025) (PDF)' → title 'California Fair Elections Act of 2026'.",
+          "Extract title from the full link text (e.g. 'ACA 13 (Ward) Voting thresholds. (Res. Ch. 176, 2023)')",
           "Extract detailUrl from the <a> href attribute (PDF link)",
-          "The election date 'November 3, 2026' is in the <h2> heading above the measures"
+          "The election date 'November 3, 2026' is in the <h2> heading above the measures",
+          "Use these EXACT field names: externalId, title, detailUrl, electionDate. The consuming code expects these literal names — synonyms (id, name, link, date) will be ignored.",
+          "For title and externalId: use extractionMethod 'text', NOT regex — capture the full anchor text as-is and let the consumer clean it. Regex extraction here has historically produced empty results due to lazy/greedy interactions on real anchor text."
         ]
       },
       {
@@ -34,7 +36,9 @@
         "hints": [
           "Data is in structured HTML tables with embedded JSON metadata",
           "Content is divided into committee hearings and floor calendar sections",
-          "Tables include date, time, committee name, and room location columns"
+          "Tables include date, time, committee name, and room location columns",
+          "Use these EXACT field names: externalId (composite e.g. 'assembly-{committee-slug}-{YYYY-MM-DD}'), title (committee name + session label), body (literal 'Assembly'), scheduledAt (combined date + time), location (room), agendaUrl (if present, otherwise omit).",
+          "Prefer extractionMethod 'text' for plain values, 'attribute' for href/src, 'structured' with children for nested arrays. Avoid regex unless a hint explicitly requires it."
         ]
       },
       {
@@ -47,7 +51,9 @@
           "Each card has a photo, name, district, and party",
           "Extract the member's profile page link as 'detailUrl' from the card's anchor href (e.g. /assemblymembers/30)",
           "Use the full URL with https://www.assembly.ca.gov prefix for detailUrl if href is relative",
-          "80 Assembly members total"
+          "80 Assembly members total",
+          "Use these EXACT field names: externalId ('ca-assembly-{N}'), name, district (numeric string, no 'District:' prefix), party, photoUrl, detailUrl. The consuming code expects these literal names — past regenerations have stored 'District:' label text in the district field instead of the number.",
+          "Prefer extractionMethod 'text' for plain values, 'attribute' for href/src. Avoid regex unless a hint explicitly requires it."
         ],
         "detailFields": {
           "contactInfo.website": "a.member-page__link.--website|attr:href",
@@ -85,7 +91,9 @@
           "DETAIL URL: The field MUST be named 'detailUrl' (not contactInfo.website). Extract from a.member__link[title^='Homepage'] href attribute. Apply url_resolve transform",
           "OFFICES: Extract a structured array for 'contactInfo.offices' using this EXACT fieldMapping (required for the array to populate correctly): {\"fieldName\": \"contactInfo.offices\", \"selector\": \".member__office\", \"extractionMethod\": \"structured\", \"required\": false, \"children\": {\"name\": \"h4.member__office-title\", \"address\": \"p.member__address\"}}. The .member__address text contains both address and phone separated by '; '. Extract offices ONLY from this listing page \u2014 do NOT rely on individual senator detail sites.",
           "NOTE: Individual senator sites (sr/sd{NN}.senate.ca.gov) use different Drupal themes per-senator \u2014 CSS selectors vary across sites. The listing page at senate.ca.gov/senators has consistent structure for all 40 senators.",
-          "40 Senators total"
+          "40 Senators total",
+          "Use these EXACT field names: externalId ('ca-senate-{N}'), name, district (numeric string), party, photoUrl, detailUrl, contactInfo.offices.",
+          "Prefer extractionMethod 'text' for plain values, 'attribute' for href/src/data-src, 'structured' with children for nested arrays. The OFFICES hint above is the one place regex/structured-array detail is required \u2014 follow it verbatim."
         ]
       },
       {
@@ -101,7 +109,8 @@
           "This page links to a PDF \u2014 download the first .PDF link",
           "The PDF contains committee hearing schedules organized by date",
           "Each entry has: committee name, date, time, room/location",
-          "Use committee name + date as externalId"
+          "Use these EXACT field names: externalId ('senate-{committee-slug}-{YYYY-MM-DD}', lowercase + hyphens, no spaces), title (committee name + session label), body (literal 'Senate'), scheduledAt (combined date + time), location (room).",
+          "Prefer extractionMethod 'text'. Avoid regex unless a hint explicitly requires it."
         ]
       },
       {
