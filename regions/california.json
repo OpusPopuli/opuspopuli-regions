@@ -55,7 +55,8 @@
           "Extract the member's profile page link as 'detailUrl' from the card's anchor href (e.g. /assemblymembers/30)",
           "Use the full URL with https://www.assembly.ca.gov prefix for detailUrl if href is relative",
           "80 Assembly members total",
-          "Use these EXACT field names: externalId ('ca-assembly-{N}'), name, district (numeric string, no 'District:' prefix), party, photoUrl, detailUrl. The consuming code expects these literal names — past regenerations have stored 'District:' label text in the district field instead of the number.",
+          "Use these EXACT field names: externalId, name, district (numeric string, no 'District:' prefix), party, photoUrl, detailUrl. The consuming code expects these literal names — past regenerations have stored 'District:' label text in the district field instead of the number.",
+          "externalId: produce this fieldMapping verbatim — { fieldName: 'externalId', scope: 'item', selector: 'a', attribute: 'href', extractionMethod: 'attribute', transform: { type: 'regex_replace', params: { pattern: '^.*?/assemblymembers/(\\\\d+).*$', replacement: 'ca-assembly-$1' } }, required: true }. The output value MUST be exactly the literal prefix 'ca-assembly-' followed by the district number with NO leading zero, NO extra prefix digits, and NO other text. Example: href '/assemblymembers/30' → externalId 'ca-assembly-30'. Example: href '/assemblymembers/1' → externalId 'ca-assembly-1' (NOT 'ca-assembly-01' and NOT 'ca-assembly-101').",
           "Prefer extractionMethod 'text' for plain values, 'attribute' for href/src. For substring-via-regex use extractionMethod 'regex' with regexPattern + regexGroup on the field mapping.",
           "TRANSFORMS: the only valid transform.type values are exactly these strings: trim, lowercase, uppercase, strip_html, url_resolve, regex_replace, name_format, date_parse. NEVER invent other types (e.g., 'regex', 'extract', 'parse') — they are silently dropped at runtime."
         ],
@@ -90,13 +91,13 @@
           "Each senator card is a .page-members__member element inside .page-members__listing",
           "District number is in .page-members__district-num (NOT .member__district-num)",
           "Name is in h3.member__name, party in span.member__party",
-          "Use district number prefixed with 'ca-senate-' as externalId (e.g. ca-senate-24)",
+          "externalId: produce this fieldMapping verbatim — { fieldName: 'externalId', scope: 'item', selector: '.page-members__district-num', extractionMethod: 'text', transform: { type: 'regex_replace', params: { pattern: '\\\\D*(\\\\d+).*', replacement: 'ca-senate-$1' } }, required: true }. The output value MUST be exactly the literal prefix 'ca-senate-' followed by the district number with NO leading zero, NO extra prefix digits, and NO other text. Example: district-num text '24' → externalId 'ca-senate-24'. Example: district-num text '1' → externalId 'ca-senate-1' (NOT 'ca-senate-01' and NOT 'ca-senate-101').",
           "PHOTO: Images are lazy-loaded \u2014 use 'data-src' attribute (NOT 'src') on .member__portrait img. Apply url_resolve transform to make absolute URLs",
           "DETAIL URL: The field MUST be named 'detailUrl' (not contactInfo.website). Extract from a.member__link[title^='Homepage'] href attribute. Apply url_resolve transform",
           "OFFICES: Extract a structured array for 'contactInfo.offices' using this EXACT fieldMapping (required for the array to populate correctly): {\"fieldName\": \"contactInfo.offices\", \"selector\": \".member__office\", \"extractionMethod\": \"structured\", \"required\": false, \"children\": {\"name\": \"h4.member__office-title\", \"address\": \"p.member__address\"}}. The .member__address text contains both address and phone separated by '; '. Extract offices ONLY from this listing page \u2014 do NOT rely on individual senator detail sites.",
           "NOTE: Individual senator sites (sr/sd{NN}.senate.ca.gov) use different Drupal themes per-senator \u2014 CSS selectors vary across sites. The listing page at senate.ca.gov/senators has consistent structure for all 40 senators.",
           "40 Senators total",
-          "Use these EXACT field names: externalId ('ca-senate-{N}'), name, district (numeric string), party, photoUrl, detailUrl, contactInfo.offices.",
+          "Use these EXACT field names: externalId, name, district (numeric string), party, photoUrl, detailUrl, contactInfo.offices.",
           "Prefer extractionMethod 'text' for plain values, 'attribute' for href/src/data-src, 'structured' with children for nested arrays. The OFFICES hint above is the one place regex/structured-array detail is required \u2014 follow it verbatim.",
           "TRANSFORMS: the only valid transform.type values are exactly these strings: trim, lowercase, uppercase, strip_html, url_resolve, regex_replace, name_format, date_parse. NEVER invent other types (e.g., 'regex', 'extract', 'parse') \u2014 they are silently dropped at runtime."
         ]
