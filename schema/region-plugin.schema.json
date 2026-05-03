@@ -101,7 +101,7 @@
         },
         "dataType": {
           "type": "string",
-          "enum": ["propositions", "meetings", "representatives", "campaign_finance", "lobbying"],
+          "enum": ["propositions", "meetings", "representatives", "campaign_finance", "lobbying", "legislative_actions"],
           "description": "What type of content this source provides"
         },
         "contentGoal": {
@@ -125,8 +125,8 @@
         },
         "sourceType": {
           "type": "string",
-          "enum": ["html_scrape", "bulk_download", "api", "pdf"],
-          "description": "Source type determines the extraction strategy (default: html_scrape)"
+          "enum": ["html_scrape", "bulk_download", "api", "pdf", "pdf_archive"],
+          "description": "Source type determines the extraction strategy (default: html_scrape). 'pdf_archive' selects the listing-walk + per-PDF-extract pipeline: the URL is a paginated listing page that links to a series of dated PDF documents, each fetched and parsed (text only at V1) into one Minutes record."
         },
         "bulk": {
           "$ref": "#/definitions/BulkDownloadConfig"
@@ -136,6 +136,9 @@
         },
         "pdf": {
           "$ref": "#/definitions/PdfSourceConfig"
+        },
+        "pdfArchive": {
+          "$ref": "#/definitions/PdfArchiveConfig"
         },
         "detailFields": {
           "type": "object",
@@ -292,6 +295,44 @@
         "multiple": {
           "type": "boolean",
           "description": "If true, extracts all matches as an array (default: true)"
+        }
+      }
+    },
+    "PdfArchiveConfig": {
+      "type": "object",
+      "required": ["linkSelector"],
+      "additionalProperties": false,
+      "description": "Listing-walk configuration for sourceType=pdf_archive. The page at `url` is treated as a paginated index of dated PDF documents; each linked PDF is fetched, pdf-parsed, and stored as a Minutes record. Cold-start work is bounded by maxNew (default 10) so first-run sync doesn't ingest years of historical archives. Per-document parsing (text → action records) is a downstream backend pass — this block carries no parser DSL.",
+      "properties": {
+        "linkSelector": {
+          "type": "string",
+          "description": "CSS selector for PDF anchor elements on the listing page. Each match yields a candidate document."
+        },
+        "datePattern": {
+          "type": "string",
+          "description": "Regex applied to the link href (falling back to anchor text) to extract the document's date. Capture groups depend on dateFormat."
+        },
+        "dateFormat": {
+          "type": "string",
+          "description": "Date format hint for interpreting datePattern's captures. Supported: 'MMDDYY' (3 captures: month, day, two-digit year — assumed 20YY), 'YYYY-MM-DD' (3 captures), 'MM/DD/YYYY' (3 captures)."
+        },
+        "revisionPattern": {
+          "type": "string",
+          "description": "Regex against the link href whose match indicates this URL is a revision. Capture group 1 is the revision sequence number (1, 2, ...). Unmatched URLs are revisionSeq=0."
+        },
+        "maxPages": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum number of listing pages to walk during one sync cycle. Default: 10."
+        },
+        "maxNew": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Hard cap on number of new documents ingested per sync cycle. Cold-start protection. Default: 10."
+        },
+        "paginationParam": {
+          "type": "string",
+          "description": "Query parameter name used to paginate the listing page (e.g., 'page'). Omitted when the listing isn't paginated."
         }
       }
     }

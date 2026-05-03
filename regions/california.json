@@ -104,6 +104,28 @@
         ]
       },
       {
+        "url": "https://clerk.assembly.ca.gov/legislative-publications/daily-journals",
+        "dataType": "legislative_actions",
+        "sourceType": "pdf_archive",
+        "contentGoal": "Extract daily-journal PDFs from the California Assembly clerk's archive. Each session day publishes one PDF (filename pattern adj{MMDDYY}.pdf, with re-issues as adj{MMDDYY}_r{N}.pdf). The handler walks the listing descending by date and stores each PDF's text as a Minutes record; the backend linker mines the text post-sync to produce LegislativeAction rows (presence rolls, committee reports/hearings, amendments, engrossments/enrollments, resolutions) connecting representatives + propositions + committees.",
+        "category": "Assembly",
+        "pdfArchive": {
+          "linkSelector": "a[href$='.pdf'][href*='/adj']",
+          "datePattern": "adj(\\d{2})(\\d{2})(\\d{2})(?:_r\\d+)?\\.pdf",
+          "dateFormat": "MMDDYY",
+          "revisionPattern": "_r(\\d+)\\.pdf$",
+          "maxPages": 5,
+          "maxNew": 10
+        },
+        "hints": [
+          "Listing page is `https://clerk.assembly.ca.gov/legislative-publications/daily-journals`. PDF links live under `/sites/clerk.assembly.ca.gov/files/adj{MMDDYY}.pdf`.",
+          "The default `maxNew=10` (~2 weeks of session days) bounds cold-start ingestion. To backfill historical journals, raise `maxNew` (or wipe the watermark) for one explicit run.",
+          "Re-issues use the suffix `_r1`, `_r2`, etc.; the handler stores them as new Minutes rows with revisionSeq=N+1 and flips the original's isActive=false.",
+          "V1 stores the full PDF text on Minutes.rawText (capped at ~256kB). The backend `LegislativeActionLinkerService` mines the text after sync to produce LegislativeAction rows — no AI extraction at scrape time. AI summarization + per-passage claim attribution land in V2.",
+          "The downstream linker resolves bill citations (\"Assembly Bill No. 1863\" → AB 1863, normalised against `propositions.externalId`), surnames against `representatives.lastName` filtered by chamber + active status (single-match only in V1; multi-match leaves the FK null + logs), and committee names against `legislative_committees`."
+        ]
+      },
+      {
         "url": "https://www.senate.ca.gov/publications/senate-daily-file",
         "dataType": "meetings",
         "sourceType": "pdf",
