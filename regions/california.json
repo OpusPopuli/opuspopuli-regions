@@ -105,9 +105,9 @@
       },
       {
         "url": "https://clerk.assembly.ca.gov/legislative-publications/daily-journals",
-        "dataType": "legislative_actions",
+        "dataType": "meetings",
         "sourceType": "pdf_archive",
-        "contentGoal": "Extract daily-journal PDFs from the California Assembly clerk's archive. Each session day publishes one PDF (filename pattern adj{MMDDYY}.pdf, with re-issues as adj{MMDDYY}_r{N}.pdf). The handler walks the listing descending by date and stores each PDF's text as a Minutes record; the backend linker mines the text post-sync to produce LegislativeAction rows (presence rolls, committee reports/hearings, amendments, engrossments/enrollments, resolutions) connecting representatives + propositions + committees.",
+        "contentGoal": "Extract daily-journal PDFs from the California Assembly clerk's archive as past meeting minutes. Each session day publishes one PDF (filename pattern adj{MMDDYY}.pdf, with re-issues as adj{MMDDYY}_r{N}.pdf). The handler walks the listing descending by date and stores each PDF's text as a Minutes record; the backend's downstream linker mines the text post-sync to produce LegislativeAction rows (presence rolls, committee reports/hearings, amendments, engrossments/enrollments, resolutions) connecting representatives + propositions + committees. Lives under MEETINGS dataType — minutes are the past-record counterpart to scheduled-meeting calendar entries.",
         "category": "Assembly",
         "pdfArchive": {
           "linkSelector": "a[href$='.pdf'][href*='/adj']",
