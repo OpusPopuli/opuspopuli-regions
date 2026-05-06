@@ -101,8 +101,8 @@
         },
         "dataType": {
           "type": "string",
-          "enum": ["propositions", "meetings", "representatives", "campaign_finance", "lobbying"],
-          "description": "What type of content this source provides. Daily journals / meeting minutes go under 'meetings' with sourceType=pdf_archive — the consumer partitions by sourceType internally."
+          "enum": ["propositions", "meetings", "representatives", "campaign_finance", "lobbying", "civics"],
+          "description": "What type of content this source provides. Daily journals / meeting minutes go under 'meetings' with sourceType=pdf_archive — the consumer partitions by sourceType internally. 'civics' marks a source of region governmental structure, process, and vocabulary; the civics-ingest handler scrapes it and uses the private prompt-service to extract structured shape (chambers, measure types, lifecycle stages with status patterns, glossary) plus a plain-language rewrite for laypeople. Verbatim source text and the AI rewrite are stored together — never one without the other."
         },
         "contentGoal": {
           "type": "string",
