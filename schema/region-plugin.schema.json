@@ -149,6 +149,16 @@
             ]
           },
           "description": "Detail page extraction plan: maps domain field names to CSS selectors (string) or structured array configs (object). Supports dot notation and '|attr:name' suffix."
+        },
+        "crawlDepth": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Crawl depth from the seed URL for sync handlers that walk a site's link graph (currently civics — see opuspopuli#669). 0 (default) = no crawl, fetch only the seed. N = N hops from seed. Crawls are scoped to same host + same path prefix as the seed, HTML responses only."
+        },
+        "crawlMaxPages": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Cap on total pages a crawler will visit per sync run regardless of crawlDepth. Defaults to 20. Each page costs one LLM call, so this bounds runtime + token spend."
         }
       }
     },
