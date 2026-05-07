@@ -2,7 +2,7 @@
   "name": "california",
   "displayName": "California",
   "description": "California civic and campaign finance data from official state government websites",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "config": {
     "regionId": "california",
     "regionName": "California",
@@ -256,36 +256,17 @@
       {
         "url": "https://www.assembly.ca.gov/resources/legislative-process",
         "dataType": "civics",
-        "contentGoal": "Extract the California legislative process: ordered lifecycle stages a bill passes through (introduction, committee, second/third readings, conference, Governor action, terminal states like chaptered/vetoed/held/failed), voting thresholds, the Governor's role and timing, and citizen participation guidance. Preserve verbatim section text alongside the extracted structure so the prompt-service can produce both the institutional definition and a plain-language rewrite for laypeople.",
+        "contentGoal": "Extract civic content from this page and any sibling pages under /resources/ \u2014 chambers and leadership, measure types and voting thresholds, ordered lifecycle stages a bill passes through, Governor action timing, glossary of legislative terms, and citizen participation guidance. Each visited page typically contributes only one slice of the CivicsBlock (e.g., the glossary page fills `glossary[]`; the legislative-process page fills `lifecycleStages[]`); the prompt-service generates plain-language rewrites alongside the verbatim source text on every field.",
         "category": "Assembly",
+        "crawlDepth": 2,
+        "crawlMaxPages": 12,
         "hints": [
-          "This is the canonical CA Assembly description of how a bill becomes law",
+          "Seed page is the canonical CA Assembly description of how a bill becomes law; sibling pages under /resources/ include the glossary and other civic-process references",
           "Vote thresholds: 41 (Assembly majority), 21 (Senate majority), 54 (Assembly 2/3), 27 (Senate 2/3)",
           "Governor has 12 days to sign, allow without signing, or veto; 2/3 override in each chamber",
-          "Citizen-action URLs to surface from this page: leginfo.legislature.ca.gov for bill search; assembly.ca.gov/assemblymembers/find-my-rep",
-          "Status-string patterns to capture for each lifecycle stage (regex form, JS syntax) so the pipeline can map raw scraped status strings to canonical stages: 'Re-referred to Com\\.', 'Set, first hearing', 'Read first time', 'Read second time', 'Read third time', 'Approved by the Governor', 'Chaptered', 'Vetoed', 'Held under submission', 'Failed passage'"
-        ]
-      },
-      {
-        "url": "https://www.assembly.ca.gov/resources/glossary",
-        "dataType": "civics",
-        "contentGoal": "Extract the official California Assembly glossary: every defined term with its verbatim institutional definition. The prompt-service generates a plain-language rewrite per term for laypeople, but the verbatim Assembly definition is mandatory and must be preserved untouched. Curate to terms a typical voter or civics learner would encounter \u2014 abbreviations (AB/SB/ACA/etc.), procedural verbs (engrossed/enrolled/chaptered), and high-frequency floor + committee vocabulary; skip purely internal staff terms.",
-        "category": "Assembly",
-        "hints": [
-          "Approximately 150 terms organized A-Z plus an abbreviations section",
-          "Always emit BOTH `verbatim` (Assembly's exact text) AND `plainLanguage` (rewrite for a high-school-senior reading level) per term \u2014 never replace one with the other",
-          "Capture all measure-type abbreviations (AB, SB, ACA, SCA, ACR, SCR, AJR, SJR, HR, SR) plus high-leverage procedural terms: engrossed, enrolled, chaptered, gut and amend, urgency clause, conference committee, do pass, third reading, etc."
-        ]
-      },
-      {
-        "url": "https://www.leginfo.ca.gov/califleg.html",
-        "dataType": "civics",
-        "contentGoal": "Extract the California Legislative Manual reference: chamber composition (Assembly 80 members, Senate 40), term lengths (2 yr Assembly, 4 yr Senate), leadership roles (Speaker, President pro Tempore, etc.), session scheme (biennial, named {startYear}-{endYear}), and the full set of measure types (AB, SB, ACA, SCA, ACR, SCR, AJR, SJR, HR, SR) with each one's voting threshold and whether it reaches the Governor.",
-        "category": "Legislative Counsel",
-        "hints": [
-          "The page is a directory of PDF chapters; chapter VIII covers organization, IX covers process, glossary section is supplementary",
-          "Measure-type matrix: AB/SB \u2192 majority + reachesGovernor=true; ACA/SCA \u2192 2/3 + reachesGovernor=false (goes to ballot); ACR/SCR/AJR/SJR/HR/SR \u2192 majority + reachesGovernor=false (resolutions, no Governor action)",
-          "Session scheme is biennial \u2014 sessions span 2-year periods named like '2025-2026'"
+          "Approximately 150 glossary terms organized A-Z plus an abbreviations section \u2014 always emit BOTH `verbatim` (Assembly's exact text) AND `plainLanguage` (rewrite for a high-school-senior reading level)",
+          "Capture all measure-type abbreviations (AB, SB, ACA, SCA, ACR, SCR, AJR, SJR, HR, SR) plus high-leverage procedural terms: engrossed, enrolled, chaptered, gut and amend, urgency clause, conference committee, do pass, third reading",
+          "Status-string patterns to capture per lifecycle stage (JS regex form): 'Re-referred to Com\\.', 'Set, first hearing', 'Read first time', 'Read second time', 'Read third time', 'Approved by the Governor', 'Chaptered', 'Vetoed', 'Held under submission', 'Failed passage'"
         ]
       }
     ],
