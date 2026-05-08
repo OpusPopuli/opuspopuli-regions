@@ -159,6 +159,16 @@
           "type": "integer",
           "minimum": 1,
           "description": "Cap on total pages a crawler will visit per sync run regardless of crawlDepth. Defaults to 20. Each page costs one LLM call, so this bounds runtime + token spend."
+        },
+        "llmMaxTokens": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Per-source override for the LLM maxTokens generation cap. Useful when a source needs a much longer or shorter output than its siblings (e.g., a 150-term glossary needs ~32000; a short bio prompt finishes well under 2000). Overrides the sync handler's hardcoded default."
+        },
+        "llmRequestTimeoutMs": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Per-source override for the LLM provider request timeout (milliseconds). Useful when a single source legitimately runs much longer than the platform-wide default — civics-glossary extraction on qwen3.5:9b can take 15-20 min, while bio gen finishes in 2 min on the same hardware. Overrides the provider's constructor-configured default."
         }
       }
     },

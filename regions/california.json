@@ -2,7 +2,7 @@
   "name": "california",
   "displayName": "California",
   "description": "California civic and campaign finance data from official state government websites",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "config": {
     "regionId": "california",
     "regionName": "California",
@@ -260,6 +260,8 @@
         "category": "Assembly",
         "crawlDepth": 2,
         "crawlMaxPages": 12,
+        "llmMaxTokens": 32000,
+        "llmRequestTimeoutMs": 1200000,
         "hints": [
           "Seed page is the canonical CA Assembly description of how a bill becomes law; sibling pages under /resources/ include the glossary and other civic-process references",
           "Vote thresholds: 41 (Assembly majority), 21 (Senate majority), 54 (Assembly 2/3), 27 (Senate 2/3)",
