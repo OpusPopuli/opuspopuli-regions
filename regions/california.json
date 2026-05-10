@@ -258,7 +258,6 @@
         "dataType": "bills",
         "category": "Legislature",
         "contentGoal": "Discover bill status pages for the current California legislative session (both chambers). Each search result row links to a bill status page — follow those links and extract one structured Bill record per page: bill number, session year, measure type code (AB/ACA/ACR/AJR/HR/SB/SCA/SCR/SJR/SR), full title, subject, current status string, last action, last action date, fiscal impact summary, full-text URL, primary author name, co-author names, committee names, and any available roll-call vote data (member name, chamber, vote date, position, motion text).",
-        "crawlMaxPages": 100,
         "billDiscovery": {
           "navLinkPattern": "/faces/billNavClient\\.xhtml\\?bill_id=([^\"&\\s]+)",
           "statusPageTemplate": "/faces/billStatusClient.xhtml?bill_id={bill_id}",
