@@ -2,7 +2,7 @@
   "name": "california",
   "displayName": "California",
   "description": "California civic and campaign finance data from official state government websites",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "config": {
     "regionId": "california",
     "regionName": "California",
@@ -254,45 +254,24 @@
         ]
       },
       {
-        "url": "https://leginfo.legislature.ca.gov/faces/billSearchClient.xhtml?house=A&author=All&lawCode=All&site=bill&search_keywords=&returntype=0",
+        "url": "https://leginfo.legislature.ca.gov/faces/billSearchClient.xhtml?author=All&lawCode=All&session_year=20252026&house=Both",
         "dataType": "bills",
-        "category": "Assembly",
-        "contentGoal": "Discover Assembly bill detail pages for the current California legislative session. Each search result row links to a bill status page — follow those links and extract one structured Bill record per page: bill number, session year, measure type code (AB/ACA/ACR/AJR/HR), full title, subject, current status string, last action, last action date, fiscal impact summary, full-text URL, primary author name, co-author names, committee names, and any available roll-call vote data (member name, chamber, vote date, position, motion text).",
+        "category": "Legislature",
+        "contentGoal": "Discover bill status pages for the current California legislative session (both chambers). Each search result row links to a bill status page — follow those links and extract one structured Bill record per page: bill number, session year, measure type code (AB/ACA/ACR/AJR/HR/SB/SCA/SCR/SJR/SR), full title, subject, current status string, last action, last action date, fiscal impact summary, full-text URL, primary author name, co-author names, committee names, and any available roll-call vote data (member name, chamber, vote date, position, motion text).",
         "crawlDepth": 2,
-        "crawlMaxPages": 50,
+        "crawlMaxPages": 100,
         "hints": [
-          "CURRENT SESSION: 2025-2026 — update this hint and the sessionYear hint below at the start of each new two-year legislative session",
+          "CURRENT SESSION: 2025-2026 — update the session_year URL param and this hint at the start of each new two-year legislative session",
           "Emit sessionYear as '2025-2026' — update alongside the CURRENT SESSION hint above",
-          "Note: leginfo uses JavaServer Faces — if this GET request returns no results, the pipeline may need a POST-capable handler for this source",
-          "Seed page is a leginfo bill search results listing; each row links to a bill status page at /faces/billStatusClient.xhtml?bill_id={sessionYears}{measureType}{number}",
-          "Bill ID format: both session years concatenated (no hyphen) + measure type + number, e.g. 202520260AB1234",
-          "Measure types for Assembly: AB (Assembly Bill), ACA (Assembly Constitutional Amendment), ACR (Assembly Concurrent Resolution), AJR (Assembly Joint Resolution), HR (House Resolution)",
-          "Author and co-author names appear in the 'Author' and 'Coauthors' fields on the bill status page",
-          "Roll-call vote tables appear on the bill status or vote history tab — extract all members' names, positions (yes/no/abstain/absent/excused/no_vote), and the motion text",
-          "Status string is the most recent entry in the bill history table",
-          "Full text link is labelled 'Bill Text' and points to /faces/billTextClient.xhtml",
-          "Committee referrals appear in the history as 'Referred to Com. on ...' or 'Re-referred to Com. on ...'"
-        ]
-      },
-      {
-        "url": "https://leginfo.legislature.ca.gov/faces/billSearchClient.xhtml?house=S&author=All&lawCode=All&site=bill&search_keywords=&returntype=0",
-        "dataType": "bills",
-        "category": "Senate",
-        "contentGoal": "Discover Senate bill detail pages for the current California legislative session. Each search result row links to a bill status page — follow those links and extract one structured Bill record per page: bill number, session year, measure type code (SB/SCA/SCR/SJR/SR), full title, subject, current status string, last action, last action date, fiscal impact summary, full-text URL, primary author name, co-author names, committee names, and any available roll-call vote data (member name, chamber, vote date, position, motion text).",
-        "crawlDepth": 2,
-        "crawlMaxPages": 50,
-        "hints": [
-          "CURRENT SESSION: 2025-2026 — update this hint and the sessionYear hint below at the start of each new two-year legislative session",
-          "Emit sessionYear as '2025-2026' — update alongside the CURRENT SESSION hint above",
-          "Note: leginfo uses JavaServer Faces — if this GET request returns no results, the pipeline may need a POST-capable handler for this source",
-          "Seed page is a leginfo bill search results listing; each row links to a bill status page at /faces/billStatusClient.xhtml?bill_id={sessionYears}{measureType}{number}",
-          "Bill ID format: both session years concatenated (no hyphen) + measure type + number, e.g. 202520260SB1234",
-          "Measure types for Senate: SB (Senate Bill), SCA (Senate Constitutional Amendment), SCR (Senate Concurrent Resolution), SJR (Senate Joint Resolution), SR (Senate Resolution)",
-          "Author and co-author names appear in the 'Author' and 'Coauthors' fields on the bill status page",
-          "Roll-call vote tables appear on the bill status or vote history tab — extract all members' names, positions (yes/no/abstain/absent/excused/no_vote), and the motion text",
-          "Status string is the most recent entry in the bill history table",
-          "Full text link is labelled 'Bill Text' and points to /faces/billTextClient.xhtml",
-          "Committee referrals appear in the history as 'Referred to Com. on ...' or 'Re-referred to Com. on ...'"
+          "leginfo bill_id format: {4-digit start year}{4-digit end year}0{MeasureType}{Number} — the '0' after the session years is always present as a revision prefix. Examples: AB 1 → 202520260AB1, SB 500 → 202520260SB500",
+          "Crawl path: search page (depth 0) → billNavClient.xhtml per bill (depth 1) → billStatusClient.xhtml + billVotesClient.xhtml (depth 2)",
+          "billStatusClient.xhtml — primary bill data: title, subject, author, co-authors, status, last action, fiscal impact, full-text link, committee referral history",
+          "billVotesClient.xhtml — roll-call votes only: member names, positions (AYE/NOE/NV/ABS/EXC), and motion text",
+          "Skip without extracting: billNavClient.xhtml (navigation hub), billHistoryClient.xhtml (history timeline), billAnalysisClient.xhtml (PDF links), billCompareClient.xhtml, billVersionsCompareClient.xhtml, billSearchClient.xhtml",
+          "Vote position symbols on billVotesClient.xhtml: AYE or Y = yes | NOE or N = no | NV = no_vote | ABS = absent | EXC = excused",
+          "Author and co-author names appear after 'Author:' and 'Coauthors:' labels on the status page — plain text, no party or district suffix",
+          "Committee referrals in history: 'Referred to Com. on JUDICIARY' → committee name is 'JUDICIARY'. Include each committee once.",
+          "Full text URL pattern: /faces/billTextClient.xhtml?bill_id={bill_id}"
         ]
       },
       {
