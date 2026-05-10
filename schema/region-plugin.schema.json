@@ -338,6 +338,10 @@
         "votesPageTemplate": {
           "type": "string",
           "description": "URL path + query template for the bill votes page. Same substitution as statusPageTemplate. Example: \"/faces/billVotesClient.xhtml?bill_id={bill_id}\""
+        },
+        "textPageTemplate": {
+          "type": "string",
+          "description": "Optional URL path + query template for the bill text page. When set, the sync fetches this page before LLM extraction to check the 'Date Published' timestamp and skip unchanged bills. Example: \"/faces/billTextClient.xhtml?bill_id={bill_id}\""
         }
       }
     },

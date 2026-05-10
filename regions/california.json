@@ -262,7 +262,8 @@
         "billDiscovery": {
           "navLinkPattern": "/faces/billNavClient\\.xhtml\\?bill_id=([^\"&\\s]+)",
           "statusPageTemplate": "/faces/billStatusClient.xhtml?bill_id={bill_id}",
-          "votesPageTemplate": "/faces/billVotesClient.xhtml?bill_id={bill_id}"
+          "votesPageTemplate": "/faces/billVotesClient.xhtml?bill_id={bill_id}",
+          "textPageTemplate": "/faces/billTextClient.xhtml?bill_id={bill_id}"
         },
         "hints": [
           "CURRENT SESSION: 2025-2026 — update the session_year URL param and this hint at the start of each new two-year legislative session",
