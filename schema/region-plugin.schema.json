@@ -140,6 +140,9 @@
         "pdfArchive": {
           "$ref": "#/definitions/PdfArchiveConfig"
         },
+        "billDiscovery": {
+          "$ref": "#/definitions/BillDiscoveryConfig"
+        },
         "detailFields": {
           "type": "object",
           "additionalProperties": {
@@ -315,6 +318,26 @@
         "multiple": {
           "type": "boolean",
           "description": "If true, extracts all matches as an array (default: true)"
+        }
+      }
+    },
+    "BillDiscoveryConfig": {
+      "type": "object",
+      "required": ["navLinkPattern", "statusPageTemplate", "votesPageTemplate"],
+      "additionalProperties": false,
+      "description": "Declarative bill discovery for legislature sites that list per-bill nav-hub links on a search results page (e.g. CA leginfo). The bills-ingest handler fetches the seed once, extracts bill IDs with navLinkPattern, and constructs status + votes URLs from the templates — bypassing generic BFS which would exhaust crawlMaxPages with nav-hub links before reaching detail pages.",
+      "properties": {
+        "navLinkPattern": {
+          "type": "string",
+          "description": "Regex string applied to the decoded seed-page HTML to extract bill IDs. Capture group 1 must be the bill ID. Example for CA leginfo: \"/faces/billNavClient\\\\.xhtml\\\\?bill_id=([^\\\"&\\\\s]+)\""
+        },
+        "statusPageTemplate": {
+          "type": "string",
+          "description": "URL path + query template for the bill status page. Use {bill_id} as the placeholder; the service prepends the seed origin. Example: \"/faces/billStatusClient.xhtml?bill_id={bill_id}\""
+        },
+        "votesPageTemplate": {
+          "type": "string",
+          "description": "URL path + query template for the bill votes page. Same substitution as statusPageTemplate. Example: \"/faces/billVotesClient.xhtml?bill_id={bill_id}\""
         }
       }
     },
