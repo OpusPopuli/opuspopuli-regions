@@ -1,10 +1,20 @@
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import { readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 
 const schemaPath = join(__dirname, '..', 'schema', 'region-plugin.schema.json');
 const regionsDir = join(__dirname, '..', 'regions');
+
+function walkJsonFiles(dir: string): string[] {
+  const out: string[] = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...walkJsonFiles(full));
+    else if (entry.isFile() && entry.name.endsWith('.json')) out.push(full);
+  }
+  return out;
+}
 
 describe('Region config validation', () => {
   const ajv = new Ajv({ allErrors: true });
@@ -12,7 +22,7 @@ describe('Region config validation', () => {
   const schema = JSON.parse(readFileSync(schemaPath, 'utf-8'));
   const validate = ajv.compile(schema);
 
-  const jsonFiles = readdirSync(regionsDir).filter((f) => f.endsWith('.json'));
+  const jsonFiles = walkJsonFiles(regionsDir).map((p) => relative(regionsDir, p));
 
   it('has at least one region config', () => {
     expect(jsonFiles.length).toBeGreaterThan(0);
