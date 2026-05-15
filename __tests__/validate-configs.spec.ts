@@ -50,4 +50,49 @@ describe('Region config validation', () => {
       expect(keys.length).toBe(unique.size);
     },
   );
+
+  describe('cross-file hierarchy assertions', () => {
+    type RawConfig = {
+      name: string;
+      config: { regionId: string; parentRegionId?: string; fipsCode?: string };
+    };
+
+    const allConfigs: RawConfig[] = jsonFiles.map((f) =>
+      JSON.parse(readFileSync(join(regionsDir, f), 'utf-8')),
+    );
+    const regionIdSet = new Set(allConfigs.map((c) => c.config.regionId));
+
+    const subRegionFiles = jsonFiles.filter((f) => {
+      const c: RawConfig = JSON.parse(readFileSync(join(regionsDir, f), 'utf-8'));
+      return !!c.config.parentRegionId;
+    });
+
+    const countyFiles = jsonFiles.filter((f) => {
+      const c: RawConfig = JSON.parse(readFileSync(join(regionsDir, f), 'utf-8'));
+      return c.config.fipsCode?.length === 5 && !!c.config.parentRegionId;
+    });
+
+    it.each(subRegionFiles)(
+      '%s parentRegionId references an existing region',
+      (file) => {
+        const c: RawConfig = JSON.parse(readFileSync(join(regionsDir, file), 'utf-8'));
+        expect(regionIdSet).toContain(c.config.parentRegionId);
+      },
+    );
+
+    it.each(countyFiles)(
+      '%s county fipsCode starts with parent state fipsCode',
+      (file) => {
+        const c: RawConfig = JSON.parse(readFileSync(join(regionsDir, file), 'utf-8'));
+        const parent = allConfigs.find(
+          (p) => p.config.regionId === c.config.parentRegionId,
+        );
+        expect(parent).toBeDefined();
+        expect(parent!.config.fipsCode).toBeDefined();
+        expect(c.config.fipsCode).toMatch(
+          new RegExp(`^${parent!.config.fipsCode}`),
+        );
+      },
+    );
+  });
 });
