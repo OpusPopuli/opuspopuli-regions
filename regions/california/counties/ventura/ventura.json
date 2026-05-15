@@ -24,7 +24,7 @@
         ]
       },
       {
-        "url": "https://bos.countyofventura.org/",
+        "url": "https://venturacounty.gov/board-of-supervisors/",
         "dataType": "representatives",
         "category": "Board of Supervisors",
         "contentGoal": "Extract Ventura County Board of Supervisors members — name, district number, party affiliation if listed, photo URL, contact info (phone, email, district office address), and profile page link.",

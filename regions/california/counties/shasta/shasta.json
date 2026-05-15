@@ -13,7 +13,7 @@
     "stateCode": "CA",
     "dataSources": [
       {
-        "url": "https://www.co.shasta.ca.us/index/bos-index/meetings-agendas",
+        "url": "https://www.shastacounty.gov/board-supervisors/page/board-agendas-minutes-videos",
         "dataType": "meetings",
         "category": "Board of Supervisors",
         "contentGoal": "Extract scheduled and past Shasta County Board of Supervisors meetings — meeting date, time, location, agenda PDF link, and minutes link when available. Each item should yield one Meeting record with externalId (date + body slug), title, body ('Shasta County Board of Supervisors'), scheduledAt (combined date + time), location, agendaUrl, minutesUrl.",
@@ -24,7 +24,7 @@
         ]
       },
       {
-        "url": "https://www.co.shasta.ca.us/index/bos-index",
+        "url": "https://www.shastacounty.gov/board-supervisors",
         "dataType": "representatives",
         "category": "Board of Supervisors",
         "contentGoal": "Extract Shasta County Board of Supervisors members — name, district number, party affiliation if listed, photo URL, contact info (phone, email, district office address), and profile page link.",

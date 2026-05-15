@@ -13,7 +13,7 @@
     "stateCode": "CA",
     "dataSources": [
       {
-        "url": "https://agenda.co.siskiyou.ca.us/agendapublic/",
+        "url": "https://www.siskiyoucounty.gov/recent_meetings",
         "dataType": "meetings",
         "category": "Board of Supervisors",
         "contentGoal": "Extract scheduled and past Siskiyou County Board of Supervisors meetings — meeting date, time, location, agenda PDF link, and minutes link when available. Each item should yield one Meeting record with externalId (date + body slug), title, body ('Siskiyou County Board of Supervisors'), scheduledAt (combined date + time), location, agendaUrl, minutesUrl.",

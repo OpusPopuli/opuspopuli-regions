@@ -13,7 +13,7 @@
     "stateCode": "CA",
     "dataSources": [
       {
-        "url": "https://www.co.imperial.ca.us/BoardofSupervisors/agendas.htm",
+        "url": "https://board.imperialcounty.org/cob/",
         "dataType": "meetings",
         "category": "Board of Supervisors",
         "contentGoal": "Extract scheduled and past Imperial County Board of Supervisors meetings — meeting date, time, location, agenda PDF link, and minutes link when available. Each item should yield one Meeting record with externalId (date + body slug), title, body ('Imperial County Board of Supervisors'), scheduledAt (combined date + time), location, agendaUrl, minutesUrl.",
@@ -24,7 +24,7 @@
         ]
       },
       {
-        "url": "https://www.co.imperial.ca.us/BoardofSupervisors/",
+        "url": "https://board.imperialcounty.org/",
         "dataType": "representatives",
         "category": "Board of Supervisors",
         "contentGoal": "Extract Imperial County Board of Supervisors members — name, district number, party affiliation if listed, photo URL, contact info (phone, email, district office address), and profile page link.",
