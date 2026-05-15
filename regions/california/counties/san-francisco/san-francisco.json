@@ -5,7 +5,7 @@
   "version": "0.1.0",
   "config": {
     "regionId": "california-san-francisco",
-    "regionName": "San Francisco County",
+    "regionName": "City and County of San Francisco",
     "parentRegionId": "california",
     "fipsCode": "06075",
     "description": "San Francisco civic data from official city and county government websites (consolidated city-county)",

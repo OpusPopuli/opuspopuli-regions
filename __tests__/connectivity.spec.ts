@@ -1,5 +1,6 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { walkJsonFiles } from './helpers';
 
 const regionsDir = join(__dirname, '..', 'regions');
 const TIMEOUT = 15_000;
@@ -8,16 +9,6 @@ interface DataSource {
   url: string;
   dataType: string;
   sourceType?: string;
-}
-
-function walkJsonFiles(dir: string): string[] {
-  const out: string[] = [];
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...walkJsonFiles(full));
-    else if (entry.isFile() && entry.name.endsWith('.json')) out.push(full);
-  }
-  return out;
 }
 
 describe('Data source URL connectivity', () => {

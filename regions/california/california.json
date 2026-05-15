@@ -6,6 +6,7 @@
   "config": {
     "regionId": "california",
     "regionName": "California",
+    "fipsCode": "06",
     "description": "California civic and campaign finance data from official state government websites",
     "timezone": "America/Los_Angeles",
     "stateCode": "CA",
