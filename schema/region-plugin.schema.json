@@ -59,6 +59,16 @@
           "pattern": "^[A-Z]{2}$",
           "description": "Two-letter US state code (e.g., 'CA')"
         },
+        "parentRegionId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Region identifier of this region's parent in the geographic hierarchy. Top-level regions (states, federal) omit this field. Counties set parentRegionId to their state's regionId (e.g., 'california'); cities will set it to their county's regionId. Presence of this field is the canonical signal that a region is a sub-region; the consumer loader uses it to build the region tree."
+        },
+        "fipsCode": {
+          "type": "string",
+          "pattern": "^\\d{2,7}$",
+          "description": "Census FIPS code: 2 digits for states (e.g., '06' for CA), 5 digits for counties (e.g., '06037' for Los Angeles County — state FIPS + county FIPS), 7 digits for places/cities. This is the canonical join key against the consumer's PostGIS counties/places tables used today for user-to-district placement."
+        },
         "dataSources": {
           "type": "array",
           "minItems": 1,
