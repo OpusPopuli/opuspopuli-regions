@@ -1,0 +1,39 @@
+{
+  "name": "california-lassen",
+  "displayName": "Lassen County",
+  "description": "Lassen County civic data from official county government websites",
+  "version": "0.1.0",
+  "config": {
+    "regionId": "california-lassen",
+    "regionName": "Lassen County",
+    "parentRegionId": "california",
+    "fipsCode": "06035",
+    "description": "Lassen County civic data from official county government websites",
+    "timezone": "America/Los_Angeles",
+    "stateCode": "CA",
+    "dataSources": [
+      {
+        "url": "https://www.lassencounty.org/dept/board-supervisors/board-supervisors-agendas",
+        "dataType": "meetings",
+        "category": "Board of Supervisors",
+        "contentGoal": "Extract scheduled and past Lassen County Board of Supervisors meetings — meeting date, time, location, agenda PDF link, and minutes link when available. Each item should yield one Meeting record with externalId (date + body slug), title, body ('Lassen County Board of Supervisors'), scheduledAt (combined date + time), location, agendaUrl, minutesUrl.",
+        "hints": [
+          "Lassen County Board of Supervisors publishes meeting agendas at this URL",
+          "Use these EXACT field names: externalId, title, body, scheduledAt, location, agendaUrl, minutesUrl",
+          "Past meetings and upcoming meetings may live on the same page or on tabbed/paginated sections — capture both when present"
+        ]
+      },
+      {
+        "url": "https://www.lassencounty.org/dept/board-supervisors/board-supervisors-home",
+        "dataType": "representatives",
+        "category": "Board of Supervisors",
+        "contentGoal": "Extract Lassen County Board of Supervisors members — name, district number, party affiliation if listed, photo URL, contact info (phone, email, district office address), and profile page link.",
+        "hints": [
+          "Most California counties have 5 supervisors; do not hardcode the count — extract whatever the page lists.",
+          "Use these EXACT field names: externalId, name, district, party (optional), photoUrl, detailUrl",
+          "Districts are numeric (e.g., \"1\", \"2\") — strip any \"District\" prefix label from extracted values"
+        ]
+      }
+    ]
+  }
+}

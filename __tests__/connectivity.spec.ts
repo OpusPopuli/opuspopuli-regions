@@ -1,5 +1,6 @@
-import { readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { join, relative } from 'node:path';
+import { walkJsonFiles } from './helpers';
 
 const regionsDir = join(__dirname, '..', 'regions');
 const TIMEOUT = 15_000;
@@ -11,7 +12,7 @@ interface DataSource {
 }
 
 describe('Data source URL connectivity', () => {
-  const jsonFiles = readdirSync(regionsDir).filter((f) => f.endsWith('.json'));
+  const jsonFiles = walkJsonFiles(regionsDir).map((p) => relative(regionsDir, p));
 
   for (const file of jsonFiles) {
     const config = JSON.parse(readFileSync(join(regionsDir, file), 'utf-8'));

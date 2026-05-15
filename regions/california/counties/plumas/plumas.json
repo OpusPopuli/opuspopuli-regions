@@ -1,0 +1,39 @@
+{
+  "name": "california-plumas",
+  "displayName": "Plumas County",
+  "description": "Plumas County civic data from official county government websites",
+  "version": "0.1.0",
+  "config": {
+    "regionId": "california-plumas",
+    "regionName": "Plumas County",
+    "parentRegionId": "california",
+    "fipsCode": "06063",
+    "description": "Plumas County civic data from official county government websites",
+    "timezone": "America/Los_Angeles",
+    "stateCode": "CA",
+    "dataSources": [
+      {
+        "url": "https://www.plumascounty.us/AgendaCenter",
+        "dataType": "meetings",
+        "category": "Board of Supervisors",
+        "contentGoal": "Extract scheduled and past Plumas County Board of Supervisors meetings — meeting date, time, location, agenda PDF link, and minutes link when available. Each item should yield one Meeting record with externalId (date + body slug), title, body ('Plumas County Board of Supervisors'), scheduledAt (combined date + time), location, agendaUrl, minutesUrl.",
+        "hints": [
+          "Plumas County Board of Supervisors publishes meeting agendas at this URL",
+          "Use these EXACT field names: externalId, title, body, scheduledAt, location, agendaUrl, minutesUrl",
+          "Past meetings and upcoming meetings may live on the same page or on tabbed/paginated sections — capture both when present"
+        ]
+      },
+      {
+        "url": "https://www.plumascounty.us/82/Board-of-Supervisors",
+        "dataType": "representatives",
+        "category": "Board of Supervisors",
+        "contentGoal": "Extract Plumas County Board of Supervisors members — name, district number, party affiliation if listed, photo URL, contact info (phone, email, district office address), and profile page link.",
+        "hints": [
+          "Most California counties have 5 supervisors; do not hardcode the count — extract whatever the page lists.",
+          "Use these EXACT field names: externalId, name, district, party (optional), photoUrl, detailUrl",
+          "Districts are numeric (e.g., \"1\", \"2\") — strip any \"District\" prefix label from extracted values"
+        ]
+      }
+    ]
+  }
+}

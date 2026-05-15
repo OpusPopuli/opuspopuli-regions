@@ -48,6 +48,10 @@ Merge to `main` triggers CI which publishes to GitHub Packages automatically. Th
 
 After publishing, update `@opuspopuli/regions` in the main monorepo and commit the lockfile change.
 
+## Versioning
+
+State and county configs version independently. The state `california.json` follows its own semver cadence (data source additions = minor, breaking schema changes = major). County configs start at `0.1.0` and are bumped per-county as their data sources are refined. There is no requirement to keep county versions in sync with the parent state version.
+
 ## Schema
 
 `schema/region-plugin.schema.json` is the canonical contract. All region configs must pass JSON Schema validation. Run `pnpm test` to verify — CI will reject configs that fail validation.
