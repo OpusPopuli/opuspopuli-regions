@@ -16,22 +16,45 @@
         "url": "https://www.mendocinocounty.gov/government/board-of-supervisors/meetings-agendas-and-minutes",
         "dataType": "meetings",
         "category": "Board of Supervisors",
-        "contentGoal": "Extract scheduled and past Mendocino County Board of Supervisors meetings — meeting date, time, location, agenda PDF link, and minutes link when available. Each item should yield one Meeting record with externalId (date + body slug), title, body ('Mendocino County Board of Supervisors'), scheduledAt (combined date + time), location, agendaUrl, minutesUrl.",
+        "contentGoal": "Extract scheduled and past Mendocino County Board of Supervisors meetings \u2014 meeting date, time, location, agenda PDF link, and minutes link when available. Each item should yield one Meeting record with externalId (date + body slug), title, body ('Mendocino County Board of Supervisors'), scheduledAt (combined date + time), location, agendaUrl, minutesUrl.",
         "hints": [
           "Mendocino County Board of Supervisors publishes meeting agendas at this URL",
           "Use these EXACT field names: externalId, title, body, scheduledAt, location, agendaUrl, minutesUrl",
-          "Past meetings and upcoming meetings may live on the same page or on tabbed/paginated sections — capture both when present"
+          "Past meetings and upcoming meetings may live on the same page or on tabbed/paginated sections \u2014 capture both when present"
         ]
       },
       {
         "url": "https://www.mendocinocounty.gov/government/board-of-supervisors",
         "dataType": "representatives",
         "category": "Board of Supervisors",
-        "contentGoal": "Extract Mendocino County Board of Supervisors members — name, district number, party affiliation if listed, photo URL, contact info (phone, email, district office address), and profile page link.",
+        "contentGoal": "Extract Mendocino County Board of Supervisors members \u2014 name, district number, party affiliation if listed, photo URL, contact info (phone, email, district office address), and profile page link.",
         "hints": [
-          "Most California counties have 5 supervisors; do not hardcode the count — extract whatever the page lists.",
+          "Most California counties have 5 supervisors; do not hardcode the count \u2014 extract whatever the page lists.",
           "Use these EXACT field names: externalId, name, district, party (optional), photoUrl, detailUrl",
-          "Districts are numeric (e.g., \"1\", \"2\") — strip any \"District\" prefix label from extracted values"
+          "Districts are numeric (e.g., \"1\", \"2\") \u2014 strip any \"District\" prefix label from extracted values"
+        ]
+      },
+      {
+        "url": "https://www.mendocinocounty.gov/government/assessor-county-clerk-recorder-elections/vitals-fees/measures-on-the-ballot",
+        "dataType": "propositions",
+        "category": "Ballot Measures",
+        "contentGoal": "Extract current and past ballot measures for Mendocino County \u2014 measure identifier (letter/number), full title, election date, sponsoring jurisdiction, measure type (bond, tax, initiative, ordinance, charter amendment, etc.), summary description, and official outcome (passed/failed) where available.",
+        "hints": [
+          "Mendocino County Registrar of Voters publishes ballot measures at this URL",
+          "Extract current and past ballot measures \u2014 measure letter/number, title, election date, jurisdiction (county, city, district), measure type (bond, tax, initiative, etc.), short description, and outcome when available",
+          "Use these EXACT field names: externalId, title, electionDate, jurisdiction, measureType, description, outcome"
+        ]
+      },
+      {
+        "url": "https://www.mendocinocounty.gov/government/assessor-county-clerk-recorder-elections/elections",
+        "dataType": "campaign_finance",
+        "category": "Campaign Disclosure",
+        "contentGoal": "Extract campaign finance disclosure filings for Mendocino County \u2014 committee name, filer type (candidate/measure committee), election, total contributions received, total expenditures made, and top contributors with amounts.",
+        "hints": [
+          "Mendocino County campaign finance disclosure portal",
+          "Extract campaign finance filings \u2014 committee name, candidate or measure supported/opposed, filing date, total contributions, total expenditures, top contributors (name, amount), and reporting period",
+          "Use these EXACT field names: committeeId, committeeName, candidateOrMeasure, filingDate, totalContributions, totalExpenditures, reportingPeriod",
+          "NOTE: UNCERTAIN \u2014 CA SOS lists Mendocino using their own elections site; no NetFile AID confirmed."
         ]
       }
     ]
