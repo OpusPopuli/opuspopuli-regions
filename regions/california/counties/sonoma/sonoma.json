@@ -2,7 +2,7 @@
   "name": "california-sonoma",
   "displayName": "Sonoma County",
   "description": "Sonoma County civic data from official county government websites",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "config": {
     "regionId": "california-sonoma",
     "regionName": "Sonoma County",
@@ -41,7 +41,7 @@
             },
             {
               "fieldName": "district",
-              "selector": "p",
+              "selector": "p:not(.img-wrap)",
               "extractionMethod": "regex",
               "regexPattern": "District (\\d+)",
               "regexGroup": 1,
