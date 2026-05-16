@@ -2,7 +2,7 @@
   "name": "california-sonoma",
   "displayName": "Sonoma County",
   "description": "Sonoma County civic data from official county government websites",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "config": {
     "regionId": "california-sonoma",
     "regionName": "Sonoma County",
@@ -76,7 +76,7 @@
         ]
       },
       {
-        "url": "https://sonomacounty.gov/administrative-support-and-fiscal-services/board-of-supervisors/supervisorial-districts/board-of-supervisors-district-5",
+        "url": "https://sonomacounty.gov/district5",
         "dataType": "representatives",
         "category": "Board of Supervisors",
         "contentGoal": "Extract the single Board of Supervisors member on this page. externalId must be 'sonoma-district-5'. district must be '5'. Extract: name (full name), phone, email, photoUrl (absolute URL \u2014 resolve relative paths against https://sonomacounty.gov).",

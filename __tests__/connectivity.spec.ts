@@ -3,7 +3,7 @@ import { join, relative } from 'node:path';
 import { walkJsonFiles } from './helpers';
 
 const regionsDir = join(__dirname, '..', 'regions');
-const TIMEOUT = 15_000;
+const TIMEOUT = 30_000;
 
 interface DataSource {
   url: string;
