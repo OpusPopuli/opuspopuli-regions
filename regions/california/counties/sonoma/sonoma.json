@@ -2,7 +2,7 @@
   "name": "california-sonoma",
   "displayName": "Sonoma County",
   "description": "Sonoma County civic data from official county government websites",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "config": {
     "regionId": "california-sonoma",
     "regionName": "Sonoma County",
@@ -51,7 +51,7 @@
               "selector": "h3 a",
               "extractionMethod": "attribute",
               "attribute": "href",
-              "transform": { "type": "regex_replace", "params": { "pattern": ".*-district-(\\d+)$", "replacement": "$1" } },
+              "transform": { "type": "regex_replace", "params": { "pattern": ".*district-?(\\d+)$", "replacement": "$1" } },
               "required": true
             },
             {
@@ -59,7 +59,7 @@
               "selector": "h3 a",
               "extractionMethod": "attribute",
               "attribute": "href",
-              "transform": { "type": "regex_replace", "params": { "pattern": ".*-district-(\\d+)$", "replacement": "sonoma-district-$1" } },
+              "transform": { "type": "regex_replace", "params": { "pattern": ".*district-?(\\d+)$", "replacement": "sonoma-district-$1" } },
               "required": true
             },
             {
