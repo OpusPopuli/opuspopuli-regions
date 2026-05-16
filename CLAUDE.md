@@ -6,8 +6,13 @@ Declarative region configuration files published as `@opuspopuli/regions` to Git
 
 ```
 regions/
-├── california.json    # California state civic data sources
-└── federal.json       # Federal civic data sources
+├── federal.json                         # Federal (FEC, Congress)
+└── california/
+    ├── california.json                  # California state config
+    └── counties/
+        ├── alameda/alameda.json
+        ├── los-angeles/los-angeles.json
+        └── ...                          # All 58 CA counties
 ```
 
 Each JSON file is validated against `schema/region-plugin.schema.json`.
@@ -15,26 +20,34 @@ Each JSON file is validated against `schema/region-plugin.schema.json`.
 ## Commands
 
 ```bash
-pnpm build    # Compile TypeScript
-pnpm test     # Schema validation for all region configs
+pnpm build             # Compile TypeScript
+pnpm test              # Schema validation + hierarchy checks (required for CI)
+pnpm test:connectivity # URL reachability (informational, continue-on-error in CI)
+pnpm test:all          # Both validation and connectivity
 pnpm lint
 ```
 
 ## Adding or editing a region
 
-1. Add or edit a `regions/<name>.json` file — no code changes needed.
-2. Validate against the schema: `pnpm test`
-3. Open a PR to `main`. CI validates schema and URL connectivity.
-4. Merge → GitHub Actions publishes a new version of `@opuspopuli/regions`.
-5. Bump the package version in `opuspopuli` monorepo: update `packages/region-provider/package.json` and run `pnpm install`.
+1. Add or edit a `regions/<state>/<state>.json` (state) or `regions/<state>/counties/<county>/<county>.json` (county) — no code changes needed.
+2. Validate: `pnpm test`
+3. Open a PR to `main`. CI validates schema and URL connectivity (connectivity failures don't block merge).
+4. Merge → GitHub Actions publishes a new version of `@opuspopuli/regions` automatically.
+5. Bump the dependency in the monorepo: update `packages/region-provider/package.json` and run `pnpm install`.
 
 ## What belongs here
 
 - Data source URLs (listing pages, detail pages, PDF archives)
 - `contentGoal` descriptions (natural language — the scraping pipeline uses these for AI extraction)
-- `dataType` assignments (`PROPOSITIONS`, `REPRESENTATIVES`, `MEETINGS`, `CIVICS`, etc.)
-- `sourceType` assignments (`html`, `pdf_archive`, etc.)
+- `dataType` assignments — lowercase enum values:
+  - `propositions`, `representatives`, `meetings`, `campaign_finance`, `lobbying`, `civics`, `bills`
+- `sourceType` assignments — lowercase enum values:
+  - `html_scrape` (default), `bulk_download`, `api`, `pdf`, `pdf_archive`
 - Extraction `hints` to guide the AI pipeline
+- `detailFields` for explicit CSS-selector-based detail page extraction
+- `billDiscovery` config for legislature bill sites
+- `pdfArchive` config for paginated PDF listing pages
+- `crawlDepth` / `crawlMaxPages` for civics and other crawling sources
 
 ## What does NOT belong here
 
@@ -42,15 +55,21 @@ pnpm lint
 - Prompt template text — that lives in the private `prompt-service`
 - Application logic of any kind
 
+## Geographic hierarchy
+
+Sub-regions must set `parentRegionId` to their parent's `regionId`. Counties must also set a 5-digit `fipsCode` (state 2-digit prefix + 3-digit county suffix). Tests enforce that:
+- `parentRegionId` references an existing region in the repo
+- County `fipsCode` starts with the parent state's `fipsCode`
+
 ## Publishing
 
-Merge to `main` triggers CI which publishes to GitHub Packages automatically. The package version follows the tag set in `package.json`. Use `pnpm version patch|minor|major` to bump before merging if the change warrants a version increment.
+Merge to `main` triggers CI which publishes to GitHub Packages automatically. The package version is set by CI as `1.0.<github_run_number>` — do **not** manually bump `package.json` before merging (the version in `package.json` is overwritten at publish time).
 
 After publishing, update `@opuspopuli/regions` in the main monorepo and commit the lockfile change.
 
-## Versioning
+## Versioning of region configs
 
-State and county configs version independently. The state `california.json` follows its own semver cadence (data source additions = minor, breaking schema changes = major). County configs start at `0.1.0` and are bumped per-county as their data sources are refined. There is no requirement to keep county versions in sync with the parent state version.
+State and county configs each have their own `version` field (semver, e.g. `"1.4.1"`). This is distinct from the npm package version. Bump the config's `version` field when the data sources for that region change significantly: data source additions = minor, breaking schema changes = major. County configs start at `0.1.0`.
 
 ## Schema
 
