@@ -35,7 +35,7 @@
         ]
       },
       {
-        "url": "https://www.alamedacountyca.gov/rov_app/measures",
+        "url": "https://www.alamedacountyca.gov/rov_app/currentelection",
         "dataType": "propositions",
         "category": "Ballot Measures",
         "contentGoal": "Extract current and past ballot measures for Alameda County \u2014 measure identifier (letter/number), full title, election date, sponsoring jurisdiction, measure type (bond, tax, initiative, ordinance, charter amendment, etc.), summary description, and official outcome (passed/failed) where available.",
