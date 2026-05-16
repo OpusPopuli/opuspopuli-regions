@@ -2,7 +2,7 @@
   "name": "california-sonoma",
   "displayName": "Sonoma County",
   "description": "Sonoma County civic data from official county government websites",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "config": {
     "regionId": "california-sonoma",
     "regionName": "Sonoma County",
@@ -24,16 +24,68 @@
         ]
       },
       {
-        "url": "https://sonomacounty.gov/administrative-support-and-fiscal-services/board-of-supervisors",
+        "url": "https://sonomacounty.gov/administrative-support-and-fiscal-services/board-of-supervisors/supervisorial-districts/board-of-supervisors-district-1",
         "dataType": "representatives",
         "category": "Board of Supervisors",
-        "contentGoal": "Extract Sonoma County Board of Supervisors members. For each supervisor extract: externalId (construct as 'sonoma-district-' + district number, e.g. 'sonoma-district-1'), name (full name), district (digit only, e.g. '1'), party (if listed, otherwise omit), photoUrl (absolute URL to headshot image), phone, email, and website (link to their individual board page if present).",
+        "contentGoal": "Extract the single Board of Supervisors member on this page. externalId must be 'sonoma-district-1'. district must be '1'. Extract: name (full name), phone, email, photoUrl (absolute URL \u2014 resolve relative paths against https://sonomacounty.gov).",
         "hints": [
-          "There are exactly 5 supervisors, one per district (1-5). Extract all 5.",
-          "externalId MUST be constructed as the string 'sonoma-district-' concatenated with the district number. Example: supervisor for District 1 gets externalId 'sonoma-district-1'.",
-          "district must be a digit string only \u2014 '1', '2', '3', '4', or '5'. Strip any 'District' prefix or label.",
-          "Each supervisor typically has a photo, name, district label, and contact details on the page.",
-          "photoUrl must be an absolute URL including the domain. If relative, resolve against https://sonomacounty.gov"
+          "This page contains exactly ONE supervisor \u2014 District 1.",
+          "externalId is always 'sonoma-district-1' for this page.",
+          "district is always '1' for this page.",
+          "Phone and email are listed in the contact section of the page.",
+          "photoUrl: if the image src is relative (starts with /), prepend https://sonomacounty.gov to make it absolute."
+        ]
+      },
+      {
+        "url": "https://sonomacounty.gov/administrative-support-and-fiscal-services/board-of-supervisors/supervisorial-districts/board-of-supervisors-district-2",
+        "dataType": "representatives",
+        "category": "Board of Supervisors",
+        "contentGoal": "Extract the single Board of Supervisors member on this page. externalId must be 'sonoma-district-2'. district must be '2'. Extract: name (full name), phone, email, photoUrl (absolute URL \u2014 resolve relative paths against https://sonomacounty.gov).",
+        "hints": [
+          "This page contains exactly ONE supervisor \u2014 District 2.",
+          "externalId is always 'sonoma-district-2' for this page.",
+          "district is always '2' for this page.",
+          "Phone and email are listed in the contact section of the page.",
+          "photoUrl: if the image src is relative (starts with /), prepend https://sonomacounty.gov to make it absolute."
+        ]
+      },
+      {
+        "url": "https://sonomacounty.gov/administrative-support-and-fiscal-services/board-of-supervisors/supervisorial-districts/board-of-supervisors-district-3",
+        "dataType": "representatives",
+        "category": "Board of Supervisors",
+        "contentGoal": "Extract the single Board of Supervisors member on this page. externalId must be 'sonoma-district-3'. district must be '3'. Extract: name (full name), phone, email, photoUrl (absolute URL \u2014 resolve relative paths against https://sonomacounty.gov).",
+        "hints": [
+          "This page contains exactly ONE supervisor \u2014 District 3.",
+          "externalId is always 'sonoma-district-3' for this page.",
+          "district is always '3' for this page.",
+          "Phone and email are listed in the contact section of the page.",
+          "photoUrl: if the image src is relative (starts with /), prepend https://sonomacounty.gov to make it absolute."
+        ]
+      },
+      {
+        "url": "https://sonomacounty.gov/administrative-support-and-fiscal-services/board-of-supervisors/supervisorial-districts/board-of-supervisors-district-4",
+        "dataType": "representatives",
+        "category": "Board of Supervisors",
+        "contentGoal": "Extract the single Board of Supervisors member on this page. externalId must be 'sonoma-district-4'. district must be '4'. Extract: name (full name), phone, email, photoUrl (absolute URL \u2014 resolve relative paths against https://sonomacounty.gov).",
+        "hints": [
+          "This page contains exactly ONE supervisor \u2014 District 4.",
+          "externalId is always 'sonoma-district-4' for this page.",
+          "district is always '4' for this page.",
+          "Phone and email are listed in the contact section of the page.",
+          "photoUrl: if the image src is relative (starts with /), prepend https://sonomacounty.gov to make it absolute."
+        ]
+      },
+      {
+        "url": "https://sonomacounty.gov/administrative-support-and-fiscal-services/board-of-supervisors/supervisorial-districts/board-of-supervisors-district-5",
+        "dataType": "representatives",
+        "category": "Board of Supervisors",
+        "contentGoal": "Extract the single Board of Supervisors member on this page. externalId must be 'sonoma-district-5'. district must be '5'. Extract: name (full name), phone, email, photoUrl (absolute URL \u2014 resolve relative paths against https://sonomacounty.gov).",
+        "hints": [
+          "This page contains exactly ONE supervisor \u2014 District 5.",
+          "externalId is always 'sonoma-district-5' for this page.",
+          "district is always '5' for this page.",
+          "Phone and email are listed in the contact section of the page.",
+          "photoUrl: if the image src is relative (starts with /), prepend https://sonomacounty.gov to make it absolute."
         ]
       },
       {
