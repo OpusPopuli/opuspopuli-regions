@@ -2,7 +2,7 @@
   "name": "california-sonoma",
   "displayName": "Sonoma County",
   "description": "Sonoma County civic data from official county government websites",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "config": {
     "regionId": "california-sonoma",
     "regionName": "Sonoma County",
@@ -27,11 +27,13 @@
         "url": "https://sonomacounty.gov/administrative-support-and-fiscal-services/board-of-supervisors",
         "dataType": "representatives",
         "category": "Board of Supervisors",
-        "contentGoal": "Extract Sonoma County Board of Supervisors members \u2014 name, district number, party affiliation if listed, photo URL, contact info (phone, email, district office address), and profile page link.",
+        "contentGoal": "Extract Sonoma County Board of Supervisors members. For each supervisor extract: externalId (construct as 'sonoma-district-' + district number, e.g. 'sonoma-district-1'), name (full name), district (digit only, e.g. '1'), party (if listed, otherwise omit), photoUrl (absolute URL to headshot image), phone, email, and website (link to their individual board page if present).",
         "hints": [
-          "Most California counties have 5 supervisors; do not hardcode the count \u2014 extract whatever the page lists.",
-          "Use these EXACT field names: externalId, name, district, party (optional), photoUrl, detailUrl",
-          "Districts are numeric (e.g., \"1\", \"2\") \u2014 strip any \"District\" prefix label from extracted values"
+          "There are exactly 5 supervisors, one per district (1-5). Extract all 5.",
+          "externalId MUST be constructed as the string 'sonoma-district-' concatenated with the district number. Example: supervisor for District 1 gets externalId 'sonoma-district-1'.",
+          "district must be a digit string only \u2014 '1', '2', '3', '4', or '5'. Strip any 'District' prefix or label.",
+          "Each supervisor typically has a photo, name, district label, and contact details on the page.",
+          "photoUrl must be an absolute URL including the domain. If relative, resolve against https://sonomacounty.gov"
         ]
       },
       {
