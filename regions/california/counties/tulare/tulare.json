@@ -16,22 +16,45 @@
         "url": "https://tularecounty.ca.gov/bos/agendas-minutes/",
         "dataType": "meetings",
         "category": "Board of Supervisors",
-        "contentGoal": "Extract scheduled and past Tulare County Board of Supervisors meetings — meeting date, time, location, agenda PDF link, and minutes link when available. Each item should yield one Meeting record with externalId (date + body slug), title, body ('Tulare County Board of Supervisors'), scheduledAt (combined date + time), location, agendaUrl, minutesUrl.",
+        "contentGoal": "Extract scheduled and past Tulare County Board of Supervisors meetings \u2014 meeting date, time, location, agenda PDF link, and minutes link when available. Each item should yield one Meeting record with externalId (date + body slug), title, body ('Tulare County Board of Supervisors'), scheduledAt (combined date + time), location, agendaUrl, minutesUrl.",
         "hints": [
           "Tulare County Board of Supervisors publishes meeting agendas at this URL",
           "Use these EXACT field names: externalId, title, body, scheduledAt, location, agendaUrl, minutesUrl",
-          "Past meetings and upcoming meetings may live on the same page or on tabbed/paginated sections — capture both when present"
+          "Past meetings and upcoming meetings may live on the same page or on tabbed/paginated sections \u2014 capture both when present"
         ]
       },
       {
         "url": "https://tularecounty.ca.gov/bos/",
         "dataType": "representatives",
         "category": "Board of Supervisors",
-        "contentGoal": "Extract Tulare County Board of Supervisors members — name, district number, party affiliation if listed, photo URL, contact info (phone, email, district office address), and profile page link.",
+        "contentGoal": "Extract Tulare County Board of Supervisors members \u2014 name, district number, party affiliation if listed, photo URL, contact info (phone, email, district office address), and profile page link.",
         "hints": [
-          "Most California counties have 5 supervisors; do not hardcode the count — extract whatever the page lists.",
+          "Most California counties have 5 supervisors; do not hardcode the count \u2014 extract whatever the page lists.",
           "Use these EXACT field names: externalId, name, district, party (optional), photoUrl, detailUrl",
-          "Districts are numeric (e.g., \"1\", \"2\") — strip any \"District\" prefix label from extracted values"
+          "Districts are numeric (e.g., \"1\", \"2\") \u2014 strip any \"District\" prefix label from extracted values"
+        ]
+      },
+      {
+        "url": "https://tularecounty.ca.gov/elections/registrar-of-voters/current-election-information",
+        "dataType": "propositions",
+        "category": "Ballot Measures",
+        "contentGoal": "Extract current and past ballot measures for Tulare County \u2014 measure identifier (letter/number), full title, election date, sponsoring jurisdiction, measure type (bond, tax, initiative, ordinance, charter amendment, etc.), summary description, and official outcome (passed/failed) where available.",
+        "hints": [
+          "Tulare County Registrar of Voters publishes ballot measures at this URL",
+          "Extract current and past ballot measures \u2014 measure letter/number, title, election date, jurisdiction (county, city, district), measure type (bond, tax, initiative, etc.), short description, and outcome when available",
+          "Use these EXACT field names: externalId, title, electionDate, jurisdiction, measureType, description, outcome"
+        ]
+      },
+      {
+        "url": "https://tularecounty.ca.gov/elections",
+        "dataType": "campaign_finance",
+        "category": "Campaign Disclosure",
+        "contentGoal": "Extract campaign finance disclosure filings for Tulare County \u2014 committee name, filer type (candidate/measure committee), election, total contributions received, total expenditures made, and top contributors with amounts.",
+        "hints": [
+          "Tulare County campaign finance disclosure portal",
+          "Extract campaign finance filings \u2014 committee name, candidate or measure supported/opposed, filing date, total contributions, total expenditures, top contributors (name, amount), and reporting period",
+          "Use these EXACT field names: committeeId, committeeName, candidateOrMeasure, filingDate, totalContributions, totalExpenditures, reportingPeriod",
+          "NOTE: UNCERTAIN \u2014 Tulare uses mandatory e-filing; NetFile AID not confirmed. Campaign finance accessible via elections site."
         ]
       }
     ]
