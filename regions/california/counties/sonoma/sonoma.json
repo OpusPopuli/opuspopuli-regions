@@ -2,7 +2,7 @@
   "name": "california-sonoma",
   "displayName": "Sonoma County",
   "description": "Sonoma County civic data from official county government websites",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "config": {
     "regionId": "california-sonoma",
     "regionName": "Sonoma County",
@@ -37,6 +37,13 @@
               "selector": "img",
               "extractionMethod": "attribute",
               "attribute": "alt",
+              "required": true
+            },
+            {
+              "fieldName": "chamber",
+              "selector": "",
+              "extractionMethod": "constant",
+              "defaultValue": "Board of Supervisors",
               "required": true
             },
             {
