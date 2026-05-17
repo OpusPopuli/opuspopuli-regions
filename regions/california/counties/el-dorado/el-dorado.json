@@ -2,7 +2,7 @@
   "name": "california-el-dorado",
   "displayName": "El Dorado County",
   "description": "El Dorado County civic data from official county government websites",
-  "version": "0.1.0",
+  "version": "0.2.2",
   "config": {
     "regionId": "california-el-dorado",
     "regionName": "El Dorado County",
@@ -16,32 +16,34 @@
         "url": "https://www.edcgov.us/Government/BOS/Pages/agenda.aspx",
         "dataType": "meetings",
         "category": "Board of Supervisors",
-        "contentGoal": "Extract scheduled and past El Dorado County Board of Supervisors meetings \u2014 meeting date, time, location, agenda PDF link, and minutes link when available. Each item should yield one Meeting record with externalId (date + body slug), title, body ('El Dorado County Board of Supervisors'), scheduledAt (combined date + time), location, agendaUrl, minutesUrl.",
+        "contentGoal": "Extract scheduled and past El Dorado County Board of Supervisors meetings — meeting date, time, location, agenda PDF link, and minutes link when available. Each item should yield one Meeting record with externalId (date + body slug), title, body ('El Dorado County Board of Supervisors'), scheduledAt (combined date + time), location, agendaUrl, minutesUrl.",
         "hints": [
           "El Dorado County Board of Supervisors publishes meeting agendas at this URL",
           "Use these EXACT field names: externalId, title, body, scheduledAt, location, agendaUrl, minutesUrl",
-          "Past meetings and upcoming meetings may live on the same page or on tabbed/paginated sections \u2014 capture both when present"
+          "Past meetings and upcoming meetings may live on the same page or on tabbed/paginated sections — capture both when present"
         ]
       },
       {
         "url": "https://www.edcgov.us/Government/BOS/Pages/Default.aspx",
         "dataType": "representatives",
         "category": "Board of Supervisors",
-        "contentGoal": "Extract El Dorado County Board of Supervisors members \u2014 name, district number, party affiliation if listed, photo URL, contact info (phone, email, district office address), and profile page link.",
+        "contentGoal": "Extract El Dorado County Board of Supervisors members — name, district number, party affiliation if listed, photo URL, contact info (phone, email, district office address), and profile page link. Construct externalId as 'california-el-dorado-supervisor-{district}' using the district number.",
         "hints": [
-          "Most California counties have 5 supervisors; do not hardcode the count \u2014 extract whatever the page lists.",
-          "Use these EXACT field names: externalId, name, district, party (optional), photoUrl, detailUrl",
-          "Districts are numeric (e.g., \"1\", \"2\") \u2014 strip any \"District\" prefix label from extracted values"
+          "externalId: construct as 'california-el-dorado-supervisor-{district}' using the district number",
+          "The page uses a standard ASP.NET layout with a main content area likely inside a div with id 'main-content' or similar, though the provided snippet is truncated.",
+          "Representative data is likely contained within a repeating HTML structure (e.g., <div class='rep-item'> or <li>) within the main content container.",
+          "Photo URLs are likely found in <img> tags with 'src' attributes that may be relative paths requiring absolutization.",
+          "Detail URLs are typically found in <a> tags with 'href' attributes pointing to individual representative profiles."
         ]
       },
       {
         "url": "https://www.eldoradocounty.ca.gov/County-Government/Elections/Local-Measures-for-El-Dorado-County",
         "dataType": "propositions",
         "category": "Ballot Measures",
-        "contentGoal": "Extract current and past ballot measures for El Dorado County \u2014 measure identifier (letter/number), full title, election date, sponsoring jurisdiction, measure type (bond, tax, initiative, ordinance, charter amendment, etc.), summary description, and official outcome (passed/failed) where available.",
+        "contentGoal": "Extract current and past ballot measures for El Dorado County — measure identifier (letter/number), full title, election date, sponsoring jurisdiction, measure type (bond, tax, initiative, ordinance, charter amendment, etc.), summary description, and official outcome (passed/failed) where available.",
         "hints": [
           "El Dorado County Registrar of Voters publishes ballot measures at this URL",
-          "Extract current and past ballot measures \u2014 measure letter/number, title, election date, jurisdiction (county, city, district), measure type (bond, tax, initiative, etc.), short description, and outcome when available",
+          "Extract current and past ballot measures — measure letter/number, title, election date, jurisdiction (county, city, district), measure type (bond, tax, initiative, etc.), short description, and outcome when available",
           "Use these EXACT field names: externalId, title, electionDate, jurisdiction, measureType, description, outcome"
         ]
       },
@@ -49,12 +51,12 @@
         "url": "https://www.eldoradocounty.ca.gov/County-Government/Elections/Candidates-and-Campaigns/Filed-Campaign-Documents",
         "dataType": "campaign_finance",
         "category": "Campaign Disclosure",
-        "contentGoal": "Extract campaign finance disclosure filings for El Dorado County \u2014 committee name, filer type (candidate/measure committee), election, total contributions received, total expenditures made, and top contributors with amounts.",
+        "contentGoal": "Extract campaign finance disclosure filings for El Dorado County — committee name, filer type (candidate/measure committee), election, total contributions received, total expenditures made, and top contributors with amounts.",
         "hints": [
           "El Dorado County campaign finance disclosure portal",
-          "Extract campaign finance filings \u2014 committee name, candidate or measure supported/opposed, filing date, total contributions, total expenditures, top contributors (name, amount), and reporting period",
+          "Extract campaign finance filings — committee name, candidate or measure supported/opposed, filing date, total contributions, total expenditures, top contributors (name, amount), and reporting period",
           "Use these EXACT field names: committeeId, committeeName, candidateOrMeasure, filingDate, totalContributions, totalExpenditures, reportingPeriod",
-          "NOTE: UNCERTAIN \u2014 El Dorado recently transitioned filing software; confirm NetFile or local system."
+          "NOTE: UNCERTAIN — El Dorado recently transitioned filing software; confirm NetFile or local system."
         ]
       }
     ]

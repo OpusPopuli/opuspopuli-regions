@@ -2,7 +2,7 @@
   "name": "california-lake",
   "displayName": "Lake County",
   "description": "Lake County civic data from official county government websites",
-  "version": "0.1.0",
+  "version": "0.2.2",
   "config": {
     "regionId": "california-lake",
     "regionName": "Lake County",
@@ -16,32 +16,34 @@
         "url": "https://www.lakecountyca.gov/AgendaCenter",
         "dataType": "meetings",
         "category": "Board of Supervisors",
-        "contentGoal": "Extract scheduled and past Lake County Board of Supervisors meetings \u2014 meeting date, time, location, agenda PDF link, and minutes link when available. Each item should yield one Meeting record with externalId (date + body slug), title, body ('Lake County Board of Supervisors'), scheduledAt (combined date + time), location, agendaUrl, minutesUrl.",
+        "contentGoal": "Extract scheduled and past Lake County Board of Supervisors meetings — meeting date, time, location, agenda PDF link, and minutes link when available. Each item should yield one Meeting record with externalId (date + body slug), title, body ('Lake County Board of Supervisors'), scheduledAt (combined date + time), location, agendaUrl, minutesUrl.",
         "hints": [
           "Lake County Board of Supervisors publishes meeting agendas at this URL",
           "Use these EXACT field names: externalId, title, body, scheduledAt, location, agendaUrl, minutesUrl",
-          "Past meetings and upcoming meetings may live on the same page or on tabbed/paginated sections \u2014 capture both when present"
+          "Past meetings and upcoming meetings may live on the same page or on tabbed/paginated sections — capture both when present"
         ]
       },
       {
-        "url": "https://www.lakecountyca.gov/272/Board-of-Supervisors",
+        "url": "https://www.lakecountyca.gov/1116/Board-of-Supervisors",
         "dataType": "representatives",
         "category": "Board of Supervisors",
-        "contentGoal": "Extract Lake County Board of Supervisors members \u2014 name, district number, party affiliation if listed, photo URL, contact info (phone, email, district office address), and profile page link.",
+        "contentGoal": "Extract Lake County Board of Supervisors members — name, district number, party affiliation if listed, photo URL, contact info (phone, email, district office address), and profile page link. Construct externalId as 'california-lake-supervisor-{district}' using the district number.",
         "hints": [
-          "Most California counties have 5 supervisors; do not hardcode the count \u2014 extract whatever the page lists.",
-          "Use these EXACT field names: externalId, name, district, party (optional), photoUrl, detailUrl",
-          "Districts are numeric (e.g., \"1\", \"2\") \u2014 strip any \"District\" prefix label from extracted values"
+          "externalId: construct as 'california-lake-supervisor-{district}' using the district number",
+          "The page is a single record detail view for the 'Board of Supervisors' entity, indicated by the breadcrumb 'Board of Supervisors' and the page title.",
+          "Representative data is likely contained within the main content area defined by the class 'pageContent cpGrid cpGrid24' and the 'fr-view' container.",
+          "The HTML provided is truncated ('<!-- [truncated] -->'), so evidence for specific representative fields (name, photo) is currently missing from the snippet.",
+          "The 'externalId' field requires a construction rule based on the page ID (1116) or a specific representative ID found in the full HTML."
         ]
       },
       {
         "url": "https://www.lakecountyca.gov/882/Current-Elections",
         "dataType": "propositions",
         "category": "Ballot Measures",
-        "contentGoal": "Extract current and past ballot measures for Lake County \u2014 measure identifier (letter/number), full title, election date, sponsoring jurisdiction, measure type (bond, tax, initiative, ordinance, charter amendment, etc.), summary description, and official outcome (passed/failed) where available.",
+        "contentGoal": "Extract current and past ballot measures for Lake County — measure identifier (letter/number), full title, election date, sponsoring jurisdiction, measure type (bond, tax, initiative, ordinance, charter amendment, etc.), summary description, and official outcome (passed/failed) where available.",
         "hints": [
           "Lake County Registrar of Voters publishes ballot measures at this URL",
-          "Extract current and past ballot measures \u2014 measure letter/number, title, election date, jurisdiction (county, city, district), measure type (bond, tax, initiative, etc.), short description, and outcome when available",
+          "Extract current and past ballot measures — measure letter/number, title, election date, jurisdiction (county, city, district), measure type (bond, tax, initiative, etc.), short description, and outcome when available",
           "Use these EXACT field names: externalId, title, electionDate, jurisdiction, measureType, description, outcome"
         ]
       },
@@ -49,12 +51,12 @@
         "url": "https://www.lakecountyca.gov/1635/Candidates-Campaign-Finance-Information",
         "dataType": "campaign_finance",
         "category": "Campaign Disclosure",
-        "contentGoal": "Extract campaign finance disclosure filings for Lake County \u2014 committee name, filer type (candidate/measure committee), election, total contributions received, total expenditures made, and top contributors with amounts.",
+        "contentGoal": "Extract campaign finance disclosure filings for Lake County — committee name, filer type (candidate/measure committee), election, total contributions received, total expenditures made, and top contributors with amounts.",
         "hints": [
           "Lake County campaign finance disclosure portal",
-          "Extract campaign finance filings \u2014 committee name, candidate or measure supported/opposed, filing date, total contributions, total expenditures, top contributors (name, amount), and reporting period",
+          "Extract campaign finance filings — committee name, candidate or measure supported/opposed, filing date, total contributions, total expenditures, top contributors (name, amount), and reporting period",
           "Use these EXACT field names: committeeId, committeeName, candidateOrMeasure, filingDate, totalContributions, totalExpenditures, reportingPeriod",
-          "NOTE: UNCERTAIN \u2014 No NetFile portal found for Lake County."
+          "NOTE: UNCERTAIN — No NetFile portal found for Lake County."
         ]
       }
     ]
