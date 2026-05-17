@@ -1,1 +1,164 @@
+# ── 0. Block direct push to main ─────────────────────────────────────────────
+if [ "$(git branch --show-current)" = "main" ]; then
+  printf '\nPush blocked: direct pushes to main are not allowed.\n'
+  printf 'Create a feature branch and open a pull request instead.\n'
+  exit 1
+fi
+
+# ── 1. Test suite ─────────────────────────────────────────────────────────────
+echo "Running tests..."
+pnpm test || exit 1
+
+# ── 2. URL connectivity (informational — does not block push) ─────────────────
+echo ""
+echo "Checking URL connectivity (informational)..."
 pnpm test:connectivity || true
+
+# ── 3. Duplicate-code gate ────────────────────────────────────────────────────
+echo ""
+echo "Checking for duplicate code..."
+pnpm jscpd || exit 1
+
+# ── 4. SonarJS lint gate ──────────────────────────────────────────────────────
+echo ""
+echo "Running SonarJS checks..."
+pnpm lint:sonar || exit 1
+
+# ── 5. Dependency vulnerability audit ────────────────────────────────────────
+# Blocks on HIGH and CRITICAL CVEs in production dependencies.
+echo ""
+echo "Running dependency vulnerability audit..."
+pnpm audit --prod --audit-level=high 2>&1
+AUDIT_EXIT=$?
+if [ $AUDIT_EXIT -ne 0 ]; then
+  printf '\nPush blocked: HIGH or CRITICAL CVEs found in production dependencies.\n'
+  printf 'Fix with: pnpm audit --fix   or add a version override to package.json > pnpm.overrides\n'
+  exit 1
+fi
+
+# ── 6. Trivy filesystem scan ──────────────────────────────────────────────────
+if command -v trivy >/dev/null 2>&1; then
+  echo ""
+  echo "Running Trivy filesystem scan..."
+  trivy fs . --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --quiet 2>&1
+  if [ $? -ne 0 ]; then
+    printf '\nPush blocked: HIGH or CRITICAL CVEs found by Trivy.\n'
+    exit 1
+  fi
+else
+  echo "Warning: trivy not found — install with: brew install trivy"
+fi
+
+# ── 7. Secret scan ────────────────────────────────────────────────────────────
+if command -v gitleaks >/dev/null 2>&1; then
+  echo ""
+  echo "Running secret scan..."
+  gitleaks detect --source . --no-banner --config .gitleaks.toml --exit-code 1 2>&1
+  if [ $? -ne 0 ]; then
+    printf '\nPush blocked: potential secrets detected by gitleaks.\n'
+    printf 'Review the findings above. If a false positive, add it to .gitleaks.toml allowlist.\n'
+    exit 1
+  fi
+else
+  echo "Warning: gitleaks not found — install with: brew install gitleaks"
+fi
+
+# ── 8. Load claude CLI ────────────────────────────────────────────────────────
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" --no-use
+
+CLAUDE=$(command -v claude 2>/dev/null)
+
+BASE=$(git merge-base HEAD origin/main 2>/dev/null || echo "HEAD~1")
+DIFF=$(git diff "$BASE"..HEAD 2>/dev/null | head -c 30000)
+
+# ── 9. AI code review gate ────────────────────────────────────────────────────
+if [ -z "$CLAUDE" ]; then
+  echo "Warning: claude CLI not found — skipping AI review."
+elif [ -z "$DIFF" ]; then
+  echo "No diff to review."
+else
+  echo ""
+  echo "Running AI code review..."
+
+  RESULT=$("$CLAUDE" --print "You are a pre-push code review gate for the opuspopuli-regions repository (declarative civic data region configs + TypeScript CLI tooling, AGPL-3.0).
+
+Review the following git diff for BLOCKING issues only:
+1. Critical bugs in the CLI that would corrupt or overwrite region config files incorrectly
+2. GPL-licensed dependency additions (violates AGPL dual-license structure)
+3. Schema changes that would invalidate existing region configs without a migration path
+4. Prompt injection risks in the Ollama analyzer (user-controlled HTML fed to LLM prompts)
+
+Minor code quality issues are NOT blocking — only flag things that would cause data loss or a production outage.
+
+Respond with EXACTLY one of:
+  PASS
+  FAIL: <one sentence describing the blocking issue>
+
+Diff:
+$DIFF" 2>/dev/null)
+
+  echo "$RESULT"
+
+  if printf '%s' "$RESULT" | grep -q "^FAIL:"; then
+    printf '\nPush blocked by AI review. Fix the issue above or use git push --no-verify to override.\n'
+    exit 1
+  fi
+fi
+
+# ── 10. AI security review gate ───────────────────────────────────────────────
+if [ -z "$CLAUDE" ]; then
+  echo "Warning: claude CLI not found — skipping security review."
+elif [ -z "$DIFF" ]; then
+  echo "No diff to review."
+else
+  echo ""
+  echo "Running AI security review..."
+
+  SEC_RESULT=$("$CLAUDE" --print "You are a security-focused pre-push gate for the opuspopuli-regions repository (TypeScript CLI tool that fetches government websites and calls a local Ollama LLM).
+
+Analyze the following git diff for HIGH-CONFIDENCE security vulnerabilities only. Ignore theoretical issues.
+
+Check for:
+1. SSRF — user-controlled URLs fetched by the CLI without host validation (government sites only — flag if arbitrary URLs from user input are fetched without sanitization)
+2. Path traversal in --init file creation (e.g. --county ../../etc/passwd style inputs)
+3. Command injection via shell-executed arguments
+4. Prompt injection — user-controlled page content passed unsanitized to LLM prompts that could exfiltrate data or alter behavior
+5. Hardcoded credentials or API keys committed in code
+
+Respond with EXACTLY one of:
+  PASS
+  FAIL: <one sentence describing the specific vulnerability and file/line>
+
+Diff:
+$DIFF" 2>/dev/null)
+
+  echo "$SEC_RESULT"
+
+  if printf '%s' "$SEC_RESULT" | grep -q "^FAIL:"; then
+    printf '\nPush blocked by security review. Fix the vulnerability above or use git push --no-verify to override.\n'
+    exit 1
+  fi
+fi
+
+# ── 11. Package version sync ──────────────────────────────────────────────────
+# Runs last — after all gates pass — so a failing check never leaves a dangling
+# version-bump commit. Keeps package.json aligned with the latest published
+# @opuspopuli/regions so the CLI review header always shows the correct version.
+# No [skip ci] needed: publish.yml only fires on pushes to main, not feature branches.
+echo ""
+echo "Syncing package version with latest published..."
+LATEST=$(npm view @opuspopuli/regions version --registry https://npm.pkg.github.com 2>/dev/null)
+if [ -z "$LATEST" ]; then
+  echo "Warning: could not fetch latest version from registry — skipping sync"
+else
+  CURRENT=$(node -p "require('./package.json').version" 2>/dev/null)
+  if [ "$LATEST" != "$CURRENT" ]; then
+    printf 'Bumping package.json: %s → %s\n' "$CURRENT" "$LATEST"
+    npm version "$LATEST" --no-git-tag-version --silent
+    git add package.json
+    git commit -m "chore: sync package version to $LATEST"
+  else
+    echo "Already at $LATEST"
+  fi
+fi

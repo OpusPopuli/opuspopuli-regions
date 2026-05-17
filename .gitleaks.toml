@@ -1,0 +1,17 @@
+# gitleaks configuration for opuspopuli-regions
+# All suppressed findings are intentional false positives:
+#   - .env.example files: templates documenting required variables.
+#   - Test spec files: obviously fake keys/tokens as test fixtures.
+#   - Docs: illustrative placeholder values.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Example files, test fixtures, and docs"
+paths = [
+  '''.env\.example''',
+  '''.*\.spec\.ts''',
+  '''.*README\.md''',
+  '''docs/.*''',
+]

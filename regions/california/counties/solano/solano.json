@@ -2,7 +2,7 @@
   "name": "california-solano",
   "displayName": "Solano County",
   "description": "Solano County civic data from official county government websites",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "config": {
     "regionId": "california-solano",
     "regionName": "Solano County",
@@ -16,32 +16,34 @@
         "url": "https://solanocounty.legistar.com/Calendar.aspx",
         "dataType": "meetings",
         "category": "Board of Supervisors",
-        "contentGoal": "Extract scheduled and past Solano County Board of Supervisors meetings \u2014 meeting date, time, location, agenda PDF link, and minutes link when available. Each item should yield one Meeting record with externalId (date + body slug), title, body ('Solano County Board of Supervisors'), scheduledAt (combined date + time), location, agendaUrl, minutesUrl.",
+        "contentGoal": "Extract scheduled and past Solano County Board of Supervisors meetings — meeting date, time, location, agenda PDF link, and minutes link when available. Each item should yield one Meeting record with externalId (date + body slug), title, body ('Solano County Board of Supervisors'), scheduledAt (combined date + time), location, agendaUrl, minutesUrl.",
         "hints": [
           "Solano County Board of Supervisors publishes meeting agendas at this URL",
           "Use these EXACT field names: externalId, title, body, scheduledAt, location, agendaUrl, minutesUrl",
-          "Past meetings and upcoming meetings may live on the same page or on tabbed/paginated sections \u2014 capture both when present"
+          "Past meetings and upcoming meetings may live on the same page or on tabbed/paginated sections — capture both when present"
         ]
       },
       {
         "url": "https://www.solanocounty.com/depts/bos/default.asp",
         "dataType": "representatives",
         "category": "Board of Supervisors",
-        "contentGoal": "Extract Solano County Board of Supervisors members \u2014 name, district number, party affiliation if listed, photo URL, contact info (phone, email, district office address), and profile page link.",
+        "contentGoal": "Extract Solano County Board of Supervisors members — name, district number, party affiliation if listed, photo URL, contact info (phone, email, district office address), and profile page link. Construct externalId as 'california-solano-supervisor-{district}' using the district number.",
         "hints": [
-          "Most California counties have 5 supervisors; do not hardcode the count \u2014 extract whatever the page lists.",
-          "Use these EXACT field names: externalId, name, district, party (optional), photoUrl, detailUrl",
-          "Districts are numeric (e.g., \"1\", \"2\") \u2014 strip any \"District\" prefix label from extracted values"
+          "externalId: construct as 'california-solano-supervisor-{district}' using the district number",
+          "Representatives are listed in a grid structure with class 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'.",
+          "Each representative card is wrapped in an <a> tag with class 'group flex h-full' containing the detailUrl.",
+          "The 'name' and 'district' are found within an <h3> element inside a div with class 'calc-card'.",
+          "The 'photoUrl' is located in an <img> tag within the same card, utilizing a 'srcset' attribute for resolution."
         ]
       },
       {
         "url": "https://www.solanocounty.com/depts/rov/faqs/registrar_of_voters_%E2%80%93_current_election_info.asp",
         "dataType": "propositions",
         "category": "Ballot Measures",
-        "contentGoal": "Extract current and past ballot measures for Solano County \u2014 measure identifier (letter/number), full title, election date, sponsoring jurisdiction, measure type (bond, tax, initiative, ordinance, charter amendment, etc.), summary description, and official outcome (passed/failed) where available.",
+        "contentGoal": "Extract current and past ballot measures for Solano County — measure identifier (letter/number), full title, election date, sponsoring jurisdiction, measure type (bond, tax, initiative, ordinance, charter amendment, etc.), summary description, and official outcome (passed/failed) where available.",
         "hints": [
           "Solano County Registrar of Voters publishes ballot measures at this URL",
-          "Extract current and past ballot measures \u2014 measure letter/number, title, election date, jurisdiction (county, city, district), measure type (bond, tax, initiative, etc.), short description, and outcome when available",
+          "Extract current and past ballot measures — measure letter/number, title, election date, jurisdiction (county, city, district), measure type (bond, tax, initiative, etc.), short description, and outcome when available",
           "Use these EXACT field names: externalId, title, electionDate, jurisdiction, measureType, description, outcome"
         ]
       },
@@ -49,10 +51,10 @@
         "url": "https://campaign.solanocounty.com/CampaignDocsWebRetrieval/",
         "dataType": "campaign_finance",
         "category": "Campaign Disclosure",
-        "contentGoal": "Extract campaign finance disclosure filings for Solano County \u2014 committee name, filer type (candidate/measure committee), election, total contributions received, total expenditures made, and top contributors with amounts.",
+        "contentGoal": "Extract campaign finance disclosure filings for Solano County — committee name, filer type (candidate/measure committee), election, total contributions received, total expenditures made, and top contributors with amounts.",
         "hints": [
           "Solano County campaign finance disclosure portal",
-          "Extract campaign finance filings \u2014 committee name, candidate or measure supported/opposed, filing date, total contributions, total expenditures, top contributors (name, amount), and reporting period",
+          "Extract campaign finance filings — committee name, candidate or measure supported/opposed, filing date, total contributions, total expenditures, top contributors (name, amount), and reporting period",
           "Use these EXACT field names: committeeId, committeeName, candidateOrMeasure, filingDate, totalContributions, totalExpenditures, reportingPeriod"
         ]
       }

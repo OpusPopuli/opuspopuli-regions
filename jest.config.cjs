@@ -8,4 +8,7 @@ module.exports = {
   transform: {
     '^.+\\.ts$': ['ts-jest', { diagnostics: { ignoreCodes: [151002] } }],
   },
+  moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1',
+  },
 };

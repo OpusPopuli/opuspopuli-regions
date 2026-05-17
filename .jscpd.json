@@ -1,0 +1,17 @@
+{
+  "threshold": 0,
+  "minLines": 8,
+  "minTokens": 60,
+  "languages": ["typescript"],
+  "formatsExts": { "typescript": ["ts"] },
+  "noSymlinks": true,
+  "path": ["src"],
+  "ignore": [
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "**/node_modules/**",
+    "**/dist/**"
+  ],
+  "reporters": ["consoleFull"],
+  "exitCode": 1
+}
