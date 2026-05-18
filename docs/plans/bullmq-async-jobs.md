@@ -8,12 +8,18 @@ Closes (rolled into this PR): #653 (cron-through-queue).
 
 Deferred follow-ups: #651 (declarative per-source cadence in regions), #652 (idempotency rework), #654 (BullBoard admin), #656 (structural-analysis decoupling).
 
+## Design north star
+
+> **The substrate must absorb new job families without code restructure.** v1 ships exactly one queue (`region-sync`), but the package layout, naming, schema pattern, metrics labels, and worker process structure are chosen so that adding a `bill-watch-notifications` queue, a `topic-interest-alerts` queue, a `webhook-deliveries` queue, etc., is purely additive: a new processor file, a new status table, a new env var. No coordinated migrations. No renames. No flag flips for unrelated jobs.
+
+Concretely, the conventions below are reusable; the v1 implementation is the first instance of them.
+
 ## Decisions locked in for v1
 
 | Question from issue | Decision | Notes |
 |---|---|---|
-| Worker topology | **Separate container** | New nest sub-app `apps/backend/src/apps/worker`, packaged into the existing backend image, run with `nest start worker` as the container command. Adds one compose service, no second Dockerfile. |
-| Status durability | **`pipeline_jobs` table is canonical** (extends the "PipelineExecution row is canonical" choice) | BullMQ job state is used only for queue operations (enqueue, retry, drain). The DB row is what the API returns. Per-source `pipeline_executions` rows link via FK so future per-source observability is additive. |
+| Worker topology | **Separate container, one process per worker app** | First worker app is `region-worker` (nest sub-app at `apps/backend/src/apps/region-worker`), same image as the API services, different entrypoint. Future job families can land as additional processors in the *same* container until their scaling profile diverges, or as peer worker apps (`notifications-worker`, etc.) when split is warranted. The split is a deploy-config decision, not a code restructure. |
+| Status durability | **Per-queue status table; DB is canonical** | `pipeline_jobs` is the v1 instance and the template for future queues. BullMQ job state is used only for queue operations (enqueue, retry, drain). Each new job family adds its own status table (`notification_deliveries`, `bill_watch_events`, …) following the template — never overload `pipeline_jobs` with foreign concerns. |
 | v1 queue | **`region-sync` only** | One queue serves both manual (GraphQL) and scheduled (repeatable job) syncs. `bulk-download`, `api-ingest`, `pdf-extract` stay synchronous (gated on #652 / #656). |
 | Cron | **Moved into the queue** | `@nestjs/schedule` removed from the region service. A BullMQ repeatable job in the worker fires the same daily cadence (`0 2 * * *`) and enqueues a `region-sync` job. Closes #653. |
 
@@ -25,46 +31,133 @@ No mixed-mode: every sync — manual or scheduled — flows through `region-sync
 - Idempotency rework for streaming handlers (#652) — `bulk-download` / `api-ingest` stay synchronous for v1.
 - BullBoard admin UI (#654).
 - Structural-analysis decoupling (#656).
-- Per-region or per-host rate limiting (one global concurrency cap is enough for v1).
+- Per-region or per-host rate limiting (one global concurrency cap is enough for v1; the substrate exposes the hooks needed to add this later).
 - Cancellation (`cancelSync`) — defer; failed-fast retries cover most cases.
+- Notification, watch, and topic-alert queues. The substrate is built so these drop in cleanly — but no code, no schema, no GraphQL surface for them in this PR.
+- BullMQ Flows (parent/child job relationships). Useful eventually for "one trigger fans out to N deliveries"; not needed for v1's single queue.
 
 ## Architecture
 
 ```
-┌────────────────────┐         ┌─────────┐         ┌──────────────────────┐
-│  region API        │  enq.   │         │  pull   │  region-worker       │
-│  (NestJS, :3004)   │ ──────► │  Redis  │ ──────► │  (NestJS, no HTTP)   │
-│                    │         │ BullMQ  │         │                      │
-│  syncRegionData    │         │         │         │  ┌────────────────┐  │
-│  regionSyncJob     │         └────▲────┘         │  │ repeatable job │  │
-└──────────┬─────────┘              │              │  │  0 2 * * *     │──┼──► enqueues
-           │  reads                 │ enqueue      │  └────────────────┘  │     region-sync
-           │                        └──────────────┤                      │     job daily
-           ▼                                       │  RegionService       │
-     ┌──────────────────────────────────────────┐  │   .syncAll(...)      │
-     │  Postgres                                │  └──────────┬───────────┘
-     │    pipeline_jobs       (canonical)       │             │ writes
-     │    pipeline_executions (per-source)      │ ◄───────────┘
-     └──────────────────────────────────────────┘
+┌────────────────────┐         ┌─────────┐         ┌────────────────────────────────┐
+│  region API        │  enq.   │         │  pull   │  region-worker container       │
+│  (NestJS, :3004)   │ ──────► │  Redis  │ ──────► │                                │
+│                    │         │ BullMQ  │         │  ┌──────────────────────────┐  │
+│  syncRegionData    │         │         │         │  │ Worker('region-sync')    │  │
+│  regionSyncJob     │         └────▲────┘         │  │  concurrency: 1          │  │
+│  recentRegion…     │              │              │  │  RegionService.syncAll() │  │
+│                    │              │              │  └──────────────────────────┘  │
+│  (future queues    │              │              │                                │
+│   enqueue here     │──────────────┘              │  ┌──────────────────────────┐  │
+│   too)             │      enqueue                │  │ JobScheduler(daily-cron) │──┼──► enq.
+└──────────┬─────────┘                             │  └──────────────────────────┘  │   region-sync
+           │  reads                                │                                │
+           │                                       │  (future Workers slot in       │
+           ▼                                       │   here or in peer worker apps) │
+     ┌─────────────────────────────────────────┐   └──────────────┬─────────────────┘
+     │  Postgres                               │                  │ writes
+     │    pipeline_jobs        (region-sync)   │ ◄────────────────┘
+     │    pipeline_executions  (per-source)    │
+     │    [future: notification_deliveries,    │
+     │     bill_watch_events, …]               │
+     └─────────────────────────────────────────┘
 ```
 
-The region API container retains the GraphQL resolver only. The worker owns both the scheduling and the execution of syncs — there is one place sync runs from.
+The region API container retains the GraphQL resolver only. The `region-worker` container owns both scheduling and execution of syncs. A given worker *container* can host multiple BullMQ `Worker` instances (one per queue) — splitting into peer containers (`notifications-worker`) is a deploy-config decision triggered by divergent scaling profiles, not a code restructure.
+
+## Substrate conventions (the patterns future queues follow)
+
+These are the rules of the road. v1 establishes them; everything from here forward follows them.
+
+### Queue naming
+
+- Kebab-case, scoped by domain: `region-sync`, `bill-watch-notifications`, `topic-interest-alerts`.
+- Constants exported from `queue-provider`: `REGION_SYNC_QUEUE = 'region-sync'`, etc. Never inline string literals at call sites.
+
+### Per-queue env-var prefix
+
+All queue-tunable settings use a uniform prefix derived from the queue name (uppercase, dashes → underscores):
+
+| Setting | Env var | Default |
+|---|---|---|
+| Concurrency | `BULLMQ_QUEUE_REGION_SYNC_CONCURRENCY` | `1` |
+| Max attempts | `BULLMQ_QUEUE_REGION_SYNC_ATTEMPTS` | `3` |
+| Backoff base ms | `BULLMQ_QUEUE_REGION_SYNC_BACKOFF_MS` | `30000` |
+| Per-queue enable | `BULLMQ_QUEUE_REGION_SYNC_ENABLED` | `true` |
+
+Adding `bill-watch-notifications` later means defining `BULLMQ_QUEUE_BILL_WATCH_NOTIFICATIONS_*` env vars — the `QueueService` helper reads them by queue name, no per-queue config code.
+
+### Status-table template
+
+Every job family gets its own status table modeled on `pipeline_jobs`. Common columns:
+
+```
+id              uuid pk
+bullmq_job_id   text                  -- BullMQ job id
+trigger_source  text                  -- queue-specific enum (e.g. manual|cron|startup, or webhook|user-action)
+status          text                  -- queued|running|succeeded|failed
+attempts        int
+enqueued_by     text                  -- userId or null
+enqueued_at     timestamptz
+started_at      timestamptz
+finished_at     timestamptz
+error_message   text
+result          jsonb                 -- queue-specific result payload
+created_at      timestamptz
+```
+
+Plus queue-specific columns (for `pipeline_jobs`: `region_id`, `data_types`, `depth`, …; for a future `notification_deliveries`: `user_id`, `notification_type`, `target_entity_id`, …). The shape stays familiar; the contents are queue-owned.
+
+### Processor structure
+
+One processor file per queue, colocated with the worker app that hosts it. Each processor:
+
+1. Resolves its domain service(s) from the Nest application context.
+2. Transitions its status row to `running` at start, `succeeded`/`failed` at end.
+3. Catches the *final* failure (after retries exhausted) to mark the row `failed` with an error message; intermediate retry failures stay in BullMQ's job state, not the DB.
+4. Emits the universal log fields (`queue`, `jobId`, `attempt`, `trigger_source`) plus any queue-specific fields.
+
+### Metrics — labeled, not per-queue-named
+
+Universal `bullmq_*` metric names with a `queue` label — so adding a queue is observability-for-free:
+
+- `bullmq_queue_depth{queue, status="waiting|active|delayed|failed"}` (gauge)
+- `bullmq_job_duration_ms{queue, trigger_source}` (histogram)
+- `bullmq_job_attempts_total{queue, trigger_source, outcome}` (counter)
+
+A new queue automatically shows up in Grafana dashboards filtered by `queue=...`. Existing alerts that page on `bullmq_queue_depth{status="failed"} > N` apply to it without configuration.
+
+### Logging — universal fields
+
+`SecureLogger` lines from any processor include: `queue`, `jobId`, `attempt`, `trigger_source`. Queue-specific fields (e.g. `regionId`, `dataTypes` for sync; `userId`, `notificationType` for notifications) are added on top.
+
+### Worker app structure
+
+`apps/backend/src/apps/<name>-worker/` is the pattern. v1 ships one: `region-worker`. The convention:
+
+- `main.ts` — same bootstrap shape every time
+- `<name>-worker.module.ts` — imports domain modules, `QueueModule`, `MetricsModule`, `LoggingModule`
+- One file per processor: `<queue-name>.processor.ts`
+- One file per scheduler (if the queue has a repeatable job): `<queue-name>.scheduler.ts`
+
+The first new job family decides: "does it belong in `region-worker` (shared domain context, low extra cost) or a peer `notifications-worker` (separate scaling/oncall)?" Defaults to the former until there's a concrete reason to split.
 
 ## File-level shape
 
 ### New files
 
 - `packages/queue-provider/` — new workspace package wrapping BullMQ. Mirrors the provider-pattern (CLAUDE.md). Exports:
-  - `QueueModule.forRoot({ url: REDIS_URL })` — registers a single shared `IORedis` connection
-  - `QueueService` — typed `enqueue(name, payload, opts)`, `getStatus(name, jobId)`, `upsertScheduler(name, schedulerId, cron, payload)`, `close()`
-  - Queue name constant `REGION_SYNC_QUEUE = 'region-sync'`
-  - Type defs: `RegionSyncJobData`, `RegionSyncJobResult`
-- `apps/backend/src/apps/worker/` — new nest sub-app
+  - `QueueModule.forRoot({ url: REDIS_URL, prefix: BULLMQ_PREFIX })` — registers a single shared `IORedis` connection
+  - `QueueService` — typed `enqueue<T>(queue, payload, opts)`, `getStatus(queue, jobId)`, `upsertScheduler(queue, schedulerId, cron, payload)`, `close()`. Reads per-queue env vars by name internally.
+  - `createWorker<T>(queue, handler)` — thin factory that applies the per-queue env-var config (concurrency, attempts, backoff) and wires standard metrics + log fields.
+  - Queue name constants: `REGION_SYNC_QUEUE = 'region-sync'` (the only one for v1).
+  - Type defs: `RegionSyncJobData`, `RegionSyncJobResult` (queue-specific types live here so callers and processors share them).
+- `apps/backend/src/apps/region-worker/` — new nest sub-app
   - `main.ts` — bootstrap (no HTTP server; `NestFactory.createApplicationContext` plus a tiny `/healthz` Express listener on a separate port for the docker healthcheck and Prometheus scrape)
-  - `worker.module.ts` — imports `RegionDomainModule` (gives us `RegionDomainService`), `QueueModule`, `MetricsModule.forRoot({ serviceName: 'region-worker' })`, `LoggingModule`
-  - `region-sync.processor.ts` — the BullMQ worker. Resolves `RegionDomainService` from the Nest context; on each job updates `pipeline_jobs` row to `running`, calls `regionService.syncAll(...)`, writes the aggregate result and `finishedAt`. On throw, BullMQ retries per policy; the processor catches the final failure and marks the row `failed`.
+  - `region-worker.module.ts` — imports `RegionDomainModule`, `QueueModule`, `MetricsModule.forRoot({ serviceName: 'region-worker' })`, `LoggingModule`
+  - `region-sync.processor.ts` — resolves `RegionDomainService`; on each job updates `pipeline_jobs` row to `running`, calls `regionService.syncAll(...)`, writes the aggregate result and `finishedAt`. Final-failure path marks the row `failed`.
   - `region-sync.scheduler.ts` — `OnApplicationBootstrap` hook that calls `queueService.upsertScheduler(REGION_SYNC_QUEUE, 'daily-cron', '0 2 * * *', { triggerSource: 'cron' })`. BullMQ's `JobScheduler` dedupes by id, so worker restarts don't duplicate the schedule. **Replaces** the old `RegionScheduler` entirely.
-- `apps/backend/src/apps/region/src/domains/pipeline-job.service.ts` — thin wrapper around Prisma for `pipeline_jobs` CRUD + status mapping. Used by both the resolver (create on enqueue) and the worker (transition states).
+- `apps/backend/src/apps/region/src/domains/pipeline-job.service.ts` — thin wrapper around Prisma for `pipeline_jobs` CRUD + status mapping. Used by both the resolver (create on enqueue) and the worker (transition states). Future queues will have their own analog (e.g. `NotificationDeliveryService`) — they don't reuse `PipelineJobService`.
 - `supabase/migrations/<timestamp>_pipeline_jobs.sql` — migration creating `pipeline_jobs` and adding `pipeline_job_id` FK to `pipeline_executions`.
 
 ### Modified files
@@ -72,44 +165,42 @@ The region API container retains the GraphQL resolver only. The worker owns both
 - `apps/backend/src/apps/region/src/domains/region.resolver.ts`
   - **`syncRegionData` becomes async-enqueue**: insert `pipeline_jobs` row (status `queued`, `triggerSource = 'manual'`), enqueue BullMQ job, return `RegionSyncJobModel` with `jobId` + status.
   - **New query**: `regionSyncJob(jobId: ID!): RegionSyncJobModel` — read `pipeline_jobs` row.
-  - Preserves `@UseGuards(AuthGuard)` and `@Roles(Role.Admin)`. Drop `@Extensions({ complexity: 100 })` from the mutation (the new mutation is cheap) and apply it to the query if needed.
+  - Preserves `@UseGuards(AuthGuard)` and `@Roles(Role.Admin)`. Drop `@Extensions({ complexity: 100 })` from the mutation (the new mutation is cheap); apply it to the query if needed.
 - `apps/backend/src/apps/region/src/domains/region.module.ts`
   - Remove `ScheduleModule.forRoot()` import.
   - Remove `RegionScheduler` from providers.
   - Import `QueueModule.forRootAsync(...)`.
   - Provide `PipelineJobService`.
 - `apps/backend/src/apps/region/src/domains/region.scheduler.ts`
-  - **Delete.** Its responsibilities split:
-    - Daily cron → `apps/worker/region-sync.scheduler.ts` (repeatable BullMQ job)
-    - `onModuleInit` initial-sync-on-startup → see below.
+  - **Delete.** Daily cron → `apps/region-worker/region-sync.scheduler.ts`; `onModuleInit` initial-sync-on-startup → see below.
 - `apps/backend/package.json`
-  - Remove `@nestjs/schedule` if no other code uses it (likely the only consumer).
-  - Add `build:worker` and `start:worker` scripts, mirroring `build:region` / `start:region`.
-  - Add `start:worker` to `start:services` so `pnpm dev` runs it alongside the others.
+  - Remove `@nestjs/schedule` if no other code uses it.
+  - Add `build:region-worker` and `start:region-worker` scripts, mirroring `build:region` / `start:region`.
+  - Add `start:region-worker` to `start:services` so `pnpm dev` runs it alongside the others.
 - `packages/config-provider/src/index.ts`
-  - Export a `redisConfig` block reading `REDIS_URL` (already in compose) and `BULLMQ_PREFIX` (defaults to `bullmq`).
-  - Replace `region.syncEnabled` with `region.syncCronEnabled` (default `true` in prod, `false` in dev — see "Dev behavior" below).
+  - Export a `redisConfig` block reading `REDIS_URL` and `BULLMQ_PREFIX` (defaults to `bullmq`).
+  - Replace `region.syncEnabled` with `region.syncCronEnabled` (default `true` in prod, `false` in dev).
 - `docker-compose.yml` and `docker-compose-prod.yml`
-  - Add `region-worker` service: same image as the API services, `command: pnpm start:worker` (dev) / `node dist/apps/worker/main.js` (prod). `depends_on: [redis, supabase-db]`. Same env-file pattern. Healthcheck hits the worker's `/healthz`.
+  - Add `region-worker` service: same image as the API services, `command: pnpm start:region-worker` (dev) / `node dist/apps/region-worker/main.js` (prod). `depends_on: [redis, supabase-db]`. Same env-file pattern. Healthcheck hits the worker's `/healthz`.
 - `apps/backend/nest-cli.json`
-  - Register the `worker` sub-app so `nest build --tsc worker` works.
-- Prometheus scrape config under `observability/prometheus/` — add `region-worker` target on its metrics port.
+  - Register the `region-worker` sub-app so `nest build --tsc region-worker` works.
+- Prometheus scrape config under `observability/prometheus/` — add `region-worker` target.
 
 ### Handling `onModuleInit` initial-sync-on-startup
 
-Today, `RegionScheduler.onModuleInit` runs a full `syncAll()` every time the region service boots. In dev `nest start --watch`, that means a 25+ minute sync triggers on every code change — almost certainly not what's intended, but worth verifying with the team before deleting.
+Today, `RegionScheduler.onModuleInit` runs a full `syncAll()` every time the region service boots. In dev `nest start --watch`, that means a 25+ minute sync triggers on every code change — almost certainly not intended, but worth verifying before deleting.
 
 Plan:
-- **Drop** the auto-sync-on-startup behavior entirely. The daily repeatable job covers the "regular sync" need.
+- **Drop** the auto-sync-on-startup behavior entirely. The daily repeatable job covers the regular sync need.
 - Replace with an explicit one-shot opt-in: env `REGION_SYNC_RUN_ON_STARTUP=true` (default `false`). When set, the worker enqueues a single `region-sync` job at bootstrap with `triggerSource = 'startup'`. Useful for prod first-deploy seeding.
-
-If there's an environment that depends on the current restart-triggers-sync behavior (worth a five-minute audit during implementation), `REGION_SYNC_RUN_ON_STARTUP=true` recovers it on demand.
 
 ### Dev behavior
 
 In `pnpm dev`, the worker runs but the daily cron firing at 2 AM during local hacking is annoying. Default `REGION_SYNC_CRON_ENABLED=false` in dev `.env` so the scheduler skips `upsertScheduler`. Engineers who need to test the cron path flip it explicitly. Prod and UAT default to `true`.
 
 ## Database schema (`pipeline_jobs`)
+
+This is the v1 instance of the status-table template documented above.
 
 ```sql
 create table public.pipeline_jobs (
@@ -125,7 +216,7 @@ create table public.pipeline_jobs (
   status          text not null check (status in
                     ('queued','running','succeeded','failed')),
   attempts        int  not null default 0,
-  enqueued_by     text,                      -- userId for 'manual', null for cron/startup
+  enqueued_by     text,
   enqueued_at     timestamptz not null default now(),
   started_at      timestamptz,
   finished_at     timestamptz,
@@ -145,7 +236,7 @@ alter table public.pipeline_executions
 create index pipeline_executions_job_idx  on public.pipeline_executions (pipeline_job_id);
 ```
 
-`trigger_source` distinguishes the three enqueue paths in ops queries ("which cron runs failed last week?", "did the deploy-time startup sync complete?"). `result` stores the `SyncResult[]` the resolver used to return inline.
+`trigger_source` distinguishes the three enqueue paths in ops queries. `result` stores the `SyncResult[]` the resolver used to return inline.
 
 ## GraphQL surface
 
@@ -165,8 +256,6 @@ type RegionSyncJob {
 }
 
 extend type Mutation {
-  # was: returns [SyncResult!]!   (synchronous, blocking)
-  # now: returns the job handle and returns immediately
   syncRegionData(
     dataTypes: [DataType!]
     depth: SyncDepth
@@ -182,28 +271,54 @@ extend type Query {
 }
 ```
 
-`recentRegionSyncJobs` is a small ops affordance — without BullBoard (#654) we want a way for an admin to glance at recent cron + manual runs from the existing GraphQL playground.
+`recentRegionSyncJobs` is a small ops affordance — without BullBoard (#654) we want a way for an admin to glance at recent cron + manual runs from the existing GraphQL playground. Future job families add their own analogous types and queries (e.g. `BillWatchEvent`, `recentBillWatchEvents`) — never overload `RegionSyncJob`.
 
 **Breaking change** for any frontend code reading `syncRegionData` synchronously: the admin sync trigger UI needs a one-time update to poll `regionSyncJob`. Land inside the same PR so `develop` is never half-broken.
 
 ## Worker process details
 
-- **Concurrency**: `BULLMQ_REGION_SYNC_CONCURRENCY=1` by default. A full `syncAll` already fans out across data types in-process. Easy to bump via env once per-host throttling lands.
-- **Retry policy**: `attempts: 3`, `backoff: { type: 'exponential', delay: 30_000 }`. Safe for v1 because only HTML scrape jobs land on this queue; streaming handlers stay on the synchronous path until #652.
+- **Concurrency**: `BULLMQ_QUEUE_REGION_SYNC_CONCURRENCY=1` by default. A full `syncAll` already fans out across data types in-process. Easy to bump via env.
+- **Retry policy**: `attempts: 3`, `backoff: { type: 'exponential', delay: 30_000 }`. Safe for v1 because only HTML scrape jobs land on this queue; streaming handlers stay synchronous until #652.
 - **Idempotency on cron**: the repeatable job uses BullMQ's built-in scheduler-id dedupe. For belt-and-braces, the cron-triggered enqueue derives `jobId = 'cron-daily-${YYYYMMDD}'`, so a worker restart or scheduler drift within the same UTC day collapses to one job.
 - **Job options**:
-  - `removeOnComplete: { age: 60 * 60 * 24 * 7, count: 1000 }` — keep a week or 1k jobs in Redis for ops triage; canonical history is in `pipeline_jobs`.
+  - `removeOnComplete: { age: 60 * 60 * 24 * 7, count: 1000 }` — Redis history is short; canonical history is in `pipeline_jobs`.
   - `removeOnFail: { age: 60 * 60 * 24 * 30 }` — keep failures longer.
   - Manual enqueue uses `jobId = pipeline_jobs.id` so resolver retries dedupe.
-- **Shutdown**: NestJS lifecycle hook calls `worker.close()` on SIGTERM, which lets in-flight jobs finish (up to a 30s grace). Stale jobs return to the queue after BullMQ's stalled-job watchdog.
+- **Shutdown**: NestJS lifecycle hook calls `worker.close()` on SIGTERM; in-flight jobs get up to a 30s grace. Stale jobs return to the queue via BullMQ's stalled-job watchdog.
+
+## Scaling axes
+
+Three independent axes the substrate supports without code restructure:
+
+1. **Horizontal worker instances.** Run N copies of `region-worker`; BullMQ distributes jobs across all of them. No coordination needed beyond Redis. `docker compose --scale region-worker=N` in dev; deployment platform's replica count in prod. Total parallelism is `N × concurrency`.
+2. **Per-queue concurrency.** `BULLMQ_QUEUE_<NAME>_CONCURRENCY` tunes how many jobs of that queue a single worker instance processes in parallel. Set high for cheap fast jobs (notifications: 50+), low for expensive ones (sync: 1, pdf-extract: 2).
+3. **Worker-app split.** When a job family's scaling/oncall profile diverges from `region-worker`'s, peel it off into a peer worker app (`notifications-worker`, `webhook-deliveries-worker`). Code change: new sub-app dir, new compose service. Code that doesn't move: the `queue-provider` package, the metric names, the env-var convention, the status-table pattern.
+
+Trigger for #3 in practice: oncall sensitivity (a notification outage should not be in the same blast radius as a sync outage), or genuinely different resource shapes (LLM-heavy PDF jobs vs. HTTP-light notification deliveries).
+
+## Adding a new queue (developer recipe)
+
+When the first follow-up queue lands (e.g. `bill-watch-notifications` for the watch/notify use cases), the work is:
+
+1. Add the constant in `queue-provider`: `BILL_WATCH_NOTIFICATIONS_QUEUE = 'bill-watch-notifications'`, plus its job-data/result types.
+2. Add a migration creating `bill_watch_events` (status table, following the template).
+3. Add the status-table service (e.g. `BillWatchEventService`) in the appropriate domain.
+4. Decide: same worker container or new one? Default to `region-worker` until divergence forces a split.
+   - Same container: add `bill-watch-notifications.processor.ts` to `apps/region-worker/`, register in `region-worker.module.ts`.
+   - New container: scaffold `apps/notifications-worker/` mirroring `region-worker/`'s structure, add the compose service.
+5. Add env defaults: `BULLMQ_QUEUE_BILL_WATCH_NOTIFICATIONS_*` in `.env.example` and the prod env-file. Sensible defaults: `CONCURRENCY=20`, `ATTEMPTS=5`.
+6. Add the GraphQL surface (enqueue mutation + read query) following the `RegionSyncJob` shape.
+7. Tests follow the `region-sync` test pattern.
+
+Nothing in `queue-provider`, `pipeline_jobs`, the metrics naming, or the existing `region-sync` code changes. The new queue gets observability, retry, idempotency hooks, scheduler support, and shutdown semantics for free.
 
 ## Observability
 
-- **Prometheus metrics** (registered via existing `MetricsModule`):
-  - `region_sync_queue_depth{status="waiting|active|delayed|failed"}` (gauge, sampled every 10s by an `@Interval` task in the worker)
-  - `region_sync_job_duration_ms{trigger_source}` (histogram)
-  - `region_sync_job_attempts{trigger_source,outcome}` (counter)
-- **Structured logs** via `SecureLogger`. Each line includes `jobId`, `triggerSource`, `regionId`, `dataTypes`, `attempt`.
+- **Prometheus metrics** (registered via existing `MetricsModule`, with `queue` label):
+  - `bullmq_queue_depth{queue,status="waiting|active|delayed|failed"}` (gauge, sampled every 10s by an `@Interval` task in each worker container)
+  - `bullmq_job_duration_ms{queue,trigger_source}` (histogram)
+  - `bullmq_job_attempts_total{queue,trigger_source,outcome}` (counter)
+- **Structured logs** via `SecureLogger`. Universal fields: `queue`, `jobId`, `attempt`, `trigger_source`. Plus queue-specific (`regionId`, `dataTypes` for `region-sync`).
 - **No BullBoard.** Operators inspect via `recentRegionSyncJobs` query or `redis-cli`. #654 covers the UI later.
 
 ## Test plan
@@ -211,7 +326,8 @@ extend type Query {
 - Unit: `region-sync.processor.spec.ts` — mocks `RegionDomainService.syncAll` to assert state transitions on success, failure, and retry exhaustion.
 - Unit: `region.resolver.spec.ts` — `syncRegionData` enqueues exactly one job, sets `triggerSource = 'manual'`, returns the job handle without invoking `syncAll`.
 - Unit: `region-sync.scheduler.spec.ts` — on bootstrap with `REGION_SYNC_CRON_ENABLED=true`, calls `upsertScheduler` with the daily cron; with `false`, does nothing.
-- Integration: spin up Redis (`docker compose up redis`), enqueue a manual job, assert the worker processes it and `pipeline_jobs` ends `succeeded`; separately, run the scheduler bootstrap and assert a scheduler entry exists.
+- Unit: `queue-provider` — env-var parsing for per-queue config; metric labels emitted correctly; `createWorker` factory wires standard fields. These tests exercise the substrate conventions and will catch regressions for *all* future queues.
+- Integration: spin up Redis, enqueue a manual job, assert the worker processes it and `pipeline_jobs` ends `succeeded`; separately, run the scheduler bootstrap and assert a scheduler entry exists.
 - E2E: not in scope.
 
 ## Migration / rollout
@@ -236,20 +352,21 @@ Sequence:
 
 | Slice | Days |
 |---|------|
-| `queue-provider` package + tests | 1 |
-| Worker sub-app + processor + Nest wiring | 2 |
+| `queue-provider` package + per-queue config + tests | 1.5 |
+| `region-worker` sub-app + processor + Nest wiring | 2 |
 | Repeatable-job scheduler + tests | 0.5 |
 | Migration + `PipelineJobService` + resolver / query changes | 1.5 |
-| Compose + Prometheus + worker healthcheck | 0.5 |
+| Compose + Prometheus (labeled metrics) + worker healthcheck | 0.5 |
 | Frontend admin-sync UI update | 0.5 |
 | Integration tests | 1.5 |
 | Two-stage feature-flag rollout + cleanup PR | 1 |
-| **Total** | **~8.5 days** |
+| **Total** | **~9 days** |
 
-Within the 30-day budget in #644, leaving room for review and rework.
+The +0.5 day vs. the previous estimate is in `queue-provider` — the per-queue env-var helpers and the `createWorker` factory are extra surface area but pay back the first time a follow-up queue lands.
 
 ## Open questions to resolve in PR review
 
-1. **Where does `queue-provider` live?** Workspace package (`packages/queue-provider`) vs a `common/queue/` directory under `apps/backend/src`. Recommend package — aligns with the provider-pattern.
+1. **Where does `queue-provider` live?** Workspace package (`packages/queue-provider`) vs a `common/queue/` directory under `apps/backend/src`. Recommend package — aligns with the provider-pattern and is consumable from any sub-app.
 2. **`onModuleInit` audit.** Confirm no environment depends on "region service restart triggers a full sync." Five-minute check; if anything does, `REGION_SYNC_RUN_ON_STARTUP=true` recovers it.
-3. **Authorization on `regionSyncJob` / `recentRegionSyncJobs` queries.** v1 picks `@Roles(Role.Admin)`; revisit alongside #629 (public API) once that's designed.
+3. **Authorization on `regionSyncJob` / `recentRegionSyncJobs` queries.** v1 picks `@Roles(Role.Admin)`; revisit alongside #629 (public API).
+4. **Where does the next queue land?** Not for *this* PR, but worth aligning intent: the watch/notification queues will arrive soon. The substrate is built to absorb them as additional processors in `region-worker`; the call to split into `notifications-worker` is reserved for the moment scaling profiles or oncall sensitivity genuinely diverge.
