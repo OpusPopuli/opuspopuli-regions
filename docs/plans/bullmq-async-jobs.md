@@ -65,6 +65,97 @@ No mixed-mode: every sync — manual or scheduled — flows through `region-sync
 
 The region API container retains the GraphQL resolver only. The `region-worker` container owns both scheduling and execution of syncs. A given worker *container* can host multiple BullMQ `Worker` instances (one per queue) — splitting into peer containers (`notifications-worker`) is a deploy-config decision triggered by divergent scaling profiles, not a code restructure.
 
+### What the region service becomes
+
+Two ways to describe it after this change:
+
+- **As a process** — API-only. The region container hosts GraphQL resolvers for reads (propositions, bills, representatives) plus the new sync-enqueue mutation and the status query. No long-running work runs inside it. No scheduler. No 25-minute calls holding the container thread.
+- **As a codebase** — still owns the region domain logic. `RegionDomainService`, the per-data-type sync code, the per-source handlers, the manifest store — all of that stays in `apps/backend/src/apps/region/`. It gets *consumed by two different processes now*: the region container (for the resolver) and the region-worker container (for the processor).
+
+That dual-consumption is the whole reason `region-worker` stays as a sibling sub-app in the backend monorepo rather than being extracted to a separate repo or package — one set of domain types, one Prisma client, one set of unit tests. Code dependency is strictly one-way: `region-worker` imports `region`, never the reverse.
+
+### Who registers the scheduler
+
+The **worker** registers the recurring job at its own bootstrap, not the region service. Two reasons:
+
+1. The worker is the process that needs to be alive when the job fires — registering a scheduler from a process that may not be running when 02:00 hits is a smell.
+2. Keeps all queue-side concerns in one place; the region service stays purely "API + enqueue."
+
+In v1 the worker registers one hardcoded entry: `daily 02:00`. When #651 (declarative per-source cadence in `@opuspopuli/regions`) lands, the bootstrap reads every region/source config and calls `upsertScheduler` for each one with its declared cadence. `JobScheduler` dedupes by id, so re-registering on every worker boot is idempotent and config changes take effect on next deploy.
+
+## Sync job flows
+
+### Manual sync (admin, Postman, future public API)
+
+```
+  browser /         api gateway         region service       Redis      region-worker        Postgres
+  Postman           (:3000)             (:3004)              (BullMQ)   (region-sync         (pipeline_jobs,
+                                                                         worker)              domain tables)
+  ─────────────────────────────────────────────────────────────────────────────────────────────────────────
+    │                  │                     │                  │              │                  │
+ 1. │ syncRegionData──►│                     │                  │              │                  │
+    │ (mutation)       │ HMAC fwd ──────────►│                  │              │                  │
+    │                  │                 2.  │ INSERT pipeline_jobs ──────────────────────────────►│
+    │                  │                     │ (status='queued',                                   │
+    │                  │                     │  trigger_source='manual')                           │
+    │                  │                 3.  │ enqueue(REGION_SYNC, …) ────────►│                  │
+    │                  │                     │                  │              │                  │
+    │                  │◄──────────  4. { jobId, status:QUEUED }│              │                  │
+    │◄─────────────────│                     │                  │              │                  │
+    │                                                                                              │
+ 5. │ start polling regionSyncJob(jobId) every ~2s                                                  │
+    │                                                                                              │
+    │                                                              6. dequeue ─►│                  │
+    │                                                                       7.  │ UPDATE pipeline ►│
+    │                                                                           │  _jobs status=   │
+    │                                                                           │  'running',      │
+    │                                                                           │  started_at=now()│
+    │                                                                       8.  │ regionService.   │
+    │                                                                           │  syncAll(...)    │
+    │                                                                           │   ├─ fetch gov   │
+    │                                                                           │   │  sites       │
+    │                                                                           │   ├─ LLM         │
+    │                                                                           │   │  structural  │
+    │                                                                           │   │  analysis    │
+    │                                                                           │   ├─ extract     │
+    │                                                                           │   └─ upsert ────►│
+    │                                                                           │     domain rows  │
+    │                                                                       9.  │ UPDATE pipeline ►│
+    │                                                                           │  _jobs status=   │
+    │                                                                           │  'succeeded',    │
+    │                                                                           │  finished_at,    │
+    │                                                                           │  result=[…]      │
+    │                                                                                              │
+ 10.│ regionSyncJob returns status=SUCCEEDED, results=[…]  ◄──────────────────────────────────────│
+    │ polling stops, UI shows "sync complete"                                                       │
+```
+
+Between steps 4 and 10 the browser talks only to the region service (read-only status polls). It never speaks to Redis or the worker. The async-ness is hidden behind two GraphQL operations: enqueue + poll.
+
+### Scheduled sync (no human involved)
+
+Shorter — the API gateway and the browser don't exist in this path:
+
+```
+  region-worker         Redis           region-worker          Postgres
+  (JobScheduler)        (BullMQ)        (Worker)
+  ──────────────────────────────────────────────────────────────────
+       │                   │                  │                  │
+  02:00│ cron-daily-       │                  │                  │
+       │ ${YYYYMMDD}       │                  │                  │
+       │                                                          │
+       │ INSERT pipeline_jobs ────────────────────────────────────►
+       │ (trigger_source='cron')                                  │
+       │ enqueue(REGION_SYNC, …) ─►                               │
+       │                   │                  │                  │
+       │                   │   dequeue ──────►│                  │
+       │                                      │ … same syncAll   │
+       │                                      │   flow as steps  │
+       │                                      │   7–9 above ────►│
+```
+
+Same processor, same `pipeline_jobs` table, same `syncAll` code path. The only differences are `trigger_source='cron'` and no user is waiting on a poll. That sameness is the design goal — one execution path for both triggers.
+
 ## Substrate conventions (the patterns future queues follow)
 
 These are the rules of the road. v1 establishes them; everything from here forward follows them.
