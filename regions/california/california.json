@@ -2,7 +2,7 @@
   "name": "california",
   "displayName": "California",
   "description": "California civic and campaign finance data from official state government websites",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "config": {
     "regionId": "california",
     "regionName": "California",
@@ -154,7 +154,7 @@
           "format": "zip_tsv",
           "filePattern": "RCPT_CD.TSV",
           "columnMappings": {
-            "FILING_ID": "externalId",
+            "TRAN_ID": "externalId",
             "CMTE_ID": "committeeId",
             "ENTITY_CD": "donorType",
             "CTRIB_NAMF": "donorFirstName",
@@ -189,7 +189,7 @@
           "format": "zip_tsv",
           "filePattern": "EXPN_CD.TSV",
           "columnMappings": {
-            "FILING_ID": "externalId",
+            "TRAN_ID": "externalId",
             "CMTE_ID": "committeeId",
             "PAYEE_NAML": "payeeName",
             "AMOUNT": "amount",
@@ -217,7 +217,7 @@
           "format": "zip_tsv",
           "filePattern": "S496_CD.TSV",
           "columnMappings": {
-            "FILING_ID": "externalId",
+            "TRAN_ID": "externalId",
             "AMOUNT": "amount",
             "EXP_DATE": "date",
             "EXPN_DSCR": "description"
