@@ -1,6 +1,6 @@
 {
   "name": "@opuspopuli/regions",
-  "version": "1.0.57",
+  "version": "1.0.58",
   "description": "Declarative region configuration files for Opus Populi civic data platform",
   "type": "module",
   "main": "dist/index.js",
@@ -32,7 +32,9 @@
     "prepare": "husky"
   },
   "lint-staged": {
-    "**/*.ts": ["pnpm lint"]
+    "**/*.ts": [
+      "pnpm lint"
+    ]
   },
   "repository": {
     "type": "git",
