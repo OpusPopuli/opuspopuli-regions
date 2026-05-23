@@ -96,6 +96,15 @@
           "type": "integer",
           "minimum": 0,
           "description": "Request timeout in milliseconds"
+        },
+        "normalizeExternalIdDistrict": {
+          "type": "boolean",
+          "description": "Strip leading zeros from representative externalId trailing segment (e.g. ca-assembly-01 → ca-assembly-1). Opt-in; default false. Only needed for regions whose LLM manifests emit zero-padded district numbers."
+        },
+        "bioNoisePatterns": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Regex pattern strings (case-insensitive) matched against scraped representative bio text. Bios matching any pattern are treated as nav junk and discarded. Defaults to no filtering if omitted."
         }
       }
     },
@@ -132,6 +141,11 @@
           "type": "number",
           "minimum": 0,
           "description": "Override rate limit for this specific source"
+        },
+        "syncCadence": {
+          "type": "string",
+          "pattern": "^[^ ]+ [^ ]+ [^ ]+ [^ ]+ [^ ]+$",
+          "description": "5-field cron expression (minute hour dom month dow) controlling how often this source is synced. The worker applies a deterministic per-source minute offset at registration time to spread load across gov hosts — the minute field you specify is the base, not the exact fire time. Omit to inherit the global daily fallback. Common patterns: '0 2 * * *' daily at 2 AM, '0 2 * * 0' weekly on Sunday, '0 * * * *' hourly."
         },
         "sourceType": {
           "type": "string",
