@@ -14,6 +14,7 @@
       {
         "url": "https://www.sos.ca.gov/elections/ballot-measures/qualified-ballot-measures",
         "dataType": "propositions",
+        "syncCadence": "0 2 * * 0",
         "contentGoal": "Extract qualified ballot measures with measure ID, title, brief description, and election date",
         "category": "Secretary of State",
         "hints": [
@@ -34,6 +35,7 @@
       {
         "url": "https://www.assembly.ca.gov/schedules-publications/daily-file",
         "dataType": "meetings",
+        "syncCadence": "0 2 * * *",
         "contentGoal": "Extract scheduled Assembly committee meetings with date, time, location, and committee name",
         "category": "Assembly",
         "hints": [
@@ -48,6 +50,7 @@
       {
         "url": "https://www.assembly.ca.gov/assemblymembers",
         "dataType": "representatives",
+        "syncCadence": "0 2 * * *",
         "contentGoal": "Extract Assembly members with name, district number, party affiliation, photo, and profile page link",
         "category": "Assembly",
         "hints": [
@@ -86,6 +89,7 @@
       {
         "url": "https://www.senate.ca.gov/senators",
         "dataType": "representatives",
+        "syncCadence": "0 2 * * *",
         "contentGoal": "Extract Senators with name, district number, party affiliation, photo, and Capitol/district office contact information",
         "category": "Senate",
         "hints": [
@@ -107,6 +111,7 @@
       {
         "url": "https://clerk.assembly.ca.gov/legislative-publications/daily-journals",
         "dataType": "meetings",
+        "syncCadence": "0 2 * * *",
         "sourceType": "pdf_archive",
         "contentGoal": "Extract daily-journal PDFs from the California Assembly clerk's archive as past meeting minutes. Each session day publishes one PDF (filename pattern adj{MMDDYY}.pdf, with re-issues as adj{MMDDYY}_r{N}.pdf). The handler walks the listing descending by date and stores each PDF's text as a Minutes record; the backend's downstream linker mines the text post-sync to produce LegislativeAction rows (presence rolls, committee reports/hearings, amendments, engrossments/enrollments, resolutions) connecting representatives + propositions + committees. Lives under MEETINGS dataType — minutes are the past-record counterpart to scheduled-meeting calendar entries.",
         "category": "Assembly",
@@ -129,6 +134,7 @@
       {
         "url": "https://www.senate.ca.gov/publications/senate-daily-file",
         "dataType": "meetings",
+        "syncCadence": "0 2 * * *",
         "sourceType": "pdf",
         "contentGoal": "Extract scheduled Senate committee meetings with date, time, location, and committee name from the linked PDF",
         "category": "Senate",
@@ -147,6 +153,7 @@
       {
         "url": "https://campaignfinance.cdn.sos.ca.gov/dbwebexport.zip",
         "dataType": "campaign_finance",
+        "syncCadence": "0 2 * * *",
         "sourceType": "bulk_download",
         "contentGoal": "Extract campaign contributions from the RCPT_CD table",
         "category": "CAL-ACCESS Contributions",
@@ -182,6 +189,7 @@
       {
         "url": "https://campaignfinance.cdn.sos.ca.gov/dbwebexport.zip",
         "dataType": "campaign_finance",
+        "syncCadence": "0 2 * * *",
         "sourceType": "bulk_download",
         "contentGoal": "Extract campaign expenditures from the EXPN_CD table",
         "category": "CAL-ACCESS Expenditures",
@@ -210,6 +218,7 @@
       {
         "url": "https://campaignfinance.cdn.sos.ca.gov/dbwebexport.zip",
         "dataType": "campaign_finance",
+        "syncCadence": "0 2 * * *",
         "sourceType": "bulk_download",
         "contentGoal": "Extract late independent expenditures from S496_CD",
         "category": "CAL-ACCESS Independent Expenditures",
@@ -231,6 +240,7 @@
       {
         "url": "https://campaignfinance.cdn.sos.ca.gov/dbwebexport.zip",
         "dataType": "campaign_finance",
+        "syncCadence": "0 2 * * *",
         "sourceType": "bulk_download",
         "contentGoal": "Extract ballot-measure committee declarations (Form 410) from CVR2_CAMPAIGN_DISCLOSURE_CD \u2014 links a filing (and therefore a committee) to a specific ballot measure with a support/oppose position",
         "category": "CAL-ACCESS Committee Positions",
@@ -257,6 +267,7 @@
       {
         "url": "https://leginfo.legislature.ca.gov/faces/billSearchClient.xhtml?author=All&lawCode=All&session_year=20252026&house=Both",
         "dataType": "bills",
+        "syncCadence": "0 2 * * *",
         "category": "Legislature",
         "contentGoal": "Discover bill status pages for the current California legislative session (both chambers). Each search result row links to a bill status page — follow those links and extract one structured Bill record per page: bill number, session year, measure type code (AB/ACA/ACR/AJR/HR/SB/SCA/SCR/SJR/SR), full title, subject, current status string, last action, last action date, fiscal impact summary, full-text URL, primary author name, co-author names, committee names, and any available roll-call vote data (member name, chamber, vote date, position, motion text).",
         "billDiscovery": {
@@ -282,6 +293,7 @@
       {
         "url": "https://www.assembly.ca.gov/resources/legislative-process",
         "dataType": "civics",
+        "syncCadence": "0 2 * * 0",
         "contentGoal": "Extract civic content from this page and any sibling pages under /resources/ \u2014 chambers and leadership, measure types and voting thresholds, ordered lifecycle stages a bill passes through, Governor action timing, glossary of legislative terms, and citizen participation guidance. Each visited page typically contributes only one slice of the CivicsBlock (e.g., the glossary page fills `glossary[]`; the legislative-process page fills `lifecycleStages[]`); the prompt-service generates plain-language rewrites alongside the verbatim source text on every field.",
         "category": "Assembly",
         "crawlDepth": 2,
@@ -303,6 +315,8 @@
       "burstSize": 3
     },
     "cacheTtlMs": 900000,
-    "requestTimeoutMs": 30000
+    "requestTimeoutMs": 30000,
+    "normalizeExternalIdDistrict": true,
+    "bioNoisePatterns": ["^Home\\b", "Latest News"]
   }
 }
