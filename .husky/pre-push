@@ -5,6 +5,33 @@ if [ "$(git branch --show-current)" = "main" ]; then
   exit 1
 fi
 
+# ── 0.5 Classify the diff: JSON/docs-only PRs skip the heavier gates ────────
+# Issue #44. For pure config edits (new county URLs, hint tweaks, doc
+# updates) the SonarJS lint pass and the two Claude AI reviews are
+# no-ops or near-no-ops — they exist to catch dangerous CLI changes,
+# not data-config edits. Skipping them on JSON-only diffs saves the
+# contributor ~30-60 seconds per push without weakening coverage of
+# code changes.
+#
+# Always-run gates regardless of diff type: tests, jscpd, npm audit,
+# trivy, gitleaks, package version sync.
+#
+# Set FORCE_ALL_GATES=1 to override and run everything anyway.
+DIFF_BASE=$(git merge-base HEAD origin/main 2>/dev/null || echo "HEAD~1")
+CHANGED_FILES=$(git diff --name-only "$DIFF_BASE"..HEAD 2>/dev/null)
+
+# A file is "data/docs-only" if it matches one of these patterns. Anything
+# else (src/, scripts/, schema/, __tests__/, .github/, .husky/, configs at
+# repo root, etc.) is "code" and triggers the full gate set.
+NON_DATA_FILES=$(printf '%s\n' "$CHANGED_FILES" | grep -v -E '^(regions/.*\.json|.*\.md|docs/.*)$' || true)
+
+JSON_ONLY=0
+if [ -z "$FORCE_ALL_GATES" ] && [ -n "$CHANGED_FILES" ] && [ -z "$NON_DATA_FILES" ]; then
+  JSON_ONLY=1
+  echo "📋 JSON/docs-only PR detected — skipping SonarJS lint + AI reviews."
+  echo "   Set FORCE_ALL_GATES=1 to run every gate regardless."
+fi
+
 # ── 1. Test suite + coverage gate ────────────────────────────────────────────
 # Runs `pnpm test:coverage` rather than plain `pnpm test` so the
 # coverage thresholds in jest.config.cjs (issue #40) are actually
@@ -25,9 +52,14 @@ echo "Checking for duplicate code..."
 pnpm jscpd || exit 1
 
 # ── 4. SonarJS lint gate ──────────────────────────────────────────────────────
-echo ""
-echo "Running SonarJS checks..."
-pnpm lint:sonar || exit 1
+if [ "$JSON_ONLY" = "1" ]; then
+  echo ""
+  echo "Skipping SonarJS checks (JSON/docs-only diff)."
+else
+  echo ""
+  echo "Running SonarJS checks..."
+  pnpm lint:sonar || exit 1
+fi
 
 # ── 5. Dependency vulnerability audit ────────────────────────────────────────
 # Blocks on HIGH and CRITICAL CVEs in production dependencies.
@@ -78,7 +110,10 @@ BASE=$(git merge-base HEAD origin/main 2>/dev/null || echo "HEAD~1")
 DIFF=$(git diff "$BASE"..HEAD 2>/dev/null | head -c 30000)
 
 # ── 9. AI code review gate ────────────────────────────────────────────────────
-if [ -z "$CLAUDE" ]; then
+if [ "$JSON_ONLY" = "1" ]; then
+  echo ""
+  echo "Skipping AI code review (JSON/docs-only diff)."
+elif [ -z "$CLAUDE" ]; then
   echo "Warning: claude CLI not found — skipping AI review."
 elif [ -z "$DIFF" ]; then
   echo "No diff to review."
@@ -112,7 +147,10 @@ $DIFF" 2>/dev/null)
 fi
 
 # ── 10. AI security review gate ───────────────────────────────────────────────
-if [ -z "$CLAUDE" ]; then
+if [ "$JSON_ONLY" = "1" ]; then
+  echo ""
+  echo "Skipping AI security review (JSON/docs-only diff)."
+elif [ -z "$CLAUDE" ]; then
   echo "Warning: claude CLI not found — skipping security review."
 elif [ -z "$DIFF" ]; then
   echo "No diff to review."
