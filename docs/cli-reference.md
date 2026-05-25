@@ -6,6 +6,11 @@ All commands are run from the root of the `opuspopuli-regions` repository:
 pnpm cli <command> [options]
 ```
 
+## Two ways to run the CLI
+
+- **`pnpm cli ...`** (from inside this repo) — runs the TypeScript source directly via `tsx`. No build step required.
+- **`region-cli ...`** (from an installed copy of `@opuspopuli/regions`) — requires the package to have been built. `prepublishOnly` runs `pnpm build`, so any version published to GitHub Packages already includes a compiled `dist/`. Fresh local clones do NOT have `dist/` until you run `pnpm build` once.
+
 ## Validation on load
 
 Every CLI command that reads region configs (`check-urls`, `validate-extraction`, `review`, `config-region --config`) validates each file against `schema/region-plugin.schema.json` as it loads. Malformed files fail fast with the file path and the specific errors:
