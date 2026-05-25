@@ -36,7 +36,11 @@ jobs:
           if ! git diff --quiet src/cli/lib/generated-types.ts; then
             echo "::error::generated-types.ts is out of sync with the schema."
             echo "Run \`pnpm generate:types\` locally and commit the result."
-            git --no-pager diff src/cli/lib/generated-types.ts | head -200
+            # Show diff stat first for a quick overview, then the full diff
+            # capped at 500 lines (the generated file is ~390 lines, so a
+            # full regeneration can exceed the previous 200-line cap).
+            git --no-pager diff --stat src/cli/lib/generated-types.ts
+            git --no-pager diff src/cli/lib/generated-types.ts | head -500
             exit 1
           fi
       - run: pnpm test

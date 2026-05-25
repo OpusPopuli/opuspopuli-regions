@@ -77,11 +77,12 @@ describe('checkContentGoalCoverage — representatives', () => {
 
 describe('checkContentGoalCoverage — unknown dataType', () => {
   it('returns empty array for unrecognised dataType', () => {
-    // Cast through `unknown` — the schema-derived DataSourceConfig union
-    // now excludes unrecognised values at compile time (issue #39), but
-    // this test deliberately exercises the runtime behavior of
+    // Schema-derived DataSourceConfig union excludes unrecognised values
+    // at compile time (issue #39). This test deliberately violates the
+    // type contract to exercise the runtime behavior of
     // `getRequiredFields` returning `[]` for an unknown key.
-    const ds = makeDs({ dataType: 'unknown_type' as unknown as never });
+    // @ts-expect-error — runtime path for an unknown dataType
+    const ds = makeDs({ dataType: 'unknown_type' });
     expect(checkContentGoalCoverage(ds)).toHaveLength(0);
   });
 });

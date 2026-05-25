@@ -10,7 +10,7 @@
 import { writeFileSync, mkdtempSync, mkdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { loadConfigs } from '../../src/cli/lib/config-loader';
+import { loadConfigs } from '../../src/cli/lib/config-loader.js';
 
 function makeTmpDir(): string {
   return mkdtempSync(join(tmpdir(), 'regions-loader-test-'));
@@ -69,6 +69,17 @@ describe('loadConfigs — validate-on-load (#39)', () => {
     expect(() => loadConfigs(file)).toThrow(/malformed\.json/);
   });
 
+  it('throws with the file path when JSON syntax is invalid', () => {
+    const file = join(dir, 'bad-syntax.json');
+    // Truncated/unparseable JSON. Without the loader's try/catch around
+    // JSON.parse, the surfaced SyntaxError wouldn't tell the contributor
+    // which of 60 configs is broken.
+    writeFileSync(file, '{ "name": "incomplete"', 'utf-8');
+
+    expect(() => loadConfigs(file)).toThrow(/JSON parse failed/);
+    expect(() => loadConfigs(file)).toThrow(/bad-syntax\.json/);
+  });
+
   it('surfaces multiple schema errors in the thrown message', () => {
     const file = join(dir, 'multi-errors.json');
     const malformed = {
@@ -119,7 +130,7 @@ describe('loadConfigs — validate-on-load (#39)', () => {
     }
   });
 
-  it('walks a directory and validates every file', () => {
+  it('walks a directory and surfaces the failing file by name', () => {
     const validFile = join(dir, 'valid.json');
     const subDir = join(dir, 'sub');
     mkdirSync(subDir);
@@ -127,7 +138,10 @@ describe('loadConfigs — validate-on-load (#39)', () => {
     writeFileSync(validFile, JSON.stringify(VALID), 'utf-8');
     writeFileSync(invalidFile, JSON.stringify({ name: 'x' }), 'utf-8');
 
-    // Whichever file is encountered first that's invalid, the loader throws.
+    // The thrown error must name the failing file specifically — otherwise
+    // a contributor with 60 county configs has no way to know which one
+    // broke. Asserts the file path appears in the message verbatim.
     expect(() => loadConfigs(dir)).toThrow(/Schema validation failed/);
+    expect(() => loadConfigs(dir)).toThrow(/invalid\.json/);
   });
 });

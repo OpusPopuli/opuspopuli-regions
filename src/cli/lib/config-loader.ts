@@ -41,7 +41,17 @@ function walkJson(dir: string): string[] {
  * pipeline and surface as confusing downstream errors.
  */
 function loadOne(file: string): { file: string; region: RegionPluginFile } {
-  const raw: unknown = JSON.parse(readFileSync(file, 'utf-8'));
+  // Parse errors and schema errors both need the file path in the message
+  // — without it, the CLI surfaces a SyntaxError that doesn't tell the
+  // contributor which of 60 configs is broken.
+  let raw: unknown;
+  try {
+    raw = JSON.parse(readFileSync(file, 'utf-8'));
+  } catch (err) {
+    throw new Error(
+      `JSON parse failed for ${file}: ${(err as Error).message}`,
+    );
+  }
   const result = validateRegionFile(raw);
   if (!result.valid) {
     const summary = result.errors.slice(0, 5).join('\n  ');
