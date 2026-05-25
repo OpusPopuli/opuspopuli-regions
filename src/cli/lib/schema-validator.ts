@@ -14,12 +14,35 @@ type AjvLike = { compile: (schema: object) => ValidateFn };
 const AjvClass = Ajv as unknown as new (opts: object) => AjvLike;
 const applyFormats = addFormats as unknown as (ajv: AjvLike) => void;
 
-export function validateRegionFile(data: unknown, schemaPath?: string): ValidationResult {
-  const resolvedPath = schemaPath ?? join(process.cwd(), 'schema', 'region-plugin.schema.json');
+// Compile once per schema path. Module-level cache keyed by path so the
+// expensive ajv compile happens once regardless of how often validation
+// is called across a CLI run.
+const validatorCache = new Map<string, ValidateFn>();
+
+// Resolve the default schema path lazily at call time, not module load.
+// `process.cwd()` captured at import time would point at the wrong place
+// if anything `chdir`s between module load and the first call. The CLI
+// is documented to run from the repo root, but lazy resolution costs
+// nothing and removes a class of flake. Avoiding `import.meta.url` here
+// keeps ts-jest's CJS transformer happy without forcing ESM-only test
+// config.
+function defaultSchemaPath(): string {
+  return join(process.cwd(), 'schema', 'region-plugin.schema.json');
+}
+
+function getValidator(schemaPath: string): ValidateFn {
+  const cached = validatorCache.get(schemaPath);
+  if (cached) return cached;
   const ajv = new AjvClass({ allErrors: true });
   applyFormats(ajv);
-  const schema = JSON.parse(readFileSync(resolvedPath, 'utf-8')) as object;
+  const schema = JSON.parse(readFileSync(schemaPath, 'utf-8')) as object;
   const validate = ajv.compile(schema);
+  validatorCache.set(schemaPath, validate);
+  return validate;
+}
+
+export function validateRegionFile(data: unknown, schemaPath?: string): ValidationResult {
+  const validate = getValidator(schemaPath ?? defaultSchemaPath());
   const valid = validate(data);
   if (valid) return { valid: true };
   return {

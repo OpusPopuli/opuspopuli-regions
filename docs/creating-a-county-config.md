@@ -131,6 +131,8 @@ pnpm test
 
 All tests should pass. If you see a validation error, check the error message — it will tell you exactly which field is wrong (for example, a malformed URL or a missing required field).
 
+You don't actually have to wait for `pnpm test` to catch a typo. Every CLI command (`check-urls`, `review`, `validate-extraction`, `config-region`) validates every config it loads — if your edit breaks the schema, the next CLI run throws with the file path and the specific schema errors. Same for JSON-syntax mistakes (a stray comma, an unterminated string): the error tells you which file is broken.
+
 ## Step 8: Open a pull request
 
 ```bash
@@ -150,4 +152,6 @@ Then open a pull request to `main` on GitHub. CI will validate the schema and ch
 | AI suggests wrong CSS selectors | Add a `staticManifest` with the correct selectors, or improve `hints` with exact class names you can see in the page source. |
 | `validate-extraction` warns about all fields | The page may require JavaScript to render. Note this in `contentGoal` hints. |
 | Schema validation fails with "must be uri" | The URL has a typo or uses `http` where `https` is required. |
+| `JSON parse failed for ...` | The JSON file has a syntax error — a stray comma, an unterminated string, missing closing brace. The error message names the file; open it and look for an obvious typo. |
+| `Schema validation failed for ...` | The JSON is parseable but doesn't match the schema. The error lists the path (e.g. `/config/dataSources/0/url`) and the issue (`must be uri`, `must have required property "version"`). Fix in place. |
 | `externalId` warning won't go away | This is expected — it's always ⚠ because it must be constructed, not extracted. As long as `contentGoal` describes the construction rule, you're fine. |

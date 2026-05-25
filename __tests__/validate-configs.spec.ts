@@ -1,18 +1,12 @@
-import Ajv from 'ajv';
-import addFormats from 'ajv-formats';
 import { readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { walkJsonFiles } from './helpers';
+import { validateRegionFile } from '../src/cli/lib/schema-validator';
 
 const schemaPath = join(__dirname, '..', 'schema', 'region-plugin.schema.json');
 const regionsDir = join(__dirname, '..', 'regions');
 
 describe('Region config validation', () => {
-  const ajv = new Ajv({ allErrors: true });
-  addFormats(ajv);
-  const schema = JSON.parse(readFileSync(schemaPath, 'utf-8'));
-  const validate = ajv.compile(schema);
-
   const jsonFiles = walkJsonFiles(regionsDir).map((p) => relative(regionsDir, p));
 
   it('has at least one region config', () => {
@@ -21,11 +15,14 @@ describe('Region config validation', () => {
 
   it.each(jsonFiles)('%s passes schema validation', (file) => {
     const config = JSON.parse(readFileSync(join(regionsDir, file), 'utf-8'));
-    const valid = validate(config);
-    if (!valid) {
-      console.error(JSON.stringify(validate.errors, null, 2));
+    // Use the cached `validateRegionFile` so the ajv compile happens once
+    // across this whole test file rather than once per `it.each` iteration.
+    // Pass the absolute schema path so tests don't depend on `process.cwd()`.
+    const result = validateRegionFile(config, schemaPath);
+    if (!result.valid) {
+      console.error(`${file}:\n  ${result.errors.join('\n  ')}`);
     }
-    expect(valid).toBe(true);
+    expect(result.valid).toBe(true);
   });
 
   it.each(jsonFiles)('%s has matching name and config.regionId', (file) => {
