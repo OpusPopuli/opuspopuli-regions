@@ -2,7 +2,7 @@
   "name": "california",
   "displayName": "California",
   "description": "California civic and campaign finance data from official state government websites",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "config": {
     "regionId": "california",
     "regionName": "California",
@@ -194,6 +194,30 @@
           "Re-issues use the suffix `_r1`, `_r2`, etc.; the handler stores them as new Minutes rows with revisionSeq=N+1 and flips the original's isActive=false.",
           "V1 stores the full PDF text on Minutes.rawText (capped at ~256kB). The backend `LegislativeActionLinkerService` mines the text after sync to produce LegislativeAction rows — no AI extraction at scrape time. AI summarization + per-passage claim attribution land in V2.",
           "The downstream linker resolves bill citations (\"Assembly Bill No. 1863\" → AB 1863, normalised against `propositions.externalId`), surnames against `representatives.lastName` filtered by chamber + active status (single-match only in V1; multi-match leaves the FK null + logs), and committee names against `legislative_committees`."
+        ]
+      },
+      {
+        "url": "https://clerk.assembly.ca.gov/legislative-publications/weekly-histories",
+        "dataType": "meetings",
+        "syncCadence": "0 3 * * 6",
+        "sourceType": "pdf_archive",
+        "contentGoal": "Extract Assembly weekly-history PDFs as bill-level activity rollups for the prior session week. Each Friday publishes one PDF covering the week's actions (committee referrals, hearings, votes, engrossments, amendments) rolled up per bill. The handler stores each PDF as a Minutes record; the downstream LegislativeActionLinkerService mines the text to produce LegislativeAction rows linked to both Bill (billId) and Proposition (propositionId, when the measure has qualified for the ballot). Companion to daily-journals — same atomic actions, different projection: journals are per-day events, histories are per-bill rollups. See opuspopuli#666.",
+        "category": "Assembly",
+        "pdfArchive": {
+          "linkSelector": "td.views-field-field-publication-document a[href$='.pdf']",
+          "datePattern": "(\\d{1,2})\\.(\\d{1,2})\\.(\\d{4})-weekly-history(?:_\\d+)?\\.pdf",
+          "dateFormat": "MM/DD/YYYY",
+          "revisionPattern": "_(\\d+)\\.pdf$",
+          "maxPages": 3,
+          "maxNew": 10
+        },
+        "hints": [
+          "Listing page is `https://clerk.assembly.ca.gov/legislative-publications/weekly-histories`. PDF links live under `/sites/clerk.assembly.ca.gov/files/<M.D.YYYY>-weekly-history.pdf`, with re-issues suffixed `_0`, `_1`, etc.",
+          "Each `<time datetime=\"YYYY-MM-DDTHH:MM:SS-OFFSET\">` element in the listing carries the canonical publication date; the filename's `M.D.YYYY` matches that date.",
+          "Cadence is weekly (Friday afternoon publication) — the Saturday 3 AM sync gives the upstream publisher a few hours buffer.",
+          "Histories are tabular-ish (bill ID, action, date, vote tally in columns). The same linker that handles daily journals extracts LegislativeAction rows from this PDF's text — patterns are similar enough that no parser changes are required for V1.",
+          "Cross-source dedup: the same atomic action appears in both a daily journal and that week's history. The linker dedups by (billId, date, actionType, position) tuple so the same event creates ONE LegislativeAction row, not two. See opuspopuli#666.",
+          "Bills are linked by `billNumber` match against the `Bill` table (set during the bills sync). Bills not yet ingested at history-parse time will get backfilled on the next bills sync — actions without a billId are still useful (propositionId may resolve)."
         ]
       },
       {
