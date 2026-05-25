@@ -2,7 +2,7 @@
   "name": "california",
   "displayName": "California",
   "description": "California civic and campaign finance data from official state government websites",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "config": {
     "regionId": "california",
     "regionName": "California",
@@ -372,7 +372,10 @@
           "Governor has 12 days to sign, allow without signing, or veto; 2/3 override in each chamber",
           "Approximately 150 glossary terms organized A-Z plus an abbreviations section — always emit BOTH `verbatim` (Assembly's exact text) AND `plainLanguage` (rewrite for a high-school-senior reading level)",
           "Capture all measure-type abbreviations (AB, SB, ACA, SCA, ACR, SCR, AJR, SJR, HR, SR) plus high-leverage procedural terms: engrossed, enrolled, chaptered, gut and amend, urgency clause, conference committee, do pass, third reading",
-          "Status-string patterns to capture per lifecycle stage (JS regex form): 'Re-referred to Com\\.', 'Set, first hearing', 'Read first time', 'Read second time', 'Read third time', 'Approved by the Governor', 'Chaptered', 'Vetoed', 'Held under submission', 'Failed passage'"
+          "Status-string patterns to capture per lifecycle stage (JS regex form): 'Re-referred to Com\\.', 'Set, first hearing', 'Read first time', 'Read second time', 'Read third time', 'Approved by the Governor', 'Chaptered', 'Vetoed', 'Held under submission', 'Failed passage'",
+          "Second-house stages: CalMatters API status strings 'Active Bill - In Second Committee Process' (maps to second-house-policy) and 'Active Bill - In Second House Process' (maps to second-house-fiscal). These are bill-level status strings on the CalMatters bill page, not leginfo journal entries — include them as separate statusStringPatterns on the second-house-policy and second-house-fiscal stages respectively. See OpusPopuli/opuspopuli-regions#35.",
+          "Third-reading disambiguation: the leginfo journal pattern 'Read third time' applies to FIRST-house third reading only — California's journal entries do not consistently carry a chamber prefix that distinguishes the two. If no distinct second-house third-reading pattern can be derived from the source pages, fold the third-reading-second-house stage into second-house-fiscal (i.e. omit third-reading-second-house entirely or alias its statusStringPatterns to 'Active Bill - In Second House Process'). Do NOT emit two stages with identical or near-identical patterns — the consumer uses first-match resolution and the second one is dead code.",
+          "lifecycleStageIds: every measureType's lifecycleStageIds array MUST include terminal stages — at minimum 'chaptered' and 'failed-passage' — at the end of the per-house procedural sequence. Bills that are chaptered or fail otherwise have currentStageId = null even though their status is well-defined. This is the most common gap: AB/SB measure types frequently end at 'governor-action' and omit the post-Governor terminal outcomes. Concrete shape: ['introduced', 'first-committee', ..., 'governor-action', 'chaptered', 'failed-passage']. See OpusPopuli/opuspopuli-regions#35 + opuspopuli#694."
         ]
       }
     ],

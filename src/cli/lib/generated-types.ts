@@ -17,7 +17,7 @@
  */
 
 /**
- * A declarative region configuration file for the Opus Populi civic data platform
+ * A declarative region configuration file for the Opus Populi civic data platform. A handful of string-valued fields (ApiSourceConfig.queryParams, BulkDownloadConfig.filters) support ${variableName} placeholders that the consumer resolves at runtime — see those field descriptions for the supported variable list.
  */
 export interface RegionPluginFile {
   /**
@@ -216,7 +216,7 @@ export interface BulkDownloadConfig {
     [k: string]: string;
   };
   /**
-   * Filter expressions applied during parse
+   * Filter expressions applied during parse. Values support ${variableName} placeholders that the consumer resolves at runtime from the active local region. Supported variables: ${stateCode} (the 2-letter US state code of the active local region, e.g. 'CA'). Placeholders must appear verbatim. Example: '"STATE": "${stateCode}"' on an FEC bulk filter.
    */
   filters?: {
     [k: string]: string;
@@ -245,7 +245,7 @@ export interface ApiSourceConfig {
    */
   resultsPath?: string;
   /**
-   * Static query parameters appended to every request
+   * Query parameters appended to every request. Values support ${variableName} placeholders that the consumer resolves at runtime from the active local region. Supported variables: ${stateCode} (the 2-letter US state code of the active local region, e.g. 'CA'). Placeholders must appear verbatim — no escaping, no nested expressions. Example: '"contributor_state": "${stateCode}"'.
    */
   queryParams?: {
     [k: string]: string;
