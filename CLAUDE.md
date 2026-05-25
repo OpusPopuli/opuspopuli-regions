@@ -89,3 +89,15 @@ To change a schema field:
 3. Commit both files together
 
 Callers import types from `config-loader.ts` (which re-exports from `generated-types.ts`) — there's a single source of truth.
+
+## Per-config version manifest
+
+`pnpm build` also emits `dist/manifest.json` (via the `postbuild` hook in `scripts/build-manifest.ts`) listing every region config's `regionId`, `version`, and source file path. The manifest ships with the published package, so consumers can introspect which config version is bundled in any given `@opuspopuli/regions@X.Y.Z` without parsing 60 individual JSON files:
+
+```ts
+import manifest from '@opuspopuli/regions/dist/manifest.json';
+const alameda = manifest.configs.find((c) => c.regionId === 'california-alameda');
+// → { regionId: 'california-alameda', version: '0.2.2', file: '...' }
+```
+
+Configs are sorted by `regionId` for stable output across hosts.

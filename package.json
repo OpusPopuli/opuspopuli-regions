@@ -24,6 +24,7 @@
     "generate:types": "tsx scripts/generate-types.ts",
     "prebuild": "pnpm generate:types",
     "build": "tsc",
+    "postbuild": "tsx scripts/build-manifest.ts",
     "prepublishOnly": "pnpm build",
     "cli": "tsx src/cli/index.ts",
     "test": "jest --testPathIgnorePatterns=connectivity",
