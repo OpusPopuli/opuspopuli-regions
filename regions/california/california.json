@@ -2,7 +2,7 @@
   "name": "california",
   "displayName": "California",
   "description": "California civic and campaign finance data from official state government websites",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "config": {
     "regionId": "california",
     "regionName": "California",
@@ -19,9 +19,9 @@
         "category": "Secretary of State",
         "hints": [
           "Measures are <p> tags containing <a> links to ballot-measures/pdf/*.pdf",
-          "Use CSS selector 'p > a[href*=\"ballot-measures/pdf\"]' to find measure links \u2014 the parent <p> is the item",
-          "The container is the main content area \u2014 no specific wrapper div exists",
-          "There are only 3 measures \u2014 do NOT match navigation links, notes, or other paragraphs",
+          "Use CSS selector 'p > a[href*=\"ballot-measures/pdf\"]' to find measure links — the parent <p> is the item",
+          "The container is the main content area — no specific wrapper div exists",
+          "There are only 3 measures — do NOT match navigation links, notes, or other paragraphs",
           "containerSelector MUST be 'body' (this page has no wrapper div); itemSelector MUST be 'p > a[href*=\"ballot-measures/pdf\"]'",
           "Each item is the <a> element itself. For item-scoped fieldMappings, use selector 'a' so .find()/.filter() matches the item element. Do NOT use selector 'text' or 'href' — those are interpreted as CSS tag selectors and match nothing.",
           "Use these EXACT field names: externalId, title, detailUrl, electionDate. The consuming code ignores synonyms (id, name, link, date).",
@@ -93,20 +93,85 @@
         "contentGoal": "Extract Senators with name, district number, party affiliation, photo, and Capitol/district office contact information",
         "category": "Senate",
         "hints": [
-          "Each senator card is a .page-members__member element inside .page-members__listing",
-          "District number is in .page-members__district-num (NOT .member__district-num)",
-          "Name is in h3.member__name, party in span.member__party",
-          "externalId: produce this fieldMapping verbatim — { fieldName: 'externalId', scope: 'item', selector: '.page-members__district-num', extractionMethod: 'text', transform: { type: 'regex_replace', params: { pattern: '^\\\\D*0?([1-9][0-9]*).*$', replacement: 'ca-senate-$1' } }, required: true }. The pattern uses `\\\\D*0?([1-9][0-9]*)` — NOT `(\\\\d+)` — because the source text may include non-digit prefix ('District ') AND zero-padding. `\\\\D*` skips non-digit prefix; `0?` consumes any optional leading zero; `[1-9][0-9]*` captures a non-zero-leading number. DO NOT 'simplify' this to `(\\\\d+)` or strip the `0?`/`[1-9][0-9]*` segments — that would let zero-padding through. Examples: text '24' → externalId 'ca-senate-24'. text '01' → externalId 'ca-senate-1'. text 'District 5' → externalId 'ca-senate-5'.",
-          "PHOTO: Images are lazy-loaded \u2014 use 'data-src' attribute (NOT 'src') on .member__portrait img. Apply url_resolve transform to make absolute URLs",
-          "WEBSITE: Extract the senator homepage link into 'contactInfo.website' (NOT 'detailUrl'). Use this fieldMapping verbatim: {\"fieldName\": \"contactInfo.website\", \"scope\": \"item\", \"selector\": \"a.member__link[title^='Homepage']\", \"attribute\": \"href\", \"extractionMethod\": \"attribute\", \"transform\": {\"type\": \"url_resolve\"}, \"required\": false}. The pipeline auto-uses contactInfo.website as the detail-crawl target when no detailUrl is set, so a single mapping populates both the stored website link and the detail-crawl source.",
-          "OFFICES: Extract a structured array for 'contactInfo.offices'. The .member__address text contains BOTH address AND phone separated by '; ' (e.g. '1021 O Street, Suite 6510, Sacramento, CA 95814; (916) 651-4016'). Use this EXACT fieldMapping with separate child mappings for address (with regex_replace transform that strips the trailing '; (xxx) xxx-xxxx' phone segment) and phone (extractionMethod regex against the same selector, capturing the phone with regexPattern '\\\\((\\\\d{3})\\\\)\\\\s*\\\\d{3}-\\\\d{4}' and regexGroup 0): {\"fieldName\": \"contactInfo.offices\", \"selector\": \".member__office\", \"extractionMethod\": \"structured\", \"required\": false, \"children\": {\"name\": \"h4.member__office-title\", \"address\": {\"selector\": \"p.member__address\", \"extractionMethod\": \"text\", \"transform\": {\"type\": \"regex_replace\", \"params\": {\"pattern\": \"\\\\s*;\\\\s*\\\\(\\\\d{3}\\\\)\\\\s*\\\\d{3}-\\\\d{4}.*$\", \"replacement\": \"\"}}}, \"phone\": {\"selector\": \"p.member__address\", \"extractionMethod\": \"regex\", \"regexPattern\": \"\\\\(\\\\d{3}\\\\)\\\\s*\\\\d{3}-\\\\d{4}\", \"regexGroup\": 0}}}. Phone and address must arrive as SEPARATE fields on each office record \u2014 phone glued to address breaks click-to-call and phone-only displays.",
-          "BIO: DO NOT extract a 'bio' field for senators \u2014 leave it absent from the manifest entirely. Per-senator detail sites (sr/sd{NN}.senate.ca.gov) use different Drupal themes per-senator and bio extraction from those sites is unreliable, producing junk like 'Home' nav-link text or 'Latest News' headline blocks instead of biographical content. The downstream BioGenerator generates AI bios for senators with no scraped bio, which is the desired path.",
-          "NOTE: Individual senator sites (sr/sd{NN}.senate.ca.gov) use different Drupal themes per-senator \u2014 CSS selectors vary across sites. The listing page at senate.ca.gov/senators has consistent structure for all 40 senators.",
-          "40 Senators total",
-          "Use these EXACT field names: externalId, name, district (numeric string), party, photoUrl, contactInfo.website, contactInfo.offices.",
-          "Prefer extractionMethod 'text' for plain values, 'attribute' for href/src/data-src, 'structured' with children for nested arrays. The OFFICES hint above is the one place regex/structured-array detail is required \u2014 follow it verbatim.",
-          "TRANSFORMS: the only valid transform.type values are exactly these strings: trim, lowercase, uppercase, strip_html, url_resolve, regex_replace, name_format, date_parse. NEVER invent other types (e.g., 'regex', 'extract', 'parse') \u2014 they are silently dropped at runtime."
-        ]
+          "BIO: do NOT extract a 'bio' field for senators. Per-senator detail sites (sr/sd{NN}.senate.ca.gov) use different Drupal themes and produce junk; the downstream BioGenerator fills bios for senators that arrive without one. The staticManifest below deliberately omits any bio mapping."
+        ],
+        "staticManifest": {
+          "containerSelector": ".page-members__listing",
+          "itemSelector": ".page-members__member",
+          "fieldMappings": [
+            {
+              "fieldName": "externalId",
+              "selector": ".page-members__district-num",
+              "extractionMethod": "text",
+              "transform": {
+                "type": "regex_replace",
+                "params": {
+                  "pattern": "^\\D*0?([1-9][0-9]*).*$",
+                  "replacement": "ca-senate-$1"
+                }
+              },
+              "required": true
+            },
+            {
+              "fieldName": "name",
+              "selector": "h3.member__name",
+              "extractionMethod": "text",
+              "required": true
+            },
+            {
+              "fieldName": "party",
+              "selector": "span.member__party",
+              "extractionMethod": "text",
+              "required": false
+            },
+            {
+              "fieldName": "photoUrl",
+              "selector": ".member__portrait img",
+              "extractionMethod": "attribute",
+              "attribute": "data-src",
+              "transform": {
+                "type": "url_resolve"
+              },
+              "required": false
+            },
+            {
+              "fieldName": "contactInfo.website",
+              "selector": "a.member__link[title^='Homepage']",
+              "extractionMethod": "attribute",
+              "attribute": "href",
+              "transform": {
+                "type": "url_resolve"
+              },
+              "required": false
+            },
+            {
+              "fieldName": "contactInfo.offices",
+              "selector": ".member__office",
+              "extractionMethod": "structured",
+              "required": false,
+              "children": {
+                "name": "h4.member__office-title",
+                "address": {
+                  "selector": "p.member__address",
+                  "extractionMethod": "text",
+                  "transform": {
+                    "type": "regex_replace",
+                    "params": {
+                      "pattern": "\\s*;\\s*\\(\\d{3}\\)\\s*\\d{3}-\\d{4}.*$",
+                      "replacement": ""
+                    }
+                  }
+                },
+                "phone": {
+                  "selector": "p.member__address",
+                  "extractionMethod": "regex",
+                  "regexPattern": "\\(\\d{3}\\)\\s*\\d{3}-\\d{4}",
+                  "regexGroup": 0
+                }
+              }
+            }
+          ]
+        }
       },
       {
         "url": "https://clerk.assembly.ca.gov/legislative-publications/daily-journals",
@@ -142,7 +207,7 @@
           "followPdfLink": true
         },
         "hints": [
-          "This page links to a PDF \u2014 download the first .PDF link",
+          "This page links to a PDF — download the first .PDF link",
           "The PDF contains committee hearing schedules organized by date",
           "Each entry has: committee name, date, time, room/location",
           "Use these EXACT field names: externalId ('senate-{committee-slug}-{YYYY-MM-DD}', lowercase + hyphens, no spaces), title (committee name + session label), body (literal 'Senate'), scheduledAt (combined date + time), location (room).",
@@ -211,7 +276,7 @@
           }
         },
         "hints": [
-          "Same ZIP archive as contributions \u2014 download once, extract both tables",
+          "Same ZIP archive as contributions — download once, extract both tables",
           "EXPN_CODE values: CMP=campaign paraphernalia, CNS=consulting, CTB=contribution to other committee, FIL=candidate filing fees, FND=fundraising, LIT=campaign literature, etc."
         ]
       },
@@ -242,7 +307,7 @@
         "dataType": "campaign_finance",
         "syncCadence": "0 2 * * *",
         "sourceType": "bulk_download",
-        "contentGoal": "Extract ballot-measure committee declarations (Form 410) from CVR2_CAMPAIGN_DISCLOSURE_CD \u2014 links a filing (and therefore a committee) to a specific ballot measure with a support/oppose position",
+        "contentGoal": "Extract ballot-measure committee declarations (Form 410) from CVR2_CAMPAIGN_DISCLOSURE_CD — links a filing (and therefore a committee) to a specific ballot measure with a support/oppose position",
         "category": "CAL-ACCESS Committee Positions",
         "bulk": {
           "format": "zip_tsv",
@@ -257,17 +322,18 @@
           }
         },
         "hints": [
-          "Same dbwebexport.zip as RCPT_CD/EXPN_CD/S496_CD \u2014 only one download per sync cycle",
+          "Same dbwebexport.zip as RCPT_CD/EXPN_CD/S496_CD — only one download per sync cycle",
           "Most CVR2 rows are entity declarations on non-ballot-measure filings; the linker filters at resolve time by ballotName/ballotNumber being non-empty and supportOrOppose being S or O",
           "TRAN_ID is unique per record; FILING_ID + LINE_ITEM is a composite alternative if TRAN_ID ever proves unstable",
           "SUP_OPP_CD values: S = support, O = oppose. Other values (N = neutral, blank) are skipped by the linker",
-          "Joins to existing Contribution/Expenditure rows by FILING_ID \u2014 relies on those scrapes having run first to know which committee owns each filing"
+          "Joins to existing Contribution/Expenditure rows by FILING_ID — relies on those scrapes having run first to know which committee owns each filing"
         ]
       },
       {
         "url": "https://leginfo.legislature.ca.gov/faces/billSearchClient.xhtml?author=All&lawCode=All&session_year=20252026&house=Both",
         "dataType": "bills",
         "syncCadence": "0 2 * * *",
+        "statusScanCadence": "0 2 * * 0",
         "category": "Legislature",
         "contentGoal": "Discover bill status pages for the current California legislative session (both chambers). Each search result row links to a bill status page — follow those links and extract one structured Bill record per page: bill number, session year, measure type code (AB/ACA/ACR/AJR/HR/SB/SCA/SCR/SJR/SR), full title, subject, current status string, last action, last action date, fiscal impact summary, full-text URL, primary author name, co-author names, committee names, and any available roll-call vote data (member name, chamber, vote date, position, motion text).",
         "billDiscovery": {
@@ -294,7 +360,7 @@
         "url": "https://www.assembly.ca.gov/resources/legislative-process",
         "dataType": "civics",
         "syncCadence": "0 2 * * 0",
-        "contentGoal": "Extract civic content from this page and any sibling pages under /resources/ \u2014 chambers and leadership, measure types and voting thresholds, ordered lifecycle stages a bill passes through, Governor action timing, glossary of legislative terms, and citizen participation guidance. Each visited page typically contributes only one slice of the CivicsBlock (e.g., the glossary page fills `glossary[]`; the legislative-process page fills `lifecycleStages[]`); the prompt-service generates plain-language rewrites alongside the verbatim source text on every field.",
+        "contentGoal": "Extract civic content from this page and any sibling pages under /resources/ — chambers and leadership, measure types and voting thresholds, ordered lifecycle stages a bill passes through, Governor action timing, glossary of legislative terms, and citizen participation guidance. Each visited page typically contributes only one slice of the CivicsBlock (e.g., the glossary page fills `glossary[]`; the legislative-process page fills `lifecycleStages[]`); the prompt-service generates plain-language rewrites alongside the verbatim source text on every field.",
         "category": "Assembly",
         "crawlDepth": 2,
         "crawlMaxPages": 12,
@@ -304,7 +370,7 @@
           "Seed page is the canonical CA Assembly description of how a bill becomes law; sibling pages under /resources/ include the glossary and other civic-process references",
           "Vote thresholds: 41 (Assembly majority), 21 (Senate majority), 54 (Assembly 2/3), 27 (Senate 2/3)",
           "Governor has 12 days to sign, allow without signing, or veto; 2/3 override in each chamber",
-          "Approximately 150 glossary terms organized A-Z plus an abbreviations section \u2014 always emit BOTH `verbatim` (Assembly's exact text) AND `plainLanguage` (rewrite for a high-school-senior reading level)",
+          "Approximately 150 glossary terms organized A-Z plus an abbreviations section — always emit BOTH `verbatim` (Assembly's exact text) AND `plainLanguage` (rewrite for a high-school-senior reading level)",
           "Capture all measure-type abbreviations (AB, SB, ACA, SCA, ACR, SCR, AJR, SJR, HR, SR) plus high-leverage procedural terms: engrossed, enrolled, chaptered, gut and amend, urgency clause, conference committee, do pass, third reading",
           "Status-string patterns to capture per lifecycle stage (JS regex form): 'Re-referred to Com\\.', 'Set, first hearing', 'Read first time', 'Read second time', 'Read third time', 'Approved by the Governor', 'Chaptered', 'Vetoed', 'Held under submission', 'Failed passage'"
         ]
@@ -317,6 +383,9 @@
     "cacheTtlMs": 900000,
     "requestTimeoutMs": 30000,
     "normalizeExternalIdDistrict": true,
-    "bioNoisePatterns": ["^Home\\b", "Latest News"]
+    "bioNoisePatterns": [
+      "^Home\\b",
+      "Latest News"
+    ]
   }
 }
