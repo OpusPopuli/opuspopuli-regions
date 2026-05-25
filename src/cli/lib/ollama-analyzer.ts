@@ -14,7 +14,23 @@ export type OllamaAnalysis = {
   }>;
 };
 
-function extractJson(content: string): string {
+/**
+ * Extract a JSON object from LLM output, handling the three common
+ * shapes the model produces:
+ *
+ *   1. Fenced JSON: triple-backticks (optionally followed by a `json`
+ *      language tag and a newline) wrapping the object body.
+ *   2. Bare JSON: the entire response is the object, possibly with
+ *      leading/trailing whitespace.
+ *   3. JSON embedded in prose: "Sure, here's the data: {...} hope that
+ *      helps!" — extract the substring between the first `{` and the
+ *      last `}`.
+ *
+ * Exported for unit testing — the fence-parsing logic is brittle by
+ * nature (LLMs vary their output formatting) and the contract is worth
+ * pinning with explicit cases.
+ */
+export function extractJson(content: string): string {
   const fenceStart = content.indexOf('```');
   if (fenceStart !== -1) {
     const afterFence = content.slice(fenceStart + 3);

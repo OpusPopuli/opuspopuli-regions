@@ -5,9 +5,14 @@ if [ "$(git branch --show-current)" = "main" ]; then
   exit 1
 fi
 
-# ── 1. Test suite ─────────────────────────────────────────────────────────────
-echo "Running tests..."
-pnpm test || exit 1
+# ── 1. Test suite + coverage gate ────────────────────────────────────────────
+# Runs `pnpm test:coverage` rather than plain `pnpm test` so the
+# coverage thresholds in jest.config.cjs (issue #40) are actually
+# enforced before push. Matches the pattern in `prompt-service`,
+# where pre-push gates coverage too. Pre-commit stays on `pnpm test`
+# for a faster local dev loop.
+echo "Running tests with coverage gate..."
+pnpm test:coverage || exit 1
 
 # ── 2. URL connectivity (informational — does not block push) ─────────────────
 echo ""

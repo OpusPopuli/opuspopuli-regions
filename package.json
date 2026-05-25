@@ -27,6 +27,7 @@
     "cli": "tsx src/cli/index.ts",
     "test": "jest --testPathIgnorePatterns=connectivity",
     "test:connectivity": "jest --testPathPattern=connectivity",
+    "test:coverage": "jest --coverage --testPathIgnorePatterns=connectivity",
     "test:all": "jest",
     "lint": "eslint .",
     "lint:sonar": "eslint .",
