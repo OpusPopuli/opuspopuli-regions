@@ -147,6 +147,11 @@
           "pattern": "^[^ ]+ [^ ]+ [^ ]+ [^ ]+ [^ ]+$",
           "description": "5-field cron expression (minute hour dom month dow) controlling how often this source is synced. The worker applies a deterministic per-source minute offset at registration time to spread load across gov hosts — the minute field you specify is the base, not the exact fire time. Omit to inherit the global daily fallback. Common patterns: '0 2 * * *' daily at 2 AM, '0 2 * * 0' weekly on Sunday, '0 * * * *' hourly."
         },
+        "statusScanCadence": {
+          "type": "string",
+          "pattern": "^[^ ]+ [^ ]+ [^ ]+ [^ ]+ [^ ]+$",
+          "description": "5-field cron expression for a periodic full status-page sweep of all bills (dataType='bills' only). Runs forceStatusRecheck=true — bypasses the needsStatusRecheck flag and the sourcePublishedAt skip to catch governor actions and off-session changes the journal linker can't see. Per-source minute offset is applied like syncCadence. Typical: '0 2 * * 0' weekly Sunday 2 AM. See #689."
+        },
         "sourceType": {
           "type": "string",
           "enum": ["html_scrape", "bulk_download", "api", "pdf", "pdf_archive"],
@@ -200,7 +205,21 @@
                   "regexGroup": { "type": "integer" },
                   "transform": { "type": "object" },
                   "required": { "type": "boolean" },
-                  "defaultValue": { "type": "string" }
+                  "defaultValue": { "type": "string" },
+                  "scope": {
+                    "type": "string",
+                    "enum": ["item", "container"]
+                  },
+                  "children": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "oneOf": [
+                        { "type": "string" },
+                        { "$ref": "#/definitions/ChildFieldConfig" }
+                      ]
+                    },
+                    "description": "For extractionMethod='structured': child field selectors. Each value is a string shortcut or a ChildFieldConfig object."
+                  }
                 }
               }
             }
@@ -365,12 +384,48 @@
         },
         "children": {
           "type": "object",
-          "additionalProperties": { "type": "string" },
-          "description": "Child field selectors relative to each item (e.g., { name: 'h3', phone: '.phone' })"
+          "additionalProperties": {
+            "oneOf": [
+              { "type": "string" },
+              { "$ref": "#/definitions/ChildFieldConfig" }
+            ]
+          },
+          "description": "Child field selectors relative to each item. Each entry is either a string shortcut (e.g. 'h3', 'a|attr:href') or a richer ChildFieldConfig object with extractionMethod / regex / transform."
         },
         "multiple": {
           "type": "boolean",
           "description": "If true, extracts all matches as an array (default: true)"
+        }
+      }
+    },
+    "ChildFieldConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Per-child extraction config for structured extraction. Object form supports the same shape as the top-level FieldMapping (selector + extractionMethod + attribute / regex / transform), minus fieldName/required/defaultValue which don't apply at child scope.",
+      "properties": {
+        "selector": {
+          "type": "string",
+          "description": "CSS selector relative to the matched parent item. Optional for regex on full element text."
+        },
+        "extractionMethod": {
+          "type": "string",
+          "description": "How to extract: 'text', 'attribute', 'regex', 'html', etc."
+        },
+        "attribute": {
+          "type": "string",
+          "description": "For extractionMethod='attribute': which attribute to read (e.g. 'href', 'src')."
+        },
+        "regexPattern": {
+          "type": "string",
+          "description": "For extractionMethod='regex': the pattern."
+        },
+        "regexGroup": {
+          "type": "integer",
+          "description": "For extractionMethod='regex': capture group (default: 1)."
+        },
+        "transform": {
+          "type": "object",
+          "description": "Optional transform applied after extraction (e.g. trim, regex_replace, url_resolve)."
         }
       }
     },
