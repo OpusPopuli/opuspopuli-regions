@@ -8,7 +8,11 @@ export function buildDataSourceConfig(
 ): DataSourceConfig {
   const config: DataSourceConfig = {
     url,
-    dataType,
+    // CLI-boundary input is a free string (`--dataType <type>`). The
+    // schema-derived union narrows it at compile time; at runtime, an
+    // invalid value lands in the file and `validateRegionFile` catches it
+    // before write (see `config-region.ts:writeInitFile`).
+    dataType: dataType as DataSourceConfig['dataType'],
     contentGoal: analysis.contentGoal || `Extract ${dataType} data from this page`,
   };
 

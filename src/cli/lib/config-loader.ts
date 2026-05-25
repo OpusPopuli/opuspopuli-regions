@@ -1,47 +1,24 @@
 import { readFileSync, statSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { validateRegionFile } from './schema-validator.js';
+import type {
+  DataSourceConfig,
+  RegionPluginFile,
+} from './generated-types.js';
 
-export type FieldMapping = {
-  fieldName: string;
-  selector: string;
-  extractionMethod: string;
-  required: boolean;
-  attribute?: string;
-};
+// Schema-derived types are the canonical contract — see `generated-types.ts`
+// and issue #39. Re-export so existing callers (`config-region`, `review`,
+// `validate-extraction`, etc.) import from this module unchanged.
+export type { DataSourceConfig, RegionPluginFile };
 
-export type StaticManifest = {
-  containerSelector: string;
-  itemSelector: string;
-  fieldMappings: FieldMapping[];
-};
+// Convenience aliases that some callers still reference by their older
+// hand-maintained names. These point at the schema-derived definitions
+// so there's no second source of truth.
+export type FieldMapping = NonNullable<
+  DataSourceConfig['staticManifest']
+>['fieldMappings'][number];
 
-export type DataSourceConfig = {
-  url: string;
-  dataType: string;
-  contentGoal: string;
-  category?: string;
-  hints?: string[];
-  sourceType?: string;
-  detailFields?: Record<string, string | { selector: string; children: Record<string, string>; multiple?: boolean }>;
-  staticManifest?: StaticManifest;
-};
-
-export type RegionPluginFile = {
-  name: string;
-  displayName: string;
-  description: string;
-  version: string;
-  config: {
-    regionId: string;
-    regionName: string;
-    description: string;
-    timezone: string;
-    stateCode?: string;
-    parentRegionId?: string;
-    fipsCode?: string;
-    dataSources: DataSourceConfig[];
-  };
-};
+export type StaticManifest = NonNullable<DataSourceConfig['staticManifest']>;
 
 function walkJson(dir: string): string[] {
   const out: string[] = [];
@@ -53,13 +30,36 @@ function walkJson(dir: string): string[] {
   return out;
 }
 
+/**
+ * Parse a single region JSON file, validate it against the schema, and
+ * return the typed plugin object. Throws on parse error or schema
+ * validation failure with the failing file path and the first few schema
+ * errors formatted for human reading.
+ *
+ * Validating on load (issue #39) replaces the older silent `as` cast,
+ * which let malformed configs propagate undefined fields into the CLI
+ * pipeline and surface as confusing downstream errors.
+ */
+function loadOne(file: string): { file: string; region: RegionPluginFile } {
+  const raw: unknown = JSON.parse(readFileSync(file, 'utf-8'));
+  const result = validateRegionFile(raw);
+  if (!result.valid) {
+    const summary = result.errors.slice(0, 5).join('\n  ');
+    const more =
+      result.errors.length > 5
+        ? `\n  ...and ${result.errors.length - 5} more`
+        : '';
+    throw new Error(
+      `Schema validation failed for ${file}:\n  ${summary}${more}`,
+    );
+  }
+  return { file, region: raw as RegionPluginFile };
+}
+
 export function loadConfigs(pathOrDir: string): { file: string; region: RegionPluginFile }[] {
   const stat = statSync(pathOrDir);
   if (stat.isFile()) {
-    return [{ file: pathOrDir, region: JSON.parse(readFileSync(pathOrDir, 'utf-8')) as RegionPluginFile }];
+    return [loadOne(pathOrDir)];
   }
-  return walkJson(pathOrDir).map((file) => ({
-    file,
-    region: JSON.parse(readFileSync(file, 'utf-8')) as RegionPluginFile,
-  }));
+  return walkJson(pathOrDir).map((file) => loadOne(file));
 }

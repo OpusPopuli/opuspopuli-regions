@@ -14,12 +14,36 @@ type AjvLike = { compile: (schema: object) => ValidateFn };
 const AjvClass = Ajv as unknown as new (opts: object) => AjvLike;
 const applyFormats = addFormats as unknown as (ajv: AjvLike) => void;
 
-export function validateRegionFile(data: unknown, schemaPath?: string): ValidationResult {
-  const resolvedPath = schemaPath ?? join(process.cwd(), 'schema', 'region-plugin.schema.json');
+// Resolve relative to cwd. The CLI is documented to run from the repo
+// root (`pnpm cli ...` from any consumer using this package would pull
+// from `node_modules/@opuspopuli/regions/schema/...`, which is again the
+// `process.cwd()`-relative form when invoked at the workspace root).
+// Tests pass an explicit path. Avoiding `import.meta.url` here keeps
+// ts-jest's CJS transformer happy without forcing ESM-only test config.
+const DEFAULT_SCHEMA_PATH = join(
+  process.cwd(),
+  'schema',
+  'region-plugin.schema.json',
+);
+
+// Compile once per schema path. Module-level cache keyed by path so the
+// expensive ajv compile happens once regardless of how often validation
+// is called across a CLI run.
+const validatorCache = new Map<string, ValidateFn>();
+
+function getValidator(schemaPath: string): ValidateFn {
+  const cached = validatorCache.get(schemaPath);
+  if (cached) return cached;
   const ajv = new AjvClass({ allErrors: true });
   applyFormats(ajv);
-  const schema = JSON.parse(readFileSync(resolvedPath, 'utf-8')) as object;
+  const schema = JSON.parse(readFileSync(schemaPath, 'utf-8')) as object;
   const validate = ajv.compile(schema);
+  validatorCache.set(schemaPath, validate);
+  return validate;
+}
+
+export function validateRegionFile(data: unknown, schemaPath?: string): ValidationResult {
+  const validate = getValidator(schemaPath ?? DEFAULT_SCHEMA_PATH);
   const valid = validate(data);
   if (valid) return { valid: true };
   return {
