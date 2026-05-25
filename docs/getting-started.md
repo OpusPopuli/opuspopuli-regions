@@ -10,7 +10,7 @@ The CLI is a set of tools that help you build and verify region configuration fi
 
 ### 1. Install Node.js
 
-Download and install **Node.js 18 or later** from [nodejs.org](https://nodejs.org). Choose the LTS version.
+Download and install **Node.js 20 or later** from [nodejs.org](https://nodejs.org). Choose the LTS version.
 
 To verify installation, open Terminal and run:
 
@@ -18,7 +18,7 @@ To verify installation, open Terminal and run:
 node --version
 ```
 
-You should see `v18.x.x` or higher.
+You should see `v20.x.x` or higher. (CI runs on Node 20.)
 
 ### 2. Install pnpm
 
@@ -37,10 +37,10 @@ Ollama runs the AI model locally on your Mac Studio. It is required for the `con
 3. Pull the AI model used for analysis:
 
 ```bash
-ollama pull qwen2.5:7b
+ollama pull qwen3.5:9b
 ```
 
-This downloads about 4.7 GB and only needs to be done once.
+This downloads about 6 GB and only needs to be done once. (You can override the model with `OLLAMA_MODEL=<other-model>` if your hardware can't run 9B — see the CLI reference.)
 
 ### 4. Clone the regions repository
 
@@ -74,6 +74,7 @@ Commands:
   check-urls [path]          Check HTTP reachability of all data source URLs
   validate-extraction [path] Check whether required fields are detectable
   config-region [options]    Analyze a URL and optionally create a config file
+  review [path]              Review existing configs against live pages
 ```
 
 ## Next steps

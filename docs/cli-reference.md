@@ -6,6 +6,25 @@ All commands are run from the root of the `opuspopuli-regions` repository:
 pnpm cli <command> [options]
 ```
 
+## Validation on load
+
+Every CLI command that reads region configs (`check-urls`, `validate-extraction`, `review`, `config-region --config`) validates each file against `schema/region-plugin.schema.json` as it loads. Malformed files fail fast with the file path and the specific errors:
+
+```
+Failed to load configs from ./regions: Schema validation failed for regions/california/counties/foo/foo.json:
+  /version must match pattern "^\d+\.\d+\.\d+$"
+  /config/dataSources/0/url must match format "uri"
+  /config must have required property "timezone"
+```
+
+JSON-syntax errors are reported the same way:
+
+```
+Failed to load configs from ./regions/...: JSON parse failed for regions/california/counties/foo/foo.json: Unexpected token } in JSON at position 412
+```
+
+You don't have to wait for `pnpm test` to catch a typo — the CLI will surface it on the next command you run.
+
 ---
 
 ## `check-urls`
