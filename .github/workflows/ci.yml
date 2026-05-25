@@ -43,7 +43,10 @@ jobs:
             git --no-pager diff src/cli/lib/generated-types.ts | head -500
             exit 1
           fi
-      - run: pnpm test
+      # `pnpm test:coverage` enforces the coverage thresholds in
+      # jest.config.cjs (issue #40). Matches the pre-push hook so CI
+      # is the safety net for anyone who pushes with --no-verify.
+      - run: pnpm test:coverage
 
   connectivity:
     name: URL Connectivity Check
