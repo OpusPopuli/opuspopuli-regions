@@ -22,6 +22,14 @@ const schema = JSON.parse(readFileSync(schemaPath, 'utf-8')) as {
     BulkDownloadConfig: {
       properties: { filters: { description: string } };
     };
+    TigerLayerConfig: {
+      description: string;
+      properties: {
+        where: { description: string };
+        ocdIdSegment: { description: string };
+        nameTemplate: { description: string };
+      };
+    };
   };
 };
 
@@ -50,5 +58,49 @@ describe('Schema placeholder documentation (#41)', () => {
     const filtersDesc = schema.definitions.BulkDownloadConfig.properties.filters.description;
     expect(queryParamsDesc).toMatch(/Supported variables: \$\{stateCode\}/);
     expect(filtersDesc).toMatch(/Supported variables: \$\{stateCode\}/);
+  });
+});
+
+describe('TigerLayerConfig placeholder documentation (#804)', () => {
+  // The consumer's BoundaryLoaderService substitutes ${fipsCode}, ${stateCode},
+  // ${name}, ${district} into these fields at runtime. If a future PR silently
+  // strips the documentation, region authors won't know the substitution is
+  // supported. Pin the docs the same way schema-placeholders does for
+  // ApiSourceConfig.queryParams.
+
+  it('TigerLayerConfig top-level description names the supported placeholder set', () => {
+    const desc = schema.definitions.TigerLayerConfig.description;
+    expect(desc).toMatch(/\$\{fipsCode\}/);
+    expect(desc).toMatch(/\$\{stateCode\}/);
+    expect(desc).toMatch(/\$\{name\}/);
+    expect(desc).toMatch(/\$\{district\}/);
+  });
+
+  it('TigerLayerConfig.where documents ${fipsCode}', () => {
+    expect(schema.definitions.TigerLayerConfig.properties.where.description).toMatch(
+      /\$\{fipsCode\}/,
+    );
+  });
+
+  it('TigerLayerConfig.ocdIdSegment documents both ${name} and ${district}', () => {
+    const desc = schema.definitions.TigerLayerConfig.properties.ocdIdSegment.description;
+    expect(desc).toMatch(/\$\{name\}/);
+    expect(desc).toMatch(/\$\{district\}/);
+  });
+
+  it('TigerLayerConfig.ocdIdSegment documents the OCD-ID name-normalization rule', () => {
+    // The whitespace-to-underscores + lowercase rule is a hidden contract —
+    // without docs, region authors writing ocdIdSegment will pass mixed-case
+    // names and get OCD-IDs the consumer normalizes silently. Pin the doc.
+    const desc = schema.definitions.TigerLayerConfig.properties.ocdIdSegment.description;
+    expect(desc).toMatch(/normaliz/i);
+    expect(desc).toMatch(/underscore|lowercase/i);
+  });
+
+  it('TigerLayerConfig.nameTemplate documents the ${name}/${district}/${stateCode} set', () => {
+    const desc = schema.definitions.TigerLayerConfig.properties.nameTemplate.description;
+    expect(desc).toMatch(/\$\{name\}/);
+    expect(desc).toMatch(/\$\{district\}/);
+    expect(desc).toMatch(/\$\{stateCode\}/);
   });
 });
