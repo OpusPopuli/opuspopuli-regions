@@ -105,6 +105,148 @@
           "type": "array",
           "items": { "type": "string" },
           "description": "Regex pattern strings (case-insensitive) matched against scraped representative bio text. Bios matching any pattern are treated as nav junk and discarded. Defaults to no filtering if omitted."
+        },
+        "boundarySources": {
+          "$ref": "#/definitions/BoundarySourcesConfig",
+          "description": "Civic-boundary geometry sources used to populate the consumer's `jurisdictions` table (counties, cities, state legislative districts, school districts, special districts). The consumer's BoundaryLoaderService reads this block, dispatches to TIGER and ArcGIS FeatureServer fetchers, and upserts on fipsCode/ocdId. Omit when a region has no public boundary data — addresses still resolve via Census Geocoder string fields, but PostGIS point-in-polygon queries return no matches. See opuspopuli#804."
+        }
+      }
+    },
+    "BoundarySourcesConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ocdIdPrefix"],
+      "description": "Per-region declarative recipe for loading civic boundaries. Pure config — no per-region code lives in the consumer.",
+      "properties": {
+        "ocdIdPrefix": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Open Civic Data ID prefix for this region, e.g. 'ocd-division/country:us/state:ca'. All jurisdiction OCD-IDs are composed as `${ocdIdPrefix}${TigerLayerConfig.ocdIdSegment}` (or the Geoportal equivalent)."
+        },
+        "tigerLayers": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/TigerLayerConfig" },
+          "description": "US Census TIGER/Line layers to ingest as jurisdictions. Each entry maps one ArcGIS MapServer layer to a JurisdictionType. Omit the field entirely when the region has no TIGER coverage — do not pass an empty array (the schema rejects it to prevent silent typos that strip the configured layers)."
+        },
+        "geoportalLayers": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/GeoportalLayerConfig" },
+          "description": "Region-specific ArcGIS FeatureServer endpoints — typically state geoportals serving boundary data Census TIGER doesn't cover (fire districts, water districts, transit districts, etc.). Omit when unused — empty arrays are rejected (see tigerLayers note)."
+        }
+      }
+    },
+    "JurisdictionTypeEnum": {
+      "type": "string",
+      "enum": ["COUNTY", "CITY", "STATE_SENATE_DISTRICT", "STATE_ASSEMBLY_DISTRICT", "CONGRESSIONAL_DISTRICT", "SCHOOL_DISTRICT_UNIFIED", "SCHOOL_DISTRICT_ELEMENTARY", "SCHOOL_DISTRICT_HIGH", "COMMUNITY_COLLEGE_DISTRICT", "WATER_DISTRICT", "FIRE_DISTRICT", "TRANSIT_DISTRICT", "SPECIAL_DISTRICT"],
+      "description": "Maps each feature to a JurisdictionType row in the consumer's `jurisdictions` table. Single source of truth — TigerLayerConfig and GeoportalLayerConfig both reference this so a new jurisdiction type can't be added to one without the other."
+    },
+    "JurisdictionLevelEnum": {
+      "type": "string",
+      "enum": ["FEDERAL", "STATE", "COUNTY", "MUNICIPAL", "DISTRICT"],
+      "description": "Hierarchy level for the resulting jurisdiction rows. Single source of truth — referenced from TigerLayerConfig and GeoportalLayerConfig."
+    },
+    "TigerLayerConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["layer", "outFields", "jurisdictionType", "level", "nameField"],
+      "description": "One TIGER/Line layer mapped to a JurisdictionType. The consumer hits `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/${layer}/query` with GeoJSON output. Supported placeholders inside `where`, `ocdIdSegment`, `nameTemplate`: ${fipsCode} (this region's fipsCode), ${stateCode} (two-letter code), ${name} (the layer's nameField value for a given feature), ${district} (the districtField value).",
+      "properties": {
+        "layer": {
+          "type": "string",
+          "minLength": 1,
+          "description": "TIGER MapServer service+layer path, e.g. 'State_County/MapServer/1', 'Legislative/MapServer/1' (state senate), 'Legislative/MapServer/2' (state assembly), 'School/MapServer/0' (unified school districts)."
+        },
+        "where": {
+          "type": "string",
+          "description": "ESRI WHERE clause filtering features. Defaults to `STATE='${fipsCode}'` when omitted. Use `${fipsCode}` / `${stateCode}` placeholders."
+        },
+        "outFields": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Comma-separated TIGER attribute fields to return, e.g. 'GEOID,NAME' or 'GEOID,SLDUST'."
+        },
+        "jurisdictionType": {
+          "$ref": "#/definitions/JurisdictionTypeEnum"
+        },
+        "level": {
+          "$ref": "#/definitions/JurisdictionLevelEnum"
+        },
+        "nameField": {
+          "type": "string",
+          "minLength": 1,
+          "description": "TIGER attribute key whose value becomes the substitution for `${name}` placeholders. Typically 'NAME' for human-readable layers, or a district code field like 'SLDUST'/'SLDLST' for legislative layers."
+        },
+        "fipsField": {
+          "type": "string",
+          "description": "TIGER attribute key holding the canonical fips_code for an upsert. Defaults to 'GEOID'."
+        },
+        "fipsPrefix": {
+          "type": "string",
+          "description": "Optional prefix prepended to the fipsField value before persisting as fips_code. Use when the raw GEOID would collide with another layer's GEOID (e.g. state senate GEOID overlapping county GEOID format). Example: 'sldu-' for state senate, 'sldl-' for state assembly."
+        },
+        "districtField": {
+          "type": "string",
+          "description": "TIGER attribute key supplying the ${district} placeholder. Required when ocdIdSegment or nameTemplate contains ${district}."
+        },
+        "ocdIdSegment": {
+          "type": "string",
+          "description": "Segment appended to `boundarySources.ocdIdPrefix` to form the full OCD-ID, e.g. '/county:${name}', '/sldu:${district}'. Supports ${name} and ${district} placeholders. Inside `${name}` substitutions the consumer normalizes whitespace to underscores and lowercases the value for OCD-ID compatibility — so a NAME of 'Alameda County' produces 'alameda_county' in the OCD-ID. Omit when this layer's rows don't carry an OCD-ID."
+        },
+        "nameTemplate": {
+          "type": "string",
+          "description": "Template for the persisted jurisdiction name (NOT for OCD-ID composition). Supports ${name}, ${district}, ${stateCode}. The ${name} value is substituted verbatim (case + whitespace preserved). Defaults to ${name} when omitted."
+        }
+      }
+    },
+    "GeoportalLayerConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "outFields", "jurisdictionType", "level", "nameField"],
+      "description": "One arbitrary ArcGIS FeatureServer layer for jurisdictions Census TIGER doesn't cover. Same placeholder rules as TigerLayerConfig.",
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://",
+          "description": "Full ArcGIS FeatureServer layer URL ending in /FeatureServer/<n>. Must be HTTPS — the consumer rejects other schemes. The consumer paginates via resultOffset/resultRecordCount."
+        },
+        "where": {
+          "type": "string",
+          "description": "ESRI WHERE clause. Defaults to '1=1'."
+        },
+        "outFields": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Comma-separated FeatureServer attribute fields to return."
+        },
+        "jurisdictionType": {
+          "$ref": "#/definitions/JurisdictionTypeEnum"
+        },
+        "level": {
+          "$ref": "#/definitions/JurisdictionLevelEnum"
+        },
+        "nameField": {
+          "type": "string",
+          "minLength": 1,
+          "description": "FeatureServer attribute key supplying the human-readable name and the ${name} placeholder."
+        },
+        "fipsField": {
+          "type": "string",
+          "description": "FeatureServer attribute key used as fips_code. No default — geoportal attribute names vary widely (no GEOID convention). Omit when the layer has no FIPS analog; the upsert then matches on ocdId only."
+        },
+        "fipsPrefix": {
+          "type": "string",
+          "description": "Optional prefix prepended to fipsField, mirroring TigerLayerConfig.fipsPrefix."
+        },
+        "ocdIdSegment": {
+          "type": "string",
+          "description": "Appended to boundarySources.ocdIdPrefix. Supports ${name} placeholder. Same OCD-ID normalization as TigerLayerConfig.ocdIdSegment — whitespace to underscores, lowercased."
+        },
+        "nameTemplate": {
+          "type": "string",
+          "description": "Template for persisted name (NOT for OCD-ID). ${name} substituted verbatim. Defaults to ${name}."
         }
       }
     },

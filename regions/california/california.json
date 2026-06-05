@@ -2,7 +2,7 @@
   "name": "california",
   "displayName": "California",
   "description": "California civic and campaign finance data from official state government websites",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "config": {
     "regionId": "california",
     "regionName": "California",
@@ -10,6 +10,88 @@
     "description": "California civic and campaign finance data from official state government websites",
     "timezone": "America/Los_Angeles",
     "stateCode": "CA",
+    "boundarySources": {
+      "ocdIdPrefix": "ocd-division/country:us/state:ca",
+      "tigerLayers": [
+        {
+          "layer": "State_County/MapServer/1",
+          "outFields": "GEOID,NAME",
+          "jurisdictionType": "COUNTY",
+          "level": "COUNTY",
+          "nameField": "NAME",
+          "ocdIdSegment": "/county:${name}"
+        },
+        {
+          "layer": "Places_CouSub_ConCity_SubMCD/MapServer/4",
+          "outFields": "GEOID,NAME",
+          "jurisdictionType": "CITY",
+          "level": "MUNICIPAL",
+          "nameField": "NAME",
+          "ocdIdSegment": "/place:${name}"
+        },
+        {
+          "layer": "Legislative/MapServer/1",
+          "outFields": "GEOID,SLDUST",
+          "jurisdictionType": "STATE_SENATE_DISTRICT",
+          "level": "STATE",
+          "nameField": "SLDUST",
+          "fipsPrefix": "sldu-",
+          "districtField": "SLDUST",
+          "ocdIdSegment": "/sldu:${district}",
+          "nameTemplate": "California State Senate District ${district}"
+        },
+        {
+          "layer": "Legislative/MapServer/2",
+          "outFields": "GEOID,SLDLST",
+          "jurisdictionType": "STATE_ASSEMBLY_DISTRICT",
+          "level": "STATE",
+          "nameField": "SLDLST",
+          "fipsPrefix": "sldl-",
+          "districtField": "SLDLST",
+          "ocdIdSegment": "/sldl:${district}",
+          "nameTemplate": "California State Assembly District ${district}"
+        },
+        {
+          "layer": "School/MapServer/0",
+          "outFields": "GEOID,NAME",
+          "jurisdictionType": "SCHOOL_DISTRICT_UNIFIED",
+          "level": "DISTRICT",
+          "nameField": "NAME"
+        },
+        {
+          "layer": "School/MapServer/1",
+          "outFields": "GEOID,NAME",
+          "jurisdictionType": "SCHOOL_DISTRICT_HIGH",
+          "level": "DISTRICT",
+          "nameField": "NAME"
+        },
+        {
+          "layer": "School/MapServer/2",
+          "outFields": "GEOID,NAME",
+          "jurisdictionType": "SCHOOL_DISTRICT_ELEMENTARY",
+          "level": "DISTRICT",
+          "nameField": "NAME"
+        }
+      ],
+      "geoportalLayers": [
+        {
+          "url": "https://services1.arcgis.com/jUJYIo9tSA7EHvfZ/arcgis/rest/services/California_Local_Fire_Districts/FeatureServer/0",
+          "outFields": "OBJECTID,AGENCY",
+          "jurisdictionType": "FIRE_DISTRICT",
+          "level": "DISTRICT",
+          "nameField": "AGENCY",
+          "ocdIdSegment": "/fire_district:${name}"
+        },
+        {
+          "url": "https://gis.water.ca.gov/arcgis/rest/services/Boundaries/i03_WaterDistricts/FeatureServer/0",
+          "outFields": "OBJECTID,AGENCYNAME",
+          "jurisdictionType": "WATER_DISTRICT",
+          "level": "DISTRICT",
+          "nameField": "AGENCYNAME",
+          "ocdIdSegment": "/water_district:${name}"
+        }
+      ]
+    },
     "dataSources": [
       {
         "url": "https://www.sos.ca.gov/elections/ballot-measures/qualified-ballot-measures",
