@@ -191,7 +191,13 @@ fi
 # No [skip ci] needed: publish.yml only fires on pushes to main, not feature branches.
 echo ""
 echo "Syncing package version with latest published..."
-LATEST=$(npm view @opuspopuli/regions version --registry https://npm.pkg.github.com 2>/dev/null)
+# The husky wrapper invokes this hook with `sh -e`, so any non-zero exit
+# kills the script. `npm view` against GitHub Packages 401s when the
+# contributor doesn't have `read:packages` auth configured — without `|| true`,
+# that 401 exits the hook BEFORE the warn-branch below can fire. The sync
+# is cosmetic (CI overrides the version at publish time per CLAUDE.md), so
+# we always want the warn-and-skip path to be reachable.
+LATEST=$(npm view @opuspopuli/regions version --registry https://npm.pkg.github.com 2>/dev/null || true)
 if [ -z "$LATEST" ]; then
   echo "Warning: could not fetch latest version from registry — skipping sync"
 else
