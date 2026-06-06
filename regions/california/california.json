@@ -2,7 +2,7 @@
   "name": "california",
   "displayName": "California",
   "description": "California civic and campaign finance data from official state government websites",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "config": {
     "regionId": "california",
     "regionName": "California",
@@ -31,23 +31,23 @@
         },
         {
           "layer": "Legislative/MapServer/1",
-          "outFields": "GEOID,SLDUST",
+          "outFields": "GEOID,NAME,SLDU",
           "jurisdictionType": "STATE_SENATE_DISTRICT",
           "level": "STATE",
-          "nameField": "SLDUST",
+          "nameField": "NAME",
           "fipsPrefix": "sldu-",
-          "districtField": "SLDUST",
+          "districtField": "SLDU",
           "ocdIdSegment": "/sldu:${district}",
           "nameTemplate": "California State Senate District ${district}"
         },
         {
           "layer": "Legislative/MapServer/2",
-          "outFields": "GEOID,SLDLST",
+          "outFields": "GEOID,NAME,SLDL",
           "jurisdictionType": "STATE_ASSEMBLY_DISTRICT",
           "level": "STATE",
-          "nameField": "SLDLST",
+          "nameField": "NAME",
           "fipsPrefix": "sldl-",
-          "districtField": "SLDLST",
+          "districtField": "SLDL",
           "ocdIdSegment": "/sldl:${district}",
           "nameTemplate": "California State Assembly District ${district}"
         },
@@ -76,10 +76,10 @@
       "geoportalLayers": [
         {
           "url": "https://services1.arcgis.com/jUJYIo9tSA7EHvfZ/arcgis/rest/services/California_Local_Fire_Districts/FeatureServer/0",
-          "outFields": "OBJECTID,AGENCY",
+          "outFields": "OBJECTID,Name",
           "jurisdictionType": "FIRE_DISTRICT",
           "level": "DISTRICT",
-          "nameField": "AGENCY",
+          "nameField": "Name",
           "ocdIdSegment": "/fire_district:${name}"
         },
         {
