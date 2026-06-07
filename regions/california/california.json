@@ -2,7 +2,7 @@
   "name": "california",
   "displayName": "California",
   "description": "California civic and campaign finance data from official state government websites",
-  "version": "1.9.1",
+  "version": "1.9.2",
   "config": {
     "regionId": "california",
     "regionName": "California",
@@ -124,7 +124,13 @@
           "Data is in structured HTML tables with embedded JSON metadata",
           "Content is divided into committee hearings and floor calendar sections",
           "Tables include date, time, committee name, and room location columns",
-          "Use these EXACT field names: externalId (composite e.g. 'assembly-{committee-slug}-{YYYY-MM-DD}'), title (committee name + session label), body (literal 'Assembly'), scheduledAt (combined date + time), location (room), agendaUrl (if present, otherwise omit).",
+          "Use these EXACT field names: externalId, title, body, scheduledAt, location, agendaUrl.",
+          "externalId MUST include the committee name as a slug AND the meeting date — multiple committees meet on the same day, so a date-only externalId collapses 36 distinct meetings down to 14 in the database. The required shape is 'assembly-{committee-slug}-{YYYY-MM-DD}' where {committee-slug} is the committee name lowercased with non-alphanumerics replaced by hyphens (e.g. 'Joint Legislative Audit' → 'joint-legislative-audit'). Construct externalId as a composite field by first extracting the committee name and the date as their own fields, then producing externalId via a transform that joins them. Examples: 'Joint Legislative Audit' on 2026-08-11 → externalId 'assembly-joint-legislative-audit-2026-08-11'. 'Business And Professions' on 2026-06-30 → externalId 'assembly-business-and-professions-2026-06-30'. NEVER produce an externalId that omits the committee — that is the documented bug this hint exists to prevent.",
+          "title: { fieldName: 'title', scope: 'item', selector: 'the cell containing the committee name', extractionMethod: 'text', required: true }. The full committee name, e.g. 'Joint Legislative Audit' or 'Business And Professions'. Do NOT use the table row's CSS class (committee-hearing-details) as the title — that is the static row class, not the committee name.",
+          "body: literal value 'Assembly' for every row from this source.",
+          "scheduledAt: combine the date column and the time column when both are present. If the time column is empty, use the date alone. Use extractionMethod 'text' to grab each cell and let the consumer parse — do NOT try to combine date+time via a transform.",
+          "location: the room/location cell, extractionMethod 'text'.",
+          "agendaUrl: the 'View Agenda' anchor href if present, extractionMethod 'attribute' on attribute 'href'. Omit the field entirely if no agenda link exists for that row.",
           "Prefer extractionMethod 'text' for plain values, 'attribute' for href/src, 'structured' with children for nested arrays. For substring-via-regex use extractionMethod 'regex' with regexPattern + regexGroup on the field mapping.",
           "TRANSFORMS: the only valid transform.type values are exactly these strings: trim, lowercase, uppercase, strip_html, url_resolve, regex_replace, name_format, date_parse. NEVER invent other types (e.g., 'regex', 'extract', 'parse') — they are silently dropped at runtime."
         ]
