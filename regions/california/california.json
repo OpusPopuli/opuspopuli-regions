@@ -489,6 +489,41 @@
           "Third-reading disambiguation: the leginfo journal pattern 'Read third time' applies to FIRST-house third reading only — California's journal entries do not consistently carry a chamber prefix that distinguishes the two. If no distinct second-house third-reading pattern can be derived from the source pages, fold the third-reading-second-house stage into second-house-fiscal (i.e. omit third-reading-second-house entirely or alias its statusStringPatterns to 'Active Bill - In Second House Process'). Do NOT emit two stages with identical or near-identical patterns — the consumer uses first-match resolution and the second one is dead code.",
           "lifecycleStageIds: every measureType's lifecycleStageIds array MUST include terminal stages — at minimum 'chaptered' and 'failed-passage' — at the end of the per-house procedural sequence. Bills that are chaptered or fail otherwise have currentStageId = null even though their status is well-defined. This is the most common gap: AB/SB measure types frequently end at 'governor-action' and omit the post-Governor terminal outcomes. Concrete shape: ['introduced', 'first-committee', ..., 'governor-action', 'chaptered', 'failed-passage']. See OpusPopuli/opuspopuli-regions#35 + opuspopuli#694."
         ]
+      },
+      {
+        "url": "https://www.senate.ca.gov/citizens-guide/legislative-process",
+        "dataType": "civics",
+        "syncCadence": "0 2 * * 0",
+        "contentGoal": "Extract civic content for the California State Senate (the upper chamber): the Senate chamber and its leadership, the ordered lifecycle stages a bill passes through, Senate vote thresholds, Governor action timing, and the glossary of legislative terms. Complements the Assembly civics source so the merged CivicsBlock covers BOTH chambers. Each visited page under the Senate Citizens' Guide typically contributes one slice (the legislative-process page fills lifecycleStages[]; the glossary page fills glossary[]).",
+        "category": "Senate",
+        "crawlDepth": 2,
+        "crawlMaxPages": 8,
+        "llmMaxTokens": 32000,
+        "llmRequestTimeoutMs": 1200000,
+        "hints": [
+          "Seed is the CA Senate Citizens' Guide legislative-process page. The Senate glossary of legislative terms is at https://www.senate.ca.gov/glossary and 'Information to help you follow the process' at https://www.senate.ca.gov/informationtohelpfollowtheprocess — both same-host and in crawl scope.",
+          "Emit a chambers[] entry for the Senate: name 'Senate', abbreviation 'S', size 40, termYears 4, leadershipRoles including 'President pro Tempore', 'Majority Leader', 'Minority Leader'.",
+          "Senate vote thresholds: majority = 21 votes, two-thirds = 27 votes.",
+          "This is the Senate counterpart to the Assembly civics source. Where both describe the same lifecycle stage, glossary term, or measure type, emit consistent kebab-case ids / slugs / codes so the downstream merge dedups them (glossary by slug, lifecycleStages by id, measureTypes by code)."
+        ]
+      },
+      {
+        "url": "https://www.sos.ca.gov/elections/ballot-measures/how-qualify-initiative",
+        "dataType": "civics",
+        "syncCadence": "0 2 * * 0",
+        "contentGoal": "Extract direct-democracy civic content from the California Secretary of State's ballot-measure pages: the measure types voters can enact directly (Initiative Statute, Initiative Constitutional Amendment, Referendum, and the Recall), the qualification lifecycle a ballot measure passes through (signature gathering, signature verification / random sampling, qualification for the ballot, and the statewide general-election vote), voter-participation citizen actions, and a glossary of initiative / referendum terms. These measure types reach the voters directly (reachesGovernor: false), distinguishing them from legislature-passed bills.",
+        "category": "Secretary of State",
+        "crawlDepth": 2,
+        "crawlMaxPages": 10,
+        "llmMaxTokens": 32000,
+        "llmRequestTimeoutMs": 1200000,
+        "hints": [
+          "Seed is the CA SoS 'How to Qualify an Initiative' page. Sibling process pages under /elections/ballot-measures/ include 'Referendum', 'Initiative and Referendum Qualification Status', and 'Resources and Historical Information' — all same-host, in crawl scope.",
+          "measureTypes here are DIRECT-DEMOCRACY measures — Initiative Statute, Initiative Constitutional Amendment, Referendum, Recall — every one has reachesGovernor: false (they go to the voters, not the Governor). votingThreshold is 'majority' (approved by a majority of voters).",
+          "Signature requirement to qualify: 5% of votes cast for Governor at the last gubernatorial election for an initiative statute or referendum; 8% for an initiative constitutional amendment.",
+          "lifecycleStages describe the INITIATIVE path, distinct from the legislative bill path — use distinct kebab-case ids such as 'signature-gathering', 'signature-verification', 'qualified-for-ballot', 'general-election-vote'. Do not reuse the bill-process stage ids.",
+          "This is a citizen-empowerment source: emit citizenAction where the page documents what a member of the public can do (e.g. verb 'vote' or 'learn'), with urgency reflecting whether an action window is open."
+        ]
       }
     ],
     "rateLimit": {
