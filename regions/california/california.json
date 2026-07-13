@@ -2,7 +2,7 @@
   "name": "california",
   "displayName": "California",
   "description": "California civic and campaign finance data from official state government websites",
-  "version": "1.9.2",
+  "version": "1.9.3",
   "config": {
     "regionId": "california",
     "regionName": "California",
@@ -149,6 +149,7 @@
           "80 Assembly members total",
           "Use these EXACT field names: externalId, name, district (numeric string, no 'District:' prefix), party, photoUrl, detailUrl. The consuming code expects these literal names — past regenerations have stored 'District:' label text in the district field instead of the number.",
           "externalId: produce this fieldMapping verbatim — { fieldName: 'externalId', scope: 'item', selector: 'a', attribute: 'href', extractionMethod: 'attribute', transform: { type: 'regex_replace', params: { pattern: '^.*?/assemblymembers/0?([1-9][0-9]*).*$', replacement: 'ca-assembly-$1' } }, required: true }. The pattern uses `0?([1-9][0-9]*)` — NOT `(\\\\d+)` — because the live site emits zero-padded hrefs for single-digit districts ('/assemblymembers/01' for district 1). `0?` consumes any optional leading zero; `[1-9][0-9]*` captures a non-zero-leading number. DO NOT 'simplify' this to `(\\\\d+)` — that would capture the leading zero and produce 'ca-assembly-01' instead of 'ca-assembly-1'. The captured group always contains the bare district number with NO leading zero. Examples: href '/assemblymembers/30' → externalId 'ca-assembly-30'. href '/assemblymembers/01' → externalId 'ca-assembly-1'. href '/assemblymembers/80' → externalId 'ca-assembly-80'.",
+          "district: produce this fieldMapping verbatim — { fieldName: 'district', scope: 'item', selector: 'a', attribute: 'href', extractionMethod: 'attribute', transform: { type: 'regex_replace', params: { pattern: '^.*?/assemblymembers/0?([1-9][0-9]*).*$', replacement: '$1' } }, required: false }. The district number is embedded in the profile href ('/assemblymembers/30') — the SAME reliable source as externalId, just without the 'ca-assembly-' prefix ('$1' emits the bare number, zero-pad stripped: '/assemblymembers/01' → '1', '/assemblymembers/30' → '30'). Do NOT scrape district from the visible 'District:' card text — it has been unreliable and scraped 'Unknown'.",
           "Prefer extractionMethod 'text' for plain values, 'attribute' for href/src. For substring-via-regex use extractionMethod 'regex' with regexPattern + regexGroup on the field mapping.",
           "TRANSFORMS: the only valid transform.type values are exactly these strings: trim, lowercase, uppercase, strip_html, url_resolve, regex_replace, name_format, date_parse. NEVER invent other types (e.g., 'regex', 'extract', 'parse') — they are silently dropped at runtime."
         ],
@@ -199,6 +200,19 @@
                 }
               },
               "required": true
+            },
+            {
+              "fieldName": "district",
+              "selector": ".page-members__district-num",
+              "extractionMethod": "text",
+              "transform": {
+                "type": "regex_replace",
+                "params": {
+                  "pattern": "^\\D*0?([1-9][0-9]*).*$",
+                  "replacement": "$1"
+                }
+              },
+              "required": false
             },
             {
               "fieldName": "name",
