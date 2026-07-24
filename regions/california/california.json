@@ -456,6 +456,32 @@
         ]
       },
       {
+        "url": "https://campaignfinance.cdn.sos.ca.gov/dbwebexport.zip",
+        "dataType": "campaign_finance",
+        "syncCadence": "0 2 * * *",
+        "sourceType": "bulk_download",
+        "contentGoal": "Extract the committee/filer roster from CVR_CAMPAIGN_DISCLOSURE_CD (campaign-disclosure cover pages) — resolves each filer id to committee name, committee type, and (for candidate-controlled committees) the candidate name + office, so contributions/expenditures can be attributed to a named committee and candidate (epic #936).",
+        "category": "CAL-ACCESS Committees",
+        "bulk": {
+          "format": "zip_tsv",
+          "filePattern": "CVR_CAMPAIGN_DISCLOSURE_CD.TSV",
+          "columnMappings": {
+            "FILER_ID": "externalId",
+            "FILER_NAML": "name",
+            "CMTTE_TYPE": "type",
+            "CAND_NAML": "candidateName",
+            "OFFICE_CD": "candidateOffice"
+          }
+        },
+        "hints": [
+          "Same dbwebexport.zip as the other CAL-ACCESS sources — one download per sync cycle.",
+          "Cover pages, one row per filing (many per committee); upserting by externalId (FILER_ID) dedups, last write wins. FILER_ID is the same id space as RCPT_CD/EXPN_CD CMTE_ID, so it enriches the stub committee rows created from contributions (#939) in place — never delete/recreate.",
+          "Routes to the committee mapper via the 'Committees' category — distinct from the 'Committee Positions'/CVR2 category, which routes to measure filings (#937).",
+          "CMTTE_TYPE maps to CommitteeType downstream (#940). Candidate full-name assembly (CAND_NAMF + CAND_NAML) and volume tuning (filter to committee form types / recent cycles) are follow-ups.",
+          "OFFICE_CD identifies the office sought — used to match candidate committees to representatives (#941)."
+        ]
+      },
+      {
         "url": "https://leginfo.legislature.ca.gov/faces/billSearchClient.xhtml?author=All&lawCode=All&session_year=20252026&house=Both",
         "dataType": "bills",
         "syncCadence": "0 2 * * *",
