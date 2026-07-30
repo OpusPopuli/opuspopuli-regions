@@ -101,3 +101,7 @@ const alameda = manifest.configs.find((c) => c.regionId === 'california-alameda'
 ```
 
 Configs are sorted by `regionId` for stable output across hosts.
+
+## SDLC tooling
+
+Org-wide `op-*` workflow commands (`/op-review`, `/op-release`, `/op-issue-plan`, …) come from the shared **[opuspopuli-sdlc](https://github.com/OpusPopuli/opuspopuli-sdlc)** Claude Code plugin, auto-enabled via the committed `.claude/settings.json` (trust the repo folder once).
