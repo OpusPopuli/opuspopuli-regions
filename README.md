@@ -210,6 +210,13 @@ pnpm test:all          # Both validation and connectivity
 pnpm lint
 ```
 
+## Docs
+
+- [Getting started](./docs/getting-started.md) — first-time CLI setup, including Ollama and machine notes
+- [Creating a county config](./docs/creating-a-county-config.md) — step-by-step authoring walkthrough
+- [CLI reference](./docs/cli-reference.md) — all commands and options
+- [Reviewing agent-authored config PRs](./docs/reviewing-agent-authored-configs.md) — maintainer guide for PRs opened by the jurisdiction onboarding flow
+
 ## License
 
 AGPL-3.0
