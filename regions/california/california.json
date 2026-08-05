@@ -418,6 +418,7 @@
           "filePattern": "S496_CD.TSV",
           "columnMappings": {
             "TRAN_ID": "externalId",
+            "FILING_ID": "filingId",
             "AMOUNT": "amount",
             "EXP_DATE": "date",
             "EXPN_DSCR": "description"
@@ -425,7 +426,38 @@
         },
         "hints": [
           "S496 = Form 496 late independent expenditure reports",
-          "Filed within 24 hours of making an IE of $1,000+ in the 90 days before an election"
+          "Filed within 24 hours of making an IE of $1,000+ in the 90 days before an election",
+          "S496_CD is line-item detail only — no committee/candidate/measure. FILING_ID joins each line to its Form 496 cover page (see the 'CAL-ACCESS IE Cover Pages' source) so the IE linker can attribute committee + target (#955)."
+        ]
+      },
+      {
+        "url": "https://campaignfinance.cdn.sos.ca.gov/dbwebexport.zip",
+        "dataType": "campaign_finance",
+        "syncCadence": "0 2 * * *",
+        "sourceType": "bulk_download",
+        "contentGoal": "Extract Form 496 cover pages from CVR_CAMPAIGN_DISCLOSURE_CD (FORM_TYPE=F496) — the filer committee (FILER_ID) and the independent-expenditure target (candidate name/office or ballot measure) plus support/oppose, keyed by FILING_ID. S496_CD line items carry only FILING_ID, so this cover-page map is what lets the IE linker attribute each late independent expenditure to its committee and target (#955).",
+        "category": "CAL-ACCESS IE Cover Pages",
+        "bulk": {
+          "format": "zip_tsv",
+          "filePattern": "CVR_CAMPAIGN_DISCLOSURE_CD.TSV",
+          "columnMappings": {
+            "FILING_ID": "filingId",
+            "FILER_ID": "filerId",
+            "CAND_NAML": "candidateName",
+            "OFFICE_CD": "candidateOffice",
+            "BAL_NAME": "propositionTitle",
+            "SUP_OPP_CD": "supportOrOppose"
+          },
+          "filters": {
+            "FORM_TYPE": "F496"
+          }
+        },
+        "hints": [
+          "Same dbwebexport.zip as the other CAL-ACCESS sources — one download per sync cycle.",
+          "Filtered to FORM_TYPE=F496 (Form 496 late independent expenditure reports). One row per filing; FILING_ID is the join key back to S496_CD line items.",
+          "FILER_ID is the same id space as CMTE_ID (RCPT_CD/EXPN_CD) and the Committees cover-page FILER_ID, so the IE linker resolves filerId -> committees.external_id -> committee.id.",
+          "Distinct from the 'CAL-ACCESS Committees' category (which upserts the committee roster) — this routes to cvr_filings for the per-filing IE target map (#955).",
+          "SUP_OPP_CD values: S = support, O = oppose."
         ]
       },
       {
