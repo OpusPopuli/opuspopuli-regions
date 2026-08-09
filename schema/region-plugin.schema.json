@@ -422,6 +422,12 @@
           "additionalProperties": { "type": "string" },
           "description": "Column name mappings: source column name -> domain field name"
         },
+        "compositeKey": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 2,
+          "description": "Source columns joined with ':' to form externalId, for feeds where no single column identifies a row. Order is significant and must stay stable — it defines the upsert identity, so changing it re-keys every row. Takes precedence over any externalId in columnMappings. Empty cells become empty segments so positions never shift; a column missing from the file's headers fails the parse rather than emitting short keys that would collapse distinct rows onto one externalId. Example (CAL-ACCESS RCPT_CD, where TRAN_ID repeats across filings): [\"FILING_ID\", \"AMEND_ID\", \"LINE_ITEM\", \"TRAN_ID\"]"
+        },
         "filters": {
           "type": "object",
           "additionalProperties": { "type": "string" },

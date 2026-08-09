@@ -239,6 +239,12 @@ export interface BulkDownloadConfig {
     [k: string]: string;
   };
   /**
+   * Source columns joined with ':' to form externalId, for feeds where no single column identifies a row. Order is significant and must stay stable — it defines the upsert identity, so changing it re-keys every row. Takes precedence over any externalId in columnMappings. Empty cells become empty segments so positions never shift; a column missing from the file's headers fails the parse rather than emitting short keys that would collapse distinct rows onto one externalId. Example (CAL-ACCESS RCPT_CD, where TRAN_ID repeats across filings): ["FILING_ID", "AMEND_ID", "LINE_ITEM", "TRAN_ID"]
+   *
+   * @minItems 2
+   */
+  compositeKey?: [string, string, ...string[]];
+  /**
    * Filter expressions applied during parse. Values support ${variableName} placeholders that the consumer resolves at runtime from the active local region. Supported variables: ${stateCode} (the 2-letter US state code of the active local region, e.g. 'CA'). Placeholders must appear verbatim. Example: '"STATE": "${stateCode}"' on an FEC bulk filter.
    */
   filters?: {
