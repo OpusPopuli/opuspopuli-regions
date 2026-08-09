@@ -2,7 +2,7 @@
   "name": "california",
   "displayName": "California",
   "description": "California civic and campaign finance data from official state government websites",
-  "version": "1.9.3",
+  "version": "1.10.0",
   "config": {
     "regionId": "california",
     "regionName": "California",
@@ -351,9 +351,9 @@
         "bulk": {
           "format": "zip_tsv",
           "filePattern": "RCPT_CD.TSV",
+          "compositeKey": ["FILING_ID", "AMEND_ID", "LINE_ITEM", "TRAN_ID"],
           "columnMappings": {
-            "TRAN_ID": "externalId",
-            "CMTE_ID": "committeeId",
+            "FILING_ID": "filingId",
             "ENTITY_CD": "donorType",
             "CTRIB_NAMF": "donorFirstName",
             "CTRIB_NAML": "donorLastName",
@@ -372,9 +372,11 @@
         },
         "hints": [
           "ZIP file updated daily from CA Secretary of State, ~1GB uncompressed",
-          "RCPT_CD has 64 columns; map only the essential ones",
+          "RCPT_CD has 63 columns; map only the essential ones",
           "ENTITY_CD values: IND=individual, COM=committee, OTH=other, PTY=party, SCC=small contributor",
-          "Filter to recent election cycles to manage data volume"
+          "Filter to recent election cycles to manage data volume",
+          "CMTE_ID is deliberately NOT mapped to committeeId: it sits inside the CTRIB_* block and identifies the *contributor*, not the recipient. RCPT_CD has no FILER_ID at all, so the recipient comes from FILING_ID -> the cover page (CVR_CAMPAIGN_DISCLOSURE_CD), stamped post-sync by CoverPageLinkerService (#980).",
+          "TRAN_ID is not unique across filings — the real key is FILING_ID + AMEND_ID + LINE_ITEM + TRAN_ID. Mapping TRAN_ID alone to externalId collapsed distinct line items onto one row (#980)."
         ]
       },
       {
@@ -387,9 +389,9 @@
         "bulk": {
           "format": "zip_tsv",
           "filePattern": "EXPN_CD.TSV",
+          "compositeKey": ["FILING_ID", "AMEND_ID", "LINE_ITEM", "TRAN_ID"],
           "columnMappings": {
-            "TRAN_ID": "externalId",
-            "CMTE_ID": "committeeId",
+            "FILING_ID": "filingId",
             "PAYEE_NAML": "payeeName",
             "AMOUNT": "amount",
             "EXPN_DATE": "date",
@@ -403,7 +405,9 @@
         },
         "hints": [
           "Same ZIP archive as contributions — download once, extract both tables",
-          "EXPN_CODE values: CMP=campaign paraphernalia, CNS=consulting, CTB=contribution to other committee, FIL=candidate filing fees, FND=fundraising, LIT=campaign literature, etc."
+          "EXPN_CODE values: CMP=campaign paraphernalia, CNS=consulting, CTB=contribution to other committee, FIL=candidate filing fees, FND=fundraising, LIT=campaign literature, etc.",
+          "CMTE_ID is deliberately NOT mapped, for the same reason as RCPT_CD: on EXPN_CD it sits in the payee block and identifies the *payee*, not the spender. The spender comes from FILING_ID -> the cover page (#980).",
+          "Same composite key as RCPT_CD — TRAN_ID repeats across filings."
         ]
       },
       {
@@ -435,7 +439,7 @@
         "dataType": "campaign_finance",
         "syncCadence": "0 2 * * *",
         "sourceType": "bulk_download",
-        "contentGoal": "Extract Form 496 cover pages from CVR_CAMPAIGN_DISCLOSURE_CD (FORM_TYPE=F496) — the filer committee (FILER_ID) and the independent-expenditure target (candidate name/office or ballot measure) plus support/oppose, keyed by FILING_ID. S496_CD line items carry only FILING_ID, so this cover-page map is what lets the IE linker attribute each late independent expenditure to its committee and target (#955).",
+        "contentGoal": "Extract campaign-disclosure cover pages from CVR_CAMPAIGN_DISCLOSURE_CD — the filer committee (FILER_ID) and, for independent-expenditure forms, the target (candidate name/office or ballot measure) plus support/oppose, keyed by FILING_ID. Line-item tables (S496_CD, RCPT_CD, EXPN_CD) carry only FILING_ID and no filer, so this cover-page map is what lets the linkers attribute each line item to the committee that filed it (#955, #980).",
         "category": "CAL-ACCESS IE Cover Pages",
         "bulk": {
           "format": "zip_tsv",
@@ -447,16 +451,15 @@
             "OFFICE_CD": "candidateOffice",
             "BAL_NAME": "propositionTitle",
             "SUP_OPP_CD": "supportOrOppose"
-          },
-          "filters": {
-            "FORM_TYPE": "F496"
           }
         },
         "hints": [
           "Same dbwebexport.zip as the other CAL-ACCESS sources — one download per sync cycle.",
-          "Filtered to FORM_TYPE=F496 (Form 496 late independent expenditure reports). One row per filing; FILING_ID is the join key back to S496_CD line items.",
-          "FILER_ID is the same id space as CMTE_ID (RCPT_CD/EXPN_CD) and the Committees cover-page FILER_ID, so the IE linker resolves filerId -> committees.external_id -> committee.id.",
-          "Distinct from the 'CAL-ACCESS Committees' category (which upserts the committee roster) — this routes to cvr_filings for the per-filing IE target map (#955).",
+          "NOT filtered by FORM_TYPE. It was F496-only for #955, but contributions and expenditures are filed on F460, so restricting the form type left every RCPT/EXPN row unattributable (#980). One source, one table, one ingest pass. Row count grows ~31k -> ~662k.",
+          "One row per filing; FILING_ID is the join key back to the S496_CD / RCPT_CD / EXPN_CD line items.",
+          "FILER_ID is the same id space as the Committees cover-page FILER_ID, so the linkers resolve filerId -> committees.external_id -> committee.id.",
+          "Distinct from the 'CAL-ACCESS Committees' category (which upserts the committee roster) — this routes to cvr_filings for the per-filing map (#955, #980).",
+          "candidateName/propositionTitle/supportOrOppose are only populated on IE forms; they are null for F460 rows, which the IE linker tolerates since it looks up by FILING_ID.",
           "SUP_OPP_CD values: S = support, O = oppose."
         ]
       },
