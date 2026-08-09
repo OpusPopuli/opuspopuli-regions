@@ -2,7 +2,7 @@
   "name": "california",
   "displayName": "California",
   "description": "California civic and campaign finance data from official state government websites",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "config": {
     "regionId": "california",
     "regionName": "California",
@@ -351,7 +351,7 @@
         "bulk": {
           "format": "zip_tsv",
           "filePattern": "RCPT_CD.TSV",
-          "compositeKey": ["FILING_ID", "AMEND_ID", "LINE_ITEM", "TRAN_ID"],
+          "compositeKey": ["FILING_ID", "LINE_ITEM", "TRAN_ID"],
           "columnMappings": {
             "FILING_ID": "filingId",
             "ENTITY_CD": "donorType",
@@ -376,7 +376,7 @@
           "ENTITY_CD values: IND=individual, COM=committee, OTH=other, PTY=party, SCC=small contributor",
           "Filter to recent election cycles to manage data volume",
           "CMTE_ID is deliberately NOT mapped to committeeId: it sits inside the CTRIB_* block and identifies the *contributor*, not the recipient. RCPT_CD has no FILER_ID at all, so the recipient comes from FILING_ID -> the cover page (CVR_CAMPAIGN_DISCLOSURE_CD), stamped post-sync by CoverPageLinkerService (#980).",
-          "TRAN_ID is not unique across filings — the real key is FILING_ID + AMEND_ID + LINE_ITEM + TRAN_ID. Mapping TRAN_ID alone to externalId collapsed distinct line items onto one row (#980)."
+          "TRAN_ID is not unique across filings, so externalId is FILING_ID + LINE_ITEM + TRAN_ID. AMEND_ID is deliberately EXCLUDED: CAL-ACCESS restates a filing's whole schedule on amendment, so including it keeps every superseded version as its own row and the cover-page linker attributes them all to the same filer. Measured on the 2026-08-09 export: RCPT_CD holds 20,177,193 rows, 20,177,187 distinct with AMEND_ID and 17,000,354 without — 3,176,833 restatements that would inflate totalRaised by ~16%. Omitting AMEND_ID lets a later amendment upsert over the earlier version (#980)."
         ]
       },
       {
@@ -389,7 +389,7 @@
         "bulk": {
           "format": "zip_tsv",
           "filePattern": "EXPN_CD.TSV",
-          "compositeKey": ["FILING_ID", "AMEND_ID", "LINE_ITEM", "TRAN_ID"],
+          "compositeKey": ["FILING_ID", "LINE_ITEM", "TRAN_ID"],
           "columnMappings": {
             "FILING_ID": "filingId",
             "PAYEE_NAML": "payeeName",
@@ -407,7 +407,7 @@
           "Same ZIP archive as contributions — download once, extract both tables",
           "EXPN_CODE values: CMP=campaign paraphernalia, CNS=consulting, CTB=contribution to other committee, FIL=candidate filing fees, FND=fundraising, LIT=campaign literature, etc.",
           "CMTE_ID is deliberately NOT mapped, for the same reason as RCPT_CD: on EXPN_CD it sits in the payee block and identifies the *payee*, not the spender. The spender comes from FILING_ID -> the cover page (#980).",
-          "Same composite key as RCPT_CD — TRAN_ID repeats across filings."
+          "Same composite key as RCPT_CD, and AMEND_ID is excluded for the same reason. Measured on the 2026-08-09 export: EXPN_CD holds 15,742,863 rows, 13,834,048 distinct once AMEND_ID is dropped — 1,908,815 restatements that would otherwise double-count totalSpent (#980)."
         ]
       },
       {
