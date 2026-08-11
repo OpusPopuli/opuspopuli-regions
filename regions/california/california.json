@@ -2,7 +2,7 @@
   "name": "california",
   "displayName": "California",
   "description": "California civic and campaign finance data from official state government websites",
-  "version": "1.11.0",
+  "version": "1.12.0",
   "config": {
     "regionId": "california",
     "regionName": "California",
@@ -354,6 +354,7 @@
           "compositeKey": ["FILING_ID", "LINE_ITEM", "TRAN_ID"],
           "columnMappings": {
             "FILING_ID": "filingId",
+            "AMEND_ID": "amendId",
             "ENTITY_CD": "donorType",
             "CTRIB_NAMF": "donorFirstName",
             "CTRIB_NAML": "donorLastName",
@@ -376,7 +377,8 @@
           "ENTITY_CD values: IND=individual, COM=committee, OTH=other, PTY=party, SCC=small contributor",
           "Filter to recent election cycles to manage data volume",
           "CMTE_ID is deliberately NOT mapped to committeeId: it sits inside the CTRIB_* block and identifies the *contributor*, not the recipient. RCPT_CD has no FILER_ID at all, so the recipient comes from FILING_ID -> the cover page (CVR_CAMPAIGN_DISCLOSURE_CD), stamped post-sync by CoverPageLinkerService (#980).",
-          "TRAN_ID is not unique across filings, so externalId is FILING_ID + LINE_ITEM + TRAN_ID. AMEND_ID is deliberately EXCLUDED: CAL-ACCESS restates a filing's whole schedule on amendment, so including it keeps every superseded version as its own row and the cover-page linker attributes them all to the same filer. Measured on the 2026-08-09 export: RCPT_CD holds 20,177,193 rows, 20,177,187 distinct with AMEND_ID and 17,000,354 without — 3,176,833 restatements that would inflate totalRaised by ~16%. Omitting AMEND_ID lets a later amendment upsert over the earlier version (#980)."
+          "TRAN_ID is not unique across filings, so externalId is FILING_ID + LINE_ITEM + TRAN_ID. AMEND_ID is deliberately EXCLUDED from the composite key: CAL-ACCESS restates a filing's whole schedule on amendment, so including it keeps every superseded version as its own row and the cover-page linker attributes them all to the same filer. Measured on the 2026-08-09 export: RCPT_CD holds 20,177,193 rows, 20,177,187 distinct with AMEND_ID and 17,000,354 without — 3,176,833 restatements that would inflate totalRaised by ~16%. Omitting AMEND_ID lets a later amendment upsert over the earlier version (#980).",
+          "AMEND_ID is nonetheless MAPPED as a field (#992), which is not a contradiction: key collapse only merges versions that REUSE an identifier, and a restatement usually issues new TRAN_ID/LINE_ITEM values instead, so both versions survive as distinct rows — filing 2505994 stores $339,123 against an official $170,988. Persisting amend_id is what lets AmendmentSupersessionService delete every version below max(amend_id) per filing after ingest. Excluded from the key, kept as a column."
         ]
       },
       {
@@ -392,6 +394,7 @@
           "compositeKey": ["FILING_ID", "LINE_ITEM", "TRAN_ID"],
           "columnMappings": {
             "FILING_ID": "filingId",
+            "AMEND_ID": "amendId",
             "PAYEE_NAML": "payeeName",
             "AMOUNT": "amount",
             "EXPN_DATE": "date",
@@ -407,7 +410,43 @@
           "Same ZIP archive as contributions — download once, extract both tables",
           "EXPN_CODE values: CMP=campaign paraphernalia, CNS=consulting, CTB=contribution to other committee, FIL=candidate filing fees, FND=fundraising, LIT=campaign literature, etc.",
           "CMTE_ID is deliberately NOT mapped, for the same reason as RCPT_CD: on EXPN_CD it sits in the payee block and identifies the *payee*, not the spender. The spender comes from FILING_ID -> the cover page (#980).",
-          "Same composite key as RCPT_CD, and AMEND_ID is excluded for the same reason. Measured on the 2026-08-09 export: EXPN_CD holds 15,742,863 rows, 13,834,048 distinct once AMEND_ID is dropped — 1,908,815 restatements that would otherwise double-count totalSpent (#980)."
+          "Same composite key as RCPT_CD, and AMEND_ID is excluded from it for the same reason. Measured on the 2026-08-09 export: EXPN_CD holds 15,742,863 rows, 13,834,048 distinct once AMEND_ID is dropped — 1,908,815 restatements that would otherwise double-count totalSpent (#980).",
+          "AMEND_ID is mapped as a field for supersession, exactly as on RCPT_CD — see that source's hint (#992)."
+        ]
+      },
+      {
+        "url": "https://campaignfinance.cdn.sos.ca.gov/dbwebexport.zip",
+        "dataType": "campaign_finance",
+        "syncCadence": "0 2 * * *",
+        "sourceType": "bulk_download",
+        "contentGoal": "Extract Form 460 summary lines from SMRY_CD — the period and cumulative totals each committee reports on its own filing, one row per numbered line of the form. These are the figures the itemized RCPT_CD / EXPN_CD detail is reconciled against.",
+        "category": "CAL-ACCESS Filing Summaries",
+        "bulk": {
+          "format": "zip_tsv",
+          "filePattern": "SMRY_CD.TSV",
+          "compositeKey": ["FILING_ID", "AMEND_ID", "FORM_TYPE", "LINE_ITEM"],
+          "filters": {
+            "FORM_TYPE": "F460"
+          },
+          "columnMappings": {
+            "FILING_ID": "filingId",
+            "AMEND_ID": "amendId",
+            "FORM_TYPE": "formType",
+            "LINE_ITEM": "lineItem",
+            "AMOUNT_A": "amountA",
+            "AMOUNT_B": "amountB",
+            "AMOUNT_C": "amountC"
+          }
+        },
+        "hints": [
+          "Same dbwebexport.zip as the other CAL-ACCESS sources — one download per sync cycle. SMRY_CD is ~469 MB uncompressed.",
+          "Two things depend on this table (#992). First, reconciliation: itemized detail EXCEEDING the committee's own reported total means something is being counted twice, which is exactly how the amendment double-count was found. Stored, that check runs on every sync instead of by hand. Second, unitemized contributions: Schedule A itemizes only $100 and above, so smaller donations appear ONLY on the summary line. Without this table a candidate funded by many small donors reads as less funded than one funded by a few large ones.",
+          "AMEND_ID is IN the composite key here, unlike RCPT_CD / EXPN_CD. This is the summary OF a particular amendment, and reconciliation compares against the latest one specifically — merging versions would destroy the thing being compared. These rows are therefore not superseded either.",
+          "Filtered to FORM_TYPE=F460 (recipient committee campaign statement). SMRY_CD also carries F401/F425/F450/F461/F465 and lobbying forms, which have different line numbering and no Schedule A to reconcile.",
+          "All F460 lines are ingested, not just the contribution lines 1-5. Lines 6+ carry expenditure and cash-position totals, which give #991 (the EXPN shortfall) the same independent check — it currently has none.",
+          "LINE_ITEM is a string, not an integer: F460 alone uses 47 distinct values and not all are numeric.",
+          "AMOUNT_A is the reporting period, AMOUNT_B the calendar-year cumulative, AMOUNT_C the election-cycle cumulative where the form carries one. Negatives are real (observed range roughly -60,000,000 to 195,446,000) — they are corrections and refunds, so do not clamp them.",
+          "Line 1 column A is total monetary contributions for the period — the figure the RCPT_CD itemized sum is compared against."
         ]
       },
       {
