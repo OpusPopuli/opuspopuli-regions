@@ -2,7 +2,7 @@
   "name": "california",
   "displayName": "California",
   "description": "California civic and campaign finance data from official state government websites",
-  "version": "1.12.0",
+  "version": "1.13.0",
   "config": {
     "regionId": "california",
     "regionName": "California",
@@ -355,6 +355,7 @@
           "columnMappings": {
             "FILING_ID": "filingId",
             "AMEND_ID": "amendId",
+            "FORM_TYPE": "scheduleCode",
             "ENTITY_CD": "donorType",
             "CTRIB_NAMF": "donorFirstName",
             "CTRIB_NAML": "donorLastName",
@@ -378,7 +379,10 @@
           "Filter to recent election cycles to manage data volume",
           "CMTE_ID is deliberately NOT mapped to committeeId: it sits inside the CTRIB_* block and identifies the *contributor*, not the recipient. RCPT_CD has no FILER_ID at all, so the recipient comes from FILING_ID -> the cover page (CVR_CAMPAIGN_DISCLOSURE_CD), stamped post-sync by CoverPageLinkerService (#980).",
           "TRAN_ID is not unique across filings, so externalId is FILING_ID + LINE_ITEM + TRAN_ID. AMEND_ID is deliberately EXCLUDED from the composite key: CAL-ACCESS restates a filing's whole schedule on amendment, so including it keeps every superseded version as its own row and the cover-page linker attributes them all to the same filer. Measured on the 2026-08-09 export: RCPT_CD holds 20,177,193 rows, 20,177,187 distinct with AMEND_ID and 17,000,354 without — 3,176,833 restatements that would inflate totalRaised by ~16%. Omitting AMEND_ID lets a later amendment upsert over the earlier version (#980).",
-          "AMEND_ID is nonetheless MAPPED as a field (#992), which is not a contradiction: key collapse only merges versions that REUSE an identifier, and a restatement usually issues new TRAN_ID/LINE_ITEM values instead, so both versions survive as distinct rows — filing 2505994 stores $339,123 against an official $170,988. Persisting amend_id is what lets AmendmentSupersessionService delete every version below max(amend_id) per filing after ingest. Excluded from the key, kept as a column."
+          "AMEND_ID is nonetheless MAPPED as a field (#992), which is not a contradiction: key collapse only merges versions that REUSE an identifier, and a restatement usually issues new TRAN_ID/LINE_ITEM values instead, so both versions survive as distinct rows — filing 2505994 stores $339,123 against an official $170,988. Persisting amend_id is what lets AmendmentSupersessionService delete every version below max(amend_id) per filing after ingest. Excluded from the key, kept as a column.",
+          "FORM_TYPE is the SCHEDULE letter, and RCPT_CD is not Schedule A — it is every receipt schedule in one file. Measured on the 2026-04-05 export: A 18,205,803 rows / $28.70B (Form 460 line 1, monetary contributions), C 313,633 / $1.74B (line 4, nonmonetary), I 197,921 / $1.54B (line 14, miscellaneous increases to cash), F496P3 237,731 / $1.87B and F401A 146,291 / $0.37B (not Form 460 at all), plus A-1/E530/F900 and a handful of corrupt rows. Mapped to scheduleCode so reconciliation can compare like with like (#992).",
+          "Without scheduleCode, reconciling summed detail against Form 460 line 1 compares a mixture against one of its parts. Across all 122,033 F460 filings at their surviving amendment: Schedule A alone gives 374 filings (0.31%) where our detail exceeds the committee's own reported total, whereas summing every RCPT_CD row gives 35,712 (29.3%) — 35,339 of them false. The genuine signal is outnumbered 95:1 (#992).",
+          "Mapped to scheduleCode rather than formType on purpose: the finance router in @opuspopuli/common routes a record to filingSummaries when it carries formType AND lineItem, so naming this field formType would put contribution rows one field away from being misrouted into the summaries table."
         ]
       },
       {
@@ -395,6 +399,7 @@
           "columnMappings": {
             "FILING_ID": "filingId",
             "AMEND_ID": "amendId",
+            "FORM_TYPE": "scheduleCode",
             "PAYEE_NAML": "payeeName",
             "AMOUNT": "amount",
             "EXPN_DATE": "date",
@@ -411,7 +416,8 @@
           "EXPN_CODE values: CMP=campaign paraphernalia, CNS=consulting, CTB=contribution to other committee, FIL=candidate filing fees, FND=fundraising, LIT=campaign literature, etc.",
           "CMTE_ID is deliberately NOT mapped, for the same reason as RCPT_CD: on EXPN_CD it sits in the payee block and identifies the *payee*, not the spender. The spender comes from FILING_ID -> the cover page (#980).",
           "Same composite key as RCPT_CD, and AMEND_ID is excluded from it for the same reason. Measured on the 2026-08-09 export: EXPN_CD holds 15,742,863 rows, 13,834,048 distinct once AMEND_ID is dropped — 1,908,815 restatements that would otherwise double-count totalSpent (#980).",
-          "AMEND_ID is mapped as a field for supersession, exactly as on RCPT_CD — see that source's hint (#992)."
+          "AMEND_ID is mapped as a field for supersession, exactly as on RCPT_CD — see that source's hint (#992).",
+          "FORM_TYPE is the SCHEDULE letter here too, and it carries a trap RCPT_CD does not. Measured on the 2026-04-05 export: E 7,824,338 rows (Form 460 line 6, payments made), D 4,826,727, G 1,342,727, plus F461P5 601,993 / F465P3 93,208 / F450P5 8,621 belonging to other forms. Schedule D is a MEMO schedule — it itemizes payments supporting or opposing candidates and measures that are ALREADY counted in Schedule E, so adding D to E double-counts roughly 4.8M rows. Reconciling line 6 against expenditures requires filtering to E specifically (#992, and the lever #991 needs)."
         ]
       },
       {
