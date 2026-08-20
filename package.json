@@ -1,6 +1,6 @@
 {
   "name": "@opuspopuli/regions",
-  "version": "1.0.81",
+  "version": "1.0.82",
   "description": "Declarative region configuration files for Opus Populi civic data platform",
   "type": "module",
   "main": "dist/index.js",
