@@ -115,51 +115,22 @@
         ]
       },
       {
-        "url": "https://oag.ca.gov/initiatives",
+        "url": "https://oag.ca.gov/initiatives/active-measures",
         "dataType": "propositions",
         "sourceType": "html_scrape",
         "syncCadence": "0 2 * * *",
-        "contentGoal": "Extract proposed statewide ballot initiatives at the Attorney-General title-and-summary / circulation stage — BEFORE they qualify for the ballot. For each initiative capture: the AG initiative number (e.g. '24-0012'), the official title, the official ~100-word summary, the proponent(s), the date the title and summary were issued, its circulation status (active / inactive / qualified), and the URL of the full-text PDF. These are the initiatives whose PHYSICAL signature petitions are being circulated to voters right now, so this is the reference set the petition scanner matches a scanned sheet against.",
+        "contentGoal": "Extract currently-circulating proposed statewide ballot initiatives from the California Attorney General's Active Measures list — initiatives that have received a title and summary and are gathering signatures NOW, BEFORE they qualify for the ballot. For each initiative capture: the AG initiative number (e.g. '26-0005'), the official title, the proponent(s), the date the title and summary were issued, and the URL of the full-text PDF (which carries the official ~100-word summary). These are the initiatives whose PHYSICAL signature petitions are being circulated to voters right now, so this is the reference set the petition scanner matches a scanned sheet against.",
         "category": "Attorney General",
-        "crawlDepth": 2,
-        "crawlMaxPages": 30,
         "llmMaxTokens": 32000,
         "llmRequestTimeoutMs": 1200000,
         "hints": [
-          "The landing page oag.ca.gov/initiatives is an overview — the item lists live on the linked sub-pages '/initiatives/active-measures', '/initiatives/inactive-measures' and '/initiatives/qualified-for-ballot' (same host, in crawl scope). crawlDepth 2 reaches them; extract from those pages, not the landing page.",
-          "On each measures sub-page the items are rows of a Drupal Views table. containerSelector 'table.views-table tbody'; itemSelector 'tr' — each <tr> is exactly one initiative. Verified against the live DOM 2026-08-20.",
-          "externalId (AG number, e.g. '26-0005'): { fieldName: 'externalId', scope: 'item', selector: 'td.views-field-field-initiative-related-doc a', extractionMethod: 'text', required: true }. The anchor text is the code (wrapped in <strong>). It is the join key the petition scanner matches a scanned sheet against, and the join key to the qualified-ballot-measures source as a measure advances.",
-          "detailUrl (full-text PDF): { fieldName: 'detailUrl', scope: 'item', selector: 'td.views-field-field-initiative-related-doc a', attribute: 'href', extractionMethod: 'attribute', required: true }. Resolves to oag.ca.gov/system/files/initiatives/pdfs/*.pdf — the official initiative text.",
-          "title: { fieldName: 'title', scope: 'item', selector: 'td.views-field-field-initiative-title .left', extractionMethod: 'text', required: true }. This div.left leads with the title, then '<br><strong>Proponent(s):</strong><br> NAME <br><strong>Submitted for Title and Summary</strong> on DATE'. The title is the leading text before 'Proponent(s):'.",
+          "This IS the item-list page — do NOT crawl anywhere for the list. The initiatives are rows of a single Drupal Views table on THIS exact URL. containerSelector 'table.views-table tbody'; itemSelector 'tr' — each <tr> is one initiative. Verified against the live DOM 2026-08-20.",
+          "externalId (AG number, e.g. '26-0005'): { fieldName: 'externalId', scope: 'item', selector: 'td.views-field-field-initiative-related-doc a', extractionMethod: 'text', required: true }. The anchor text is the code (wrapped in <strong>). It is the join key the petition scanner matches a scanned sheet against.",
+          "detailUrl (full-text PDF): { fieldName: 'detailUrl', scope: 'item', selector: 'td.views-field-field-initiative-related-doc a', attribute: 'href', extractionMethod: 'attribute', required: true }. Resolves to oag.ca.gov/system/files/initiatives/pdfs/*.pdf — the official initiative text; the ~100-word summary is inside this PDF, harvested on the detail pass.",
+          "title: { fieldName: 'title', scope: 'item', selector: 'td.views-field-field-initiative-title .left', extractionMethod: 'text', required: true }. div.left leads with the title, then '<br><strong>Proponent(s):</strong><br> NAME <br><strong>Submitted for Title and Summary</strong> on DATE'. The title is the leading text before 'Proponent(s):'.",
           "proponent: same cell (td.views-field-field-initiative-title .left) — the text immediately after 'Proponent(s):'.",
-          "submittedDate: { scope: 'item', selector: 'td.views-field-field-initiative-title span.date-display-single', extractionMethod: 'text' } — e.g. 'July 22, 2026'. The machine-readable ISO form is also on that span's 'content' attribute (2026-07-22T00:00:00-07:00).",
-          "status: 'active' when crawled from /active-measures, 'inactive' from /inactive-measures, 'qualified' from /qualified-for-ballot.",
-          "NOTE the ~100-word official summary is NOT on the list page — it is inside the linked PDF. Capture detailUrl here; the summary comes from the PDF body on the detail/PDF pass."
-        ]
-      },
-      {
-        "url": "https://www.sos.ca.gov/elections/ballot-measures/initiative-and-referendum-status",
-        "dataType": "propositions",
-        "sourceType": "html_scrape",
-        "syncCadence": "0 2 * * *",
-        "statusScanCadence": "0 */6 * * *",
-        "contentGoal": "Extract the qualification-pipeline status of proposed statewide initiatives and referenda from the Secretary of State's status dashboard. The page groups measures into lifecycle buckets: Pending at the Attorney General's Office, Cleared for Circulation, Circulating (25% signatures reached), Pending Raw Count, Pending Signature Verification, Eligible for the next election, and Qualified. For each measure capture: measure/initiative number, title, proponent, the key dates (cleared-for-circulation date and signature deadline), and its current lifecycle status/stage. This identifies WHICH initiatives are actively circulating right now — the scoping signal for which physical petitions a citizen could plausibly be handed this month.",
-        "category": "Secretary of State",
-        "crawlDepth": 2,
-        "crawlMaxPages": 30,
-        "llmMaxTokens": 32000,
-        "llmRequestTimeoutMs": 1200000,
-        "hints": [
-          "The landing page is a dashboard of status categories; per-measure detail lives on the linked per-status sub-pages (same host, in crawl scope) — crawlDepth 2 reaches them. Verified sub-page URLs (2026-08-20): '/initiative-and-referendum-status/initiatives-referenda-cleared-circulation', '/circulating-initiatives-25percent-signatures', '/initiatives-and-referenda-pending-signature-verification', '/eligible-statewide-initiative-measures', '/failed-qualify'.",
-          "These sub-pages have NO <table>. Each measure is a group of consecutive <p> tags in the main content: (1) a <p> like '<strong>2019. </strong>(<a href=\"https://oag.ca.gov/system/files/initiatives/pdfs/26-0001%20(...).pdf\">26-0001</a>)<br><strong>TITLE IN CAPS</strong>'; (2) a <p> like '<em>Summary Date: 04/07/26 | Circulation Deadline 10/05/26 | Signatures Required: 874,641</em><br>Proponent(s): NAME'; (3) a <p> with the plain-language description.",
-          "Segment items on the FIRST <p> of each group — a <p> whose first child is a <strong> number label immediately followed by an <a> whose href points to an oag.ca.gov initiatives PDF. That <a>'s text is the item's externalId.",
-          "externalId (AG number, e.g. '26-0001'): the <a> text in the first <p>. This is the SAME code as the OAG source and the qualified-ballot-measures source — join on it so a measure is not duplicated as it advances across sources.",
-          "title: the <strong> that follows the <br> in the first <p> (the all-caps official title).",
-          "circulationDeadline: parse 'Circulation Deadline MM/DD/YY' out of the <em> line in the second <p>. A past deadline means the petition is no longer collectable and the scanner should say so.",
-          "signaturesRequired: parse 'Signatures Required: N' from the same <em> line; summaryDate: parse 'Summary Date: MM/DD/YY' from it.",
-          "proponent: the text after 'Proponent(s):' in the second <p>.",
-          "detailUrl: the oag.ca.gov PDF href in the first <p> — the full initiative text lives on the AG's site, not here.",
-          "status/stage (kebab-case, derived from which sub-page the item came from): 'cleared-for-circulation', 'circulating-25-percent', 'pending-signature-verification', 'eligible', 'failed-qualify'."
+          "submittedDate: { scope: 'item', selector: 'td.views-field-field-initiative-title span.date-display-single', extractionMethod: 'text' } — e.g. 'July 22, 2026'; the ISO form is also on that span's 'content' attribute.",
+          "status: every item on this page is actively circulating — set status 'active' (the 'cleared-for-circulation' lifecycle stage)."
         ]
       },
       {
