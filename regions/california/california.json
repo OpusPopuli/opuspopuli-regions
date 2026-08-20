@@ -115,6 +115,46 @@
         ]
       },
       {
+        "url": "https://oag.ca.gov/initiatives",
+        "dataType": "propositions",
+        "sourceType": "html_scrape",
+        "syncCadence": "0 2 * * *",
+        "contentGoal": "Extract proposed statewide ballot initiatives at the Attorney-General title-and-summary / circulation stage — BEFORE they qualify for the ballot. For each initiative capture: the AG initiative number (e.g. '24-0012'), the official title, the official ~100-word summary, the proponent(s), the date the title and summary were issued, its circulation status (active / inactive / qualified), and the URL of the full-text PDF. These are the initiatives whose PHYSICAL signature petitions are being circulated to voters right now, so this is the reference set the petition scanner matches a scanned sheet against.",
+        "category": "Attorney General",
+        "crawlDepth": 2,
+        "crawlMaxPages": 30,
+        "llmMaxTokens": 32000,
+        "llmRequestTimeoutMs": 1200000,
+        "hints": [
+          "The landing page oag.ca.gov/initiatives is an overview — the item lists live on the linked sub-pages 'Active Measures', 'Inactive Measures' and 'Qualified for Ballot' (same host, in crawl scope). crawlDepth must reach those.",
+          "Each initiative exposes an AG number like '24-0012' — capture verbatim as externalId; it is the join key the petition scanner matches a scanned sheet against, and the join key to the qualified-ballot-measures source as a measure advances.",
+          "Capture BOTH the official title and the official ~100-word summary — the summary is the text we surface to a citizen deciding whether to sign.",
+          "Full initiative text is a linked PDF — capture its href as detailUrl; PDF body extraction can follow on the detail pass.",
+          "status: derive from which section the item was found in — 'active' (circulating), 'inactive' (failed/withdrawn), or 'qualified'.",
+          "Exact container/item selectors are UNVERIFIED against the live DOM and must be tuned on the first crawl — do NOT assume the qualified-ballot-measures selectors apply here; this is a different site (oag.ca.gov, not sos.ca.gov)."
+        ]
+      },
+      {
+        "url": "https://www.sos.ca.gov/elections/ballot-measures/initiative-and-referendum-status",
+        "dataType": "propositions",
+        "sourceType": "html_scrape",
+        "syncCadence": "0 2 * * *",
+        "statusScanCadence": "0 */6 * * *",
+        "contentGoal": "Extract the qualification-pipeline status of proposed statewide initiatives and referenda from the Secretary of State's status dashboard. The page groups measures into lifecycle buckets: Pending at the Attorney General's Office, Cleared for Circulation, Circulating (25% signatures reached), Pending Raw Count, Pending Signature Verification, Eligible for the next election, and Qualified. For each measure capture: measure/initiative number, title, proponent, the key dates (cleared-for-circulation date and signature deadline), and its current lifecycle status/stage. This identifies WHICH initiatives are actively circulating right now — the scoping signal for which physical petitions a citizen could plausibly be handed this month.",
+        "category": "Secretary of State",
+        "crawlDepth": 2,
+        "crawlMaxPages": 30,
+        "llmMaxTokens": 32000,
+        "llmRequestTimeoutMs": 1200000,
+        "hints": [
+          "The landing page is a dashboard of status categories with counts; per-measure detail lives on the linked per-status pages (Cleared for Circulation, Pending Signature Verification, etc.) — same host, in crawl scope. crawlDepth must reach them.",
+          "Model the status bucket a measure appears under as its lifecycle stage — use kebab-case ids consistent with the civics lifecycleStages: 'cleared-for-circulation', 'circulating-25-percent', 'pending-raw-count', 'pending-signature-verification', 'eligible', 'qualified-for-ballot'.",
+          "These are the SAME proposition entity as the qualified-ballot-measures source, one lifecycle step earlier — join on the measure/initiative number so a measure is not duplicated as it advances from circulating to qualified.",
+          "Capture the signature deadline where shown — a past deadline means the petition is no longer collectable and the scanner should say so.",
+          "Exact selectors are UNVERIFIED against the live DOM and must be tuned on the first crawl."
+        ]
+      },
+      {
         "url": "https://www.assembly.ca.gov/schedules-publications/daily-file",
         "dataType": "meetings",
         "syncCadence": "0 2 * * *",
