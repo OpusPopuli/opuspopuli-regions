@@ -142,7 +142,7 @@
             "sheet": 1,
             "labelColumn": 0,
             "skipRowPattern": "^\\s*Percent",
-            "excludeLabels": ["State Totals"],
+            "excludeLabels": ["State Total"],
             "valueColumn": 2,
             "asOf": "2025-02-10"
           }
@@ -150,7 +150,8 @@
         "hints": [
           "Columns are County | Eligible | Total Registered | party breakdowns — valueColumn 2 is Total Registered, NOT Eligible",
           "Display only. Registered voters are never the \u00a79118 basis for a county initiative",
-          "Republished several times a year, which is why this is a sync rather than a one-shot backfill"
+          "Republished several times a year, which is why this is a sync rather than a one-shot backfill",
+          "Its aggregate row is \"State Total\" (singular). The Statement of Vote says \"State Totals\" (plural) — the two files genuinely differ, so do not \"correct\" this to match the other source. Getting it wrong counts the state total as a 59th county and silently skips the reconciliation."
         ]
       },
       {
