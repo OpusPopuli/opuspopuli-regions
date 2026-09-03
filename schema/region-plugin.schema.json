@@ -301,7 +301,8 @@
             "campaign_finance",
             "lobbying",
             "civics",
-            "bills"
+            "bills",
+            "county_thresholds"
           ],
           "description": "What type of content this source provides. Daily journals / meeting minutes go under 'meetings' with sourceType=pdf_archive — the consumer partitions by sourceType internally. 'civics' marks a source of region governmental structure, process, and vocabulary; the civics-ingest handler scrapes it and uses the private prompt-service to extract structured shape (chambers, measure types, lifecycle stages with status patterns, glossary) plus a plain-language rewrite for laypeople. Verbatim source text and the AI rewrite are stored together — never one without the other. 'bills' marks a source of individual legislative bills (AB, SB, ACA, SCA, etc.) scraped from an official legislature website; the bills-ingest handler BFS-crawls from the seed URL and extracts one Bill record per detail page. See opuspopuli#686."
         },
@@ -436,12 +437,24 @@
     },
     "BulkDownloadConfig": {
       "type": "object",
-      "required": ["format", "columnMappings"],
+      "required": ["format"],
+      "allOf": [
+        {
+          "$comment": "columnMappings stays mandatory for the delimited formats. xlsx sheets are pivot-shaped — a header row per attribute, one column per candidate — so they carry no stable column names to map; their layout is described by the xlsx object and interpreted by the domain handler that consumes them.",
+          "if": {
+            "properties": {
+              "format": { "enum": ["tsv", "csv", "zip_tsv", "zip_csv"] }
+            },
+            "required": ["format"]
+          },
+          "then": { "required": ["columnMappings"] }
+        }
+      ],
       "additionalProperties": false,
       "properties": {
         "format": {
           "type": "string",
-          "enum": ["tsv", "csv", "zip_tsv", "zip_csv"],
+          "enum": ["tsv", "csv", "zip_tsv", "zip_csv", "xlsx"],
           "description": "File format"
         },
         "filePattern": {
@@ -482,6 +495,50 @@
           "type": "integer",
           "minimum": 1,
           "description": "Records per batch for streaming processing (default: 10000)"
+        },
+        "xlsx": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Layout of a pivot-shaped .xlsx sheet, read by the domain handler that consumes the source rather than by the generic bulk path.",
+          "properties": {
+            "sheet": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "1-based worksheet number (default 1)"
+            },
+            "labelColumn": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Column holding the row label, e.g. the county name (default 0)"
+            },
+            "skipRowPattern": {
+              "type": "string",
+              "description": "Rows whose label matches are not data. These files interleave a Percent row after every county; matching by pattern rather than position survives a vintage that adds a row."
+            },
+            "excludeLabels": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Aggregate rows such as 'State Totals'. Reconciled against the sum of the members before being excluded — that check is what proves the parse read the right columns."
+            },
+            "sumAllValueColumns": {
+              "type": "boolean",
+              "description": "Sum every numeric column on the row. Elections Code §9118 counts votes cast for ALL candidates, not the winner's total, so reading a single column understates every threshold."
+            },
+            "valueColumn": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Read a single 0-based column instead of summing"
+            },
+            "electionYear": {
+              "type": "integer",
+              "description": "Election year the figures describe, when the file itself does not say"
+            },
+            "asOf": {
+              "type": "string",
+              "format": "date",
+              "description": "Publication date of the figures, ISO YYYY-MM-DD"
+            }
+          }
         }
       }
     },

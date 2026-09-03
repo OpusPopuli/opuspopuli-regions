@@ -141,6 +141,34 @@ const FIELDS: Record<string, FieldSpec[]> = {
       warnMessage: 'usually in page text; add hint to contentGoal',
     },
   ],
+  // Not an HTML scrape. These come from official spreadsheets declared as
+  // bulk_download sources with an `xlsx` layout, so there are no CSS selectors
+  // to detect and every field is flagged manual. Listed here because the data
+  // type still needs describing — a reader asking "what must a region supply
+  // for county thresholds?" should find the answer in the same place as every
+  // other type.
+  county_thresholds: [
+    {
+      name: 'countyLabel',
+      detection: 'manual',
+      alwaysWarn: true,
+      warnMessage:
+        'spreadsheet source: set bulk.xlsx.labelColumn, not a selector',
+    },
+    {
+      name: 'gubernatorialVotes',
+      detection: 'manual',
+      alwaysWarn: true,
+      warnMessage:
+        'Elections Code §9118 counts ALL candidates — set bulk.xlsx.sumAllValueColumns, never a single column',
+    },
+    {
+      name: 'registeredVoters',
+      detection: 'manual',
+      warnMessage:
+        'second source (Report of Registration): set bulk.xlsx.valueColumn',
+    },
+  ],
 };
 
 export function getRequiredFields(dataType: string): FieldSpec[] {
