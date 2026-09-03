@@ -26,6 +26,7 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
+      - run: pnpm format:check
       # Build runs `pnpm generate:types` via the `prebuild` hook, which
       # regenerates `src/cli/lib/generated-types.ts` from the schema. If
       # the regenerated file differs from the committed one, fail the

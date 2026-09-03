@@ -1,0 +1,8 @@
+dist
+coverage
+node_modules
+pnpm-lock.yaml
+# Generated from the JSON schema by `pnpm generate:types` — formatting it
+# here would be overwritten on the next generation and shows up as drift
+# in the CI type-generation check.
+src/cli/lib/generated-types.ts

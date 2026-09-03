@@ -34,11 +34,17 @@
     "lint": "eslint .",
     "lint:sonar": "eslint . --config eslint.sonar.config.mjs",
     "jscpd": "jscpd",
-    "prepare": "husky"
+    "prepare": "husky",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "lint-staged": {
     "**/*.ts": [
-      "pnpm lint"
+      "pnpm lint",
+      "prettier --write"
+    ],
+    "**/*.{json,md,yml,yaml}": [
+      "prettier --write"
     ]
   },
   "repository": {
@@ -74,6 +80,7 @@
     "jscpd": "^4.1.0",
     "json-schema-to-typescript": "^15.0.4",
     "lint-staged": "^15.2.10",
+    "prettier": "^3.4.2",
     "ts-jest": "^29.2.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
