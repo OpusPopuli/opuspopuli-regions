@@ -4,17 +4,32 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadConfigsOrExit } from '../lib/cli-helpers.js';
 import { fetchHtml } from '../lib/fetcher.js';
-import { checkSelectors, hasSelectorsToCheck, type SelectorCheckResult } from '../lib/selector-checker.js';
-import { checkContentGoalCoverage, type GoalCoverageResult } from '../lib/contentgoal-checker.js';
+import {
+  checkSelectors,
+  hasSelectorsToCheck,
+  type SelectorCheckResult,
+} from '../lib/selector-checker.js';
+import {
+  checkContentGoalCoverage,
+  type GoalCoverageResult,
+} from '../lib/contentgoal-checker.js';
 import { simplifyHtml } from '../lib/html-simplifier.js';
 import { buildStructuralPrompt } from '../lib/prompts/structural-analysis.js';
-import { analyzeWithOllama, checkOllamaReachable } from '../lib/ollama-analyzer.js';
+import {
+  analyzeWithOllama,
+  checkOllamaReachable,
+} from '../lib/ollama-analyzer.js';
 import { buildDataSourceConfig } from '../lib/manifest-to-config.js';
 import { getRequiredFields } from '../lib/required-fields.js';
-import type { DataSourceConfig, RegionPluginFile } from '../lib/config-loader.js';
+import type {
+  DataSourceConfig,
+  RegionPluginFile,
+} from '../lib/config-loader.js';
 
 function packageVersion(): string {
-  const pkg = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf-8')) as { version: string };
+  const pkg = JSON.parse(
+    readFileSync(join(process.cwd(), 'package.json'), 'utf-8'),
+  ) as { version: string };
   return pkg.version;
 }
 
@@ -38,7 +53,9 @@ function printSelectorResults(results: SelectorCheckResult[]): void {
   for (const r of results) {
     const icon = r.found ? chalk.green('✓') : chalk.red('✗');
     const label = `${r.origin}.${r.field}`.padEnd(34);
-    const detail = r.found ? `${r.count} match(es)` : chalk.red(`0 matches — selector stale or page restructured`);
+    const detail = r.found
+      ? `${r.count} match(es)`
+      : chalk.red(`0 matches — selector stale or page restructured`);
     console.log(`    ${icon} ${label} "${r.selector}"  ${detail}`);
   }
 }
@@ -52,16 +69,27 @@ function printGoalResults(results: GoalCoverageResult[]): void {
   }
 }
 
-async function runOllamaReview(url: string, dataType: string, html: string): Promise<void> {
+async function runOllamaReview(
+  url: string,
+  dataType: string,
+  html: string,
+): Promise<void> {
   console.log('\n  AI re-analysis (suggested update):');
   try {
     const fields = getRequiredFields(dataType).map((f) => f.name);
-    const analysis = await analyzeWithOllama(buildStructuralPrompt(url, dataType, fields, simplifyHtml(html)));
+    const analysis = await analyzeWithOllama(
+      buildStructuralPrompt(url, dataType, fields, simplifyHtml(html)),
+    );
     const suggested = buildDataSourceConfig(url, dataType, analysis);
-    const lines = JSON.stringify(suggested, null, 2).split('\n').map((l) => `  ${l}`).join('\n');
+    const lines = JSON.stringify(suggested, null, 2)
+      .split('\n')
+      .map((l) => `  ${l}`)
+      .join('\n');
     console.log(chalk.dim(lines));
   } catch (err) {
-    console.log(`  ${chalk.yellow('⚠ AI analysis failed:')} ${err instanceof Error ? err.message : err}`);
+    console.log(
+      `  ${chalk.yellow('⚠ AI analysis failed:')} ${err instanceof Error ? err.message : err}`,
+    );
   }
 }
 
@@ -82,7 +110,9 @@ async function reviewDataSource(
   }
 
   const { html, bytes, ms } = fetched;
-  console.log(`  ${chalk.green('✓')} Fetched (${(bytes / 1024).toFixed(0)}kB, ${ms}ms)`);
+  console.log(
+    `  ${chalk.green('✓')} Fetched (${(bytes / 1024).toFixed(0)}kB, ${ms}ms)`,
+  );
 
   const { selectorIssues, goalIssues } = collectIssues(ds, html);
 
@@ -93,7 +123,10 @@ async function reviewDataSource(
   printGoalResults(checkContentGoalCoverage(ds));
 
   const totalIssues = selectorIssues.length + goalIssues.length;
-  const verdict = totalIssues === 0 ? chalk.green('✓ OK') : chalk.yellow(`⚠ NEEDS REVIEW (${totalIssues} issue(s))`);
+  const verdict =
+    totalIssues === 0
+      ? chalk.green('✓ OK')
+      : chalk.yellow(`⚠ NEEDS REVIEW (${totalIssues} issue(s))`);
   console.log(`\n  ${verdict}`);
 
   if (runOllama) await runOllamaReview(ds.url, ds.dataType, html);
@@ -104,8 +137,13 @@ async function reviewDataSource(
 export function registerReview(program: Command): void {
   program
     .command('review [path]')
-    .description('Review existing configs — check selectors and contentGoal coverage against live pages')
-    .option('--test', 'Also run AI re-analysis via local Ollama and show suggested update')
+    .description(
+      'Review existing configs — check selectors and contentGoal coverage against live pages',
+    )
+    .option(
+      '--test',
+      'Also run AI re-analysis via local Ollama and show suggested update',
+    )
     .action(async (pathArg?: string, opts: { test?: boolean } = {}) => {
       const doTest = opts.test === true;
       const entries = loadConfigsOrExit(pathArg);
@@ -113,8 +151,12 @@ export function registerReview(program: Command): void {
 
       if (doTest) {
         const host = process.env['OLLAMA_BASE_URL'] ?? 'http://127.0.0.1:11434';
-        if (!await checkOllamaReachable(host)) {
-          console.error(chalk.red(`Ollama not reachable at ${host}. Start Ollama or omit --test.`));
+        if (!(await checkOllamaReachable(host))) {
+          console.error(
+            chalk.red(
+              `Ollama not reachable at ${host}. Start Ollama or omit --test.`,
+            ),
+          );
           process.exit(1);
         }
         console.log(`${chalk.green('✓')} Ollama reachable\n`);
@@ -132,9 +174,12 @@ export function registerReview(program: Command): void {
       }
 
       console.log('');
-      const summary = needsReview > 0
-        ? chalk.yellow(`${needsReview} of ${totalSources} data source(s) need review.`)
-        : chalk.green(`All ${totalSources} data source(s) look good.`);
+      const summary =
+        needsReview > 0
+          ? chalk.yellow(
+              `${needsReview} of ${totalSources} data source(s) need review.`,
+            )
+          : chalk.green(`All ${totalSources} data source(s) look good.`);
       console.log(summary);
       if (needsReview > 0) process.exit(1);
     });

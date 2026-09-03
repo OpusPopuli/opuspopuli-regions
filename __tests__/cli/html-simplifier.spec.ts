@@ -3,7 +3,8 @@ import { simplifyHtml } from '../../src/cli/lib/html-simplifier';
 describe('simplifyHtml', () => {
   describe('element stripping', () => {
     it('removes script tags', () => {
-      const html = '<html><body><p>keep</p><script>alert(1)</script></body></html>';
+      const html =
+        '<html><body><p>keep</p><script>alert(1)</script></body></html>';
       const out = simplifyHtml(html);
       expect(out).toContain('<p>keep</p>');
       expect(out).not.toContain('script');
@@ -66,8 +67,7 @@ describe('simplifyHtml', () => {
     });
 
     it('leaves elements with 3 or fewer classes unchanged', () => {
-      const html =
-        '<html><body><div class="alpha beta">x</div></body></html>';
+      const html = '<html><body><div class="alpha beta">x</div></body></html>';
       const out = simplifyHtml(html);
       expect(out).toMatch(/class="alpha beta"/);
     });

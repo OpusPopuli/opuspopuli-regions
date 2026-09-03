@@ -13,7 +13,8 @@ function makeDs(overrides: Partial<DataSourceConfig>): DataSourceConfig {
 describe('checkContentGoalCoverage — representatives', () => {
   it('passes when all fields and externalId construction rule are present', () => {
     const ds = makeDs({
-      contentGoal: 'Extract name, district, phone, email, photoUrl, detailUrl. Construct externalId as "california-test-supervisor-{district}".',
+      contentGoal:
+        'Extract name, district, phone, email, photoUrl, detailUrl. Construct externalId as "california-test-supervisor-{district}".',
     });
     const results = checkContentGoalCoverage(ds);
     expect(results.every((r) => r.covered)).toBe(true);
@@ -31,7 +32,9 @@ describe('checkContentGoalCoverage — representatives', () => {
   it('covers externalId when hints mention "construct"', () => {
     const ds = makeDs({
       contentGoal: 'Extract name, district, phone, email, photoUrl, detailUrl.',
-      hints: ["construct externalId as 'california-test-supervisor-{district}'"],
+      hints: [
+        "construct externalId as 'california-test-supervisor-{district}'",
+      ],
     });
     const results = checkContentGoalCoverage(ds);
     const extId = results.find((r) => r.field === 'externalId');
@@ -45,7 +48,12 @@ describe('checkContentGoalCoverage — representatives', () => {
         containerSelector: '.container',
         itemSelector: '.item',
         fieldMappings: [
-          { fieldName: 'externalId', selector: 'h3 a', extractionMethod: 'text', required: true },
+          {
+            fieldName: 'externalId',
+            selector: 'h3 a',
+            extractionMethod: 'text',
+            required: true,
+          },
         ],
       },
     });
@@ -67,7 +75,9 @@ describe('checkContentGoalCoverage — representatives', () => {
   it('finds field mentioned in hints even if absent from contentGoal', () => {
     const ds = makeDs({
       contentGoal: 'Extract supervisors.',
-      hints: ['Use EXACT field names: name, district, phone, email, photoUrl, detailUrl'],
+      hints: [
+        'Use EXACT field names: name, district, phone, email, photoUrl, detailUrl',
+      ],
     });
     const results = checkContentGoalCoverage(ds);
     const email = results.find((r) => r.field === 'email');
@@ -91,7 +101,8 @@ describe('checkContentGoalCoverage — meetings', () => {
   it('checks meetings-specific fields', () => {
     const ds = makeDs({
       dataType: 'meetings',
-      contentGoal: 'Extract title, scheduledAt, location, agendaUrl, minutesUrl.',
+      contentGoal:
+        'Extract title, scheduledAt, location, agendaUrl, minutesUrl.',
       hints: ["construct externalId as 'meeting-{date}'"],
     });
     const results = checkContentGoalCoverage(ds);

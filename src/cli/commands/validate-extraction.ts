@@ -1,12 +1,22 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { type RegionPluginFile } from '../lib/config-loader.js';
-import { detectFields, type FieldDetectionResult } from '../lib/field-detector.js';
-import { getRequiredFields, checkFieldDetection } from '../lib/required-fields.js';
+import {
+  detectFields,
+  type FieldDetectionResult,
+} from '../lib/field-detector.js';
+import {
+  getRequiredFields,
+  checkFieldDetection,
+} from '../lib/required-fields.js';
 import { fetchHtml } from '../lib/fetcher.js';
 import { loadConfigsOrExit } from '../lib/cli-helpers.js';
 
-function printPageSummary(detection: FieldDetectionResult, kb: string, ms: number): void {
+function printPageSummary(
+  detection: FieldDetectionResult,
+  kb: string,
+  ms: number,
+): void {
   console.log(`  ${chalk.green('✓')} Fetched (${kb}kB, ${ms}ms)`);
   console.log(`  Page type:  ${detection.pageType}`);
   if (detection.headings.length > 0) {
@@ -16,12 +26,17 @@ function printPageSummary(detection: FieldDetectionResult, kb: string, ms: numbe
   console.log(`  Images:     ${detection.imageCount} found`);
 }
 
-function printFieldChecks(dataType: string, detection: FieldDetectionResult): number {
+function printFieldChecks(
+  dataType: string,
+  detection: FieldDetectionResult,
+): number {
   console.log('');
   console.log(`  Required fields for '${dataType}':`);
   const fields = getRequiredFields(dataType);
   if (fields.length === 0) {
-    console.log(chalk.dim(`    (no field spec defined for dataType '${dataType}')`));
+    console.log(
+      chalk.dim(`    (no field spec defined for dataType '${dataType}')`),
+    );
     return 0;
   }
   let warnings = 0;
@@ -61,7 +76,9 @@ async function processDataSource(
 export function registerValidateExtraction(program: Command): void {
   program
     .command('validate-extraction [path]')
-    .description('Check whether required fields for each dataType are detectable in page content')
+    .description(
+      'Check whether required fields for each dataType are detectable in page content',
+    )
     .action(async (pathArg?: string) => {
       const entries = loadConfigsOrExit(pathArg);
       let totalSources = 0;
@@ -74,9 +91,12 @@ export function registerValidateExtraction(program: Command): void {
         }
       }
 
-      const summary = warningCount > 0
-        ? chalk.yellow(`${warningCount} warning(s) need attention before syncing.`)
-        : chalk.green('All field checks passed.');
+      const summary =
+        warningCount > 0
+          ? chalk.yellow(
+              `${warningCount} warning(s) need attention before syncing.`,
+            )
+          : chalk.green('All field checks passed.');
       console.log(`Checked ${totalSources} data source(s). ${summary}`);
       if (warningCount > 0) process.exit(1);
     });

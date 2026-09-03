@@ -1,8 +1,14 @@
 import * as cheerio from 'cheerio';
 
 const STRIP_SELECTORS = [
-  'script', 'style', 'noscript', 'svg', 'iframe',
-  'link[rel="stylesheet"]', 'meta', 'head',
+  'script',
+  'style',
+  'noscript',
+  'svg',
+  'iframe',
+  'link[rel="stylesheet"]',
+  'meta',
+  'head',
 ];
 const MAX_CHARS = 12_000;
 
@@ -14,5 +20,7 @@ export function simplifyHtml(html: string, maxChars = MAX_CHARS): string {
     if (trimmed) $(el).attr('class', trimmed);
   });
   const out = $('body').html() ?? $.html();
-  return out.length > maxChars ? out.slice(0, maxChars) + '\n<!-- [truncated] -->' : out;
+  return out.length > maxChars
+    ? out.slice(0, maxChars) + '\n<!-- [truncated] -->'
+    : out;
 }

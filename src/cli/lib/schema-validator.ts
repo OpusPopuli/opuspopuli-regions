@@ -3,7 +3,9 @@ import addFormats from 'ajv-formats';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-export type ValidationResult = { valid: true } | { valid: false; errors: string[] };
+export type ValidationResult =
+  | { valid: true }
+  | { valid: false; errors: string[] };
 
 // ajv and ajv-formats use CJS `export =` which TypeScript NodeNext ESM strict mode
 // won't let you `new` or call without an explicit cast. These local aliases reflect
@@ -41,12 +43,17 @@ function getValidator(schemaPath: string): ValidateFn {
   return validate;
 }
 
-export function validateRegionFile(data: unknown, schemaPath?: string): ValidationResult {
+export function validateRegionFile(
+  data: unknown,
+  schemaPath?: string,
+): ValidationResult {
   const validate = getValidator(schemaPath ?? defaultSchemaPath());
   const valid = validate(data);
   if (valid) return { valid: true };
   return {
     valid: false,
-    errors: (validate.errors ?? []).map((e) => `${e.instancePath || '/'} ${e.message ?? 'invalid'}`),
+    errors: (validate.errors ?? []).map(
+      (e) => `${e.instancePath || '/'} ${e.message ?? 'invalid'}`,
+    ),
   };
 }

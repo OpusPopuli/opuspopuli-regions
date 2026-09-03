@@ -63,7 +63,13 @@ describe('FIELDS map ↔ schema dataType enum (issue #41 cross-check)', () => {
   // test fails until `required-fields.ts` is updated to match. Otherwise
   // the new dataType would silently return [] from getRequiredFields().
   it('covers every dataType in the schema enum', () => {
-    const schemaPath = join(__dirname, '..', '..', 'schema', 'region-plugin.schema.json');
+    const schemaPath = join(
+      __dirname,
+      '..',
+      '..',
+      'schema',
+      'region-plugin.schema.json',
+    );
     const schema = JSON.parse(readFileSync(schemaPath, 'utf-8')) as {
       definitions: {
         DataSourceConfig: {

@@ -13,10 +13,15 @@ export type FieldDetectionResult = {
 
 const PHONE_RE = /\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}/;
 const EMAIL_RE = /[\w.+-]{1,64}@[\w-]{1,63}(?:\.[\w-]{1,63})+/;
-const LONG_DATE_RE = /\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}/gi;
+const LONG_DATE_RE =
+  /\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}/gi;
 const SHORT_DATE_RE = /\d{1,2}\/\d{1,2}\/\d{2,4}/gi;
 
-function inferPageType(listItems: number, cardItems: number, headings: string[]): 'detail' | 'listing' | 'unknown' {
+function inferPageType(
+  listItems: number,
+  cardItems: number,
+  headings: string[],
+): 'detail' | 'listing' | 'unknown' {
   if (listItems > 8 || cardItems > 3) return 'listing';
   if (headings.length > 0) return 'detail';
   return 'unknown';
@@ -36,7 +41,12 @@ export function detectFields(html: string): FieldDetectionResult {
   let hasRelativeImages = false;
   images.each((_, el) => {
     const src = $(el).attr('src') ?? $(el).attr('data-src') ?? '';
-    if (src && !src.startsWith('http') && !src.startsWith('//') && !src.startsWith('data:')) {
+    if (
+      src &&
+      !src.startsWith('http') &&
+      !src.startsWith('//') &&
+      !src.startsWith('data:')
+    ) {
       hasRelativeImages = true;
     }
   });
@@ -50,7 +60,9 @@ export function detectFields(html: string): FieldDetectionResult {
 
   const linkCount = $('a[href]').length;
   const listItems = $('li, tr').length;
-  const cardItems = $('[class*="card"], [class*="member"], [class*="item"], [class*="row"], [class*="supervisor"]').length;
+  const cardItems = $(
+    '[class*="card"], [class*="member"], [class*="item"], [class*="row"], [class*="supervisor"]',
+  ).length;
 
   return {
     pageType: inferPageType(listItems, cardItems, headings),

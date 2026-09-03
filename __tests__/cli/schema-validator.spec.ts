@@ -1,7 +1,13 @@
 import { join } from 'node:path';
 import { validateRegionFile } from '../../src/cli/lib/schema-validator';
 
-const SCHEMA_PATH = join(__dirname, '..', '..', 'schema', 'region-plugin.schema.json');
+const SCHEMA_PATH = join(
+  __dirname,
+  '..',
+  '..',
+  'schema',
+  'region-plugin.schema.json',
+);
 
 const VALID_CONFIG = {
   name: 'california-test-county',
@@ -33,16 +39,22 @@ describe('validateRegionFile', () => {
   });
 
   it('returns valid:false when name is missing', () => {
-    const rest = Object.fromEntries(Object.entries(VALID_CONFIG).filter(([k]) => k !== 'name'));
+    const rest = Object.fromEntries(
+      Object.entries(VALID_CONFIG).filter(([k]) => k !== 'name'),
+    );
     const result = validateRegionFile(rest, SCHEMA_PATH);
     expect(result.valid).toBe(false);
   });
 
   it('returns errors listing missing field', () => {
-    const rest = Object.fromEntries(Object.entries(VALID_CONFIG).filter(([k]) => k !== 'name'));
+    const rest = Object.fromEntries(
+      Object.entries(VALID_CONFIG).filter(([k]) => k !== 'name'),
+    );
     const result = validateRegionFile(rest, SCHEMA_PATH);
     if (!result.valid) {
-      expect(result.errors.some((e) => e.includes('name') || e.includes('required'))).toBe(true);
+      expect(
+        result.errors.some((e) => e.includes('name') || e.includes('required')),
+      ).toBe(true);
     }
   });
 
@@ -51,7 +63,9 @@ describe('validateRegionFile', () => {
       ...VALID_CONFIG,
       config: {
         ...VALID_CONFIG.config,
-        dataSources: [{ ...VALID_CONFIG.config.dataSources[0], dataType: 'invalid_type' }],
+        dataSources: [
+          { ...VALID_CONFIG.config.dataSources[0], dataType: 'invalid_type' },
+        ],
       },
     };
     const result = validateRegionFile(config, SCHEMA_PATH);
@@ -63,7 +77,9 @@ describe('validateRegionFile', () => {
       ...VALID_CONFIG,
       config: {
         ...VALID_CONFIG.config,
-        dataSources: [{ ...VALID_CONFIG.config.dataSources[0], url: 'not-a-url' }],
+        dataSources: [
+          { ...VALID_CONFIG.config.dataSources[0], url: 'not-a-url' },
+        ],
       },
     };
     const result = validateRegionFile(config, SCHEMA_PATH);
@@ -71,7 +87,10 @@ describe('validateRegionFile', () => {
   });
 
   it('returns valid:false when dataSources is empty', () => {
-    const config = { ...VALID_CONFIG, config: { ...VALID_CONFIG.config, dataSources: [] } };
+    const config = {
+      ...VALID_CONFIG,
+      config: { ...VALID_CONFIG.config, dataSources: [] },
+    };
     const result = validateRegionFile(config, SCHEMA_PATH);
     expect(result.valid).toBe(false);
   });

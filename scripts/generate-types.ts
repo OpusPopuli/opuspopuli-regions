@@ -14,13 +14,7 @@ import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const SCHEMA_PATH = join(process.cwd(), 'schema', 'region-plugin.schema.json');
-const OUT_PATH = join(
-  process.cwd(),
-  'src',
-  'cli',
-  'lib',
-  'generated-types.ts',
-);
+const OUT_PATH = join(process.cwd(), 'src', 'cli', 'lib', 'generated-types.ts');
 
 const BANNER = `/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-empty-object-type */
 /**

@@ -42,9 +42,9 @@ pnpm cli check-urls [path]
 
 ### Arguments
 
-| Argument | Description | Default |
-|---|---|---|
-| `path` | Path to a `.json` config file or a directory to walk recursively | `./regions/` |
+| Argument | Description                                                      | Default      |
+| -------- | ---------------------------------------------------------------- | ------------ |
+| `path`   | Path to a `.json` config file or a directory to walk recursively | `./regions/` |
 
 ### Output
 
@@ -92,9 +92,9 @@ pnpm cli validate-extraction [path]
 
 ### Arguments
 
-| Argument | Description | Default |
-|---|---|---|
-| `path` | Path to a `.json` config file or a directory | `./regions/` |
+| Argument | Description                                  | Default      |
+| -------- | -------------------------------------------- | ------------ |
+| `path`   | Path to a `.json` config file or a directory | `./regions/` |
 
 ### Output
 
@@ -137,21 +137,22 @@ pnpm cli config-region [options]
 
 ### Options
 
-| Option | Description |
-|---|---|
-| `--url <url>` | URL to analyze |
+| Option              | Description                                                                                                 |
+| ------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `--url <url>`       | URL to analyze                                                                                              |
 | `--dataType <type>` | Data type: `representatives`, `meetings`, `propositions`, `campaign_finance`, `lobbying`, `civics`, `bills` |
-| `--config <path>` | Path to an existing region config — tests all its data sources |
-| `--state <state>` | State slug for `--init` (e.g., `california`) |
-| `--county <county>` | County slug for `--init` (e.g., `santa-cruz`) |
-| `--fips <code>` | 5-digit FIPS code for `--init` (e.g., `06087`) |
-| `--test` | Run AI analysis via local Ollama. **Requires Ollama running.** |
-| `--init` | Write the region config file to `regions/<state>/counties/<county>/` |
-| `--force` | Overwrite an existing config file |
+| `--config <path>`   | Path to an existing region config — tests all its data sources                                              |
+| `--state <state>`   | State slug for `--init` (e.g., `california`)                                                                |
+| `--county <county>` | County slug for `--init` (e.g., `santa-cruz`)                                                               |
+| `--fips <code>`     | 5-digit FIPS code for `--init` (e.g., `06087`)                                                              |
+| `--test`            | Run AI analysis via local Ollama. **Requires Ollama running.**                                              |
+| `--init`            | Write the region config file to `regions/<state>/counties/<county>/`                                        |
+| `--force`           | Overwrite an existing config file                                                                           |
 
 ### Usage patterns
 
 **Analyze a URL (AI analysis):**
+
 ```bash
 pnpm cli config-region \
   --url "https://www.cosb.us/departments/board-of-supervisors" \
@@ -160,11 +161,13 @@ pnpm cli config-region \
 ```
 
 **Analyze all sources in an existing config:**
+
 ```bash
 pnpm cli config-region --config ./regions/california/counties/sonoma/sonoma.json --test
 ```
 
 **Create a skeleton config (no AI):**
+
 ```bash
 pnpm cli config-region \
   --state california --county santa-cruz --fips 06087 \
@@ -172,6 +175,7 @@ pnpm cli config-region \
 ```
 
 **Analyze a URL and create the config file in one step:**
+
 ```bash
 pnpm cli config-region \
   --url "https://www.santacruz.ca.gov/bos" \
@@ -245,19 +249,20 @@ pnpm cli review [path]
 
 ### Arguments
 
-| Argument | Description | Default |
-|---|---|---|
-| `path` | Path to a `.json` config file or a directory to walk recursively | `./regions/` |
+| Argument | Description                                                      | Default      |
+| -------- | ---------------------------------------------------------------- | ------------ |
+| `path`   | Path to a `.json` config file or a directory to walk recursively | `./regions/` |
 
 ### Options
 
-| Option | Description |
-|---|---|
+| Option   | Description                                                                                     |
+| -------- | ----------------------------------------------------------------------------------------------- |
 | `--test` | Also run a fresh Ollama AI analysis and show the suggested update alongside the existing config |
 
 ### What it checks
 
 **Without `--test` (no Ollama required):**
+
 - Fetches each data source URL and confirms it's reachable
 - For data sources with a `staticManifest`: verifies `containerSelector`, `itemSelector`, and each `fieldMapping.selector` still match elements on the live page
 - For data sources with `detailFields`: verifies each CSS selector (before the `|` pipe) still matches elements on the live page
@@ -303,10 +308,10 @@ All 232 data source(s) look good.
 
 ## Environment variables
 
-| Variable | Default | Description |
-|---|---|---|
-| `OLLAMA_BASE_URL` | `http://127.0.0.1:11434` | Ollama server URL |
-| `OLLAMA_MODEL` | `qwen3.5:9b` | Model name to use for AI analysis |
+| Variable          | Default                  | Description                       |
+| ----------------- | ------------------------ | --------------------------------- |
+| `OLLAMA_BASE_URL` | `http://127.0.0.1:11434` | Ollama server URL                 |
+| `OLLAMA_MODEL`    | `qwen3.5:9b`             | Model name to use for AI analysis |
 
 ### Example with custom Ollama settings
 

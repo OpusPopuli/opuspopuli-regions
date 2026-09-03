@@ -58,7 +58,9 @@ async function checkUrlReachable(url: string): Promise<void> {
 }
 
 describe('Data source URL connectivity', () => {
-  const jsonFiles = walkJsonFiles(regionsDir).map((p) => relative(regionsDir, p));
+  const jsonFiles = walkJsonFiles(regionsDir).map((p) =>
+    relative(regionsDir, p),
+  );
 
   for (const file of jsonFiles) {
     const config = JSON.parse(readFileSync(join(regionsDir, file), 'utf-8'));

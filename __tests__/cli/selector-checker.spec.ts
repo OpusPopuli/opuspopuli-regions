@@ -1,4 +1,7 @@
-import { checkSelectors, hasSelectorsToCheck } from '../../src/cli/lib/selector-checker';
+import {
+  checkSelectors,
+  hasSelectorsToCheck,
+} from '../../src/cli/lib/selector-checker';
 import type { DataSourceConfig } from '../../src/cli/lib/config-loader';
 
 const HTML_WITH_CLASSES = `
@@ -24,9 +27,24 @@ const DS_WITH_STATIC_MANIFEST: DataSourceConfig = {
     containerSelector: '.tray-profile',
     itemSelector: '.box-profile',
     fieldMappings: [
-      { fieldName: 'name', selector: 'img', extractionMethod: 'attribute', required: true },
-      { fieldName: 'district', selector: 'h3 a', extractionMethod: 'text', required: true },
-      { fieldName: 'externalId', selector: '.missing-class', extractionMethod: 'text', required: true },
+      {
+        fieldName: 'name',
+        selector: 'img',
+        extractionMethod: 'attribute',
+        required: true,
+      },
+      {
+        fieldName: 'district',
+        selector: 'h3 a',
+        extractionMethod: 'text',
+        required: true,
+      },
+      {
+        fieldName: 'externalId',
+        selector: '.missing-class',
+        extractionMethod: 'text',
+        required: true,
+      },
     ],
   },
 };

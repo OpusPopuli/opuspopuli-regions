@@ -682,9 +682,6 @@
     "cacheTtlMs": 900000,
     "requestTimeoutMs": 30000,
     "normalizeExternalIdDistrict": true,
-    "bioNoisePatterns": [
-      "^Home\\b",
-      "Latest News"
-    ]
+    "bioNoisePatterns": ["^Home\\b", "Latest News"]
   }
 }

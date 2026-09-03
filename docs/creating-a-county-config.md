@@ -57,8 +57,8 @@ The output will show:
 
 **Pay close attention to ⚠ warnings**, especially:
 
-- `externalId — NOT inferrable` — this is expected and normal. You must add an explicit construction rule to `contentGoal`, such as: *"construct externalId as 'california-santa-cruz-supervisor-{district}'"*
-- `photoUrl — relative URLs found` — add this hint: *"photo URLs are relative; resolve against the base URL"*
+- `externalId — NOT inferrable` — this is expected and normal. You must add an explicit construction rule to `contentGoal`, such as: _"construct externalId as 'california-santa-cruz-supervisor-{district}'"_
+- `photoUrl — relative URLs found` — add this hint: _"photo URLs are relative; resolve against the base URL"_
 
 ## Step 4: Create the config file
 
@@ -75,6 +75,7 @@ pnpm cli config-region \
 ```
 
 This will:
+
 1. Analyze the URL with AI
 2. Create `regions/california/counties/santa-cruz/santa-cruz.json`
 3. Validate it against the schema
@@ -146,12 +147,12 @@ Then open a pull request to `main` on GitHub. CI will validate the schema and ch
 
 ## Common problems
 
-| Problem | Fix |
-|---|---|
-| `check-urls` shows 403 for a government site | Some sites block automated requests. Try the URL in a browser — if it works, add a `rateLimitOverride` to the data source. |
-| AI suggests wrong CSS selectors | Add a `staticManifest` with the correct selectors, or improve `hints` with exact class names you can see in the page source. |
-| `validate-extraction` warns about all fields | The page may require JavaScript to render. Note this in `contentGoal` hints. |
-| Schema validation fails with "must be uri" | The URL has a typo or uses `http` where `https` is required. |
-| `JSON parse failed for ...` | The JSON file has a syntax error — a stray comma, an unterminated string, missing closing brace. The error message names the file; open it and look for an obvious typo. |
-| `Schema validation failed for ...` | The JSON is parseable but doesn't match the schema. The error lists the path (e.g. `/config/dataSources/0/url`) and the issue (`must be uri`, `must have required property "version"`). Fix in place. |
-| `externalId` warning won't go away | This is expected — it's always ⚠ because it must be constructed, not extracted. As long as `contentGoal` describes the construction rule, you're fine. |
+| Problem                                      | Fix                                                                                                                                                                                                   |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `check-urls` shows 403 for a government site | Some sites block automated requests. Try the URL in a browser — if it works, add a `rateLimitOverride` to the data source.                                                                            |
+| AI suggests wrong CSS selectors              | Add a `staticManifest` with the correct selectors, or improve `hints` with exact class names you can see in the page source.                                                                          |
+| `validate-extraction` warns about all fields | The page may require JavaScript to render. Note this in `contentGoal` hints.                                                                                                                          |
+| Schema validation fails with "must be uri"   | The URL has a typo or uses `http` where `https` is required.                                                                                                                                          |
+| `JSON parse failed for ...`                  | The JSON file has a syntax error — a stray comma, an unterminated string, missing closing brace. The error message names the file; open it and look for an obvious typo.                              |
+| `Schema validation failed for ...`           | The JSON is parseable but doesn't match the schema. The error lists the path (e.g. `/config/dataSources/0/url`) and the issue (`must be uri`, `must have required property "version"`). Fix in place. |
+| `externalId` warning won't go away           | This is expected — it's always ⚠ because it must be constructed, not extracted. As long as `contentGoal` describes the construction rule, you're fine.                                                |
