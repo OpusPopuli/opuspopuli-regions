@@ -22,7 +22,13 @@
  * See issue #43.
  */
 
-import { readFileSync, writeFileSync, readdirSync, mkdirSync, existsSync } from 'node:fs';
+import {
+  readFileSync,
+  writeFileSync,
+  readdirSync,
+  mkdirSync,
+  existsSync,
+} from 'node:fs';
 import { join, relative } from 'node:path';
 
 export interface ManifestEntry {

@@ -16,13 +16,20 @@ function hasExternalIdConstructionRule(text: string): boolean {
 }
 
 function hasStaticManifestExternalId(ds: DataSourceConfig): boolean {
-  return (ds.staticManifest?.fieldMappings ?? []).some((fm: FieldMapping) => fm.fieldName === 'externalId');
+  return (ds.staticManifest?.fieldMappings ?? []).some(
+    (fm: FieldMapping) => fm.fieldName === 'externalId',
+  );
 }
 
-function checkExternalId(fullText: string, ds: DataSourceConfig): GoalCoverageResult {
-  const hasRule = hasExternalIdConstructionRule(fullText) || hasStaticManifestExternalId(ds);
+function checkExternalId(
+  fullText: string,
+  ds: DataSourceConfig,
+): GoalCoverageResult {
+  const hasRule =
+    hasExternalIdConstructionRule(fullText) || hasStaticManifestExternalId(ds);
   let note: string;
-  if (!hasRule) note = 'construction rule missing — AI cannot infer synthetic IDs';
+  if (!hasRule)
+    note = 'construction rule missing — AI cannot infer synthetic IDs';
   else if (hasStaticManifestExternalId(ds)) note = 'handled by staticManifest';
   else note = 'construction rule found';
   return { field: 'externalId', covered: hasRule, note };
@@ -34,7 +41,9 @@ export function checkContentGoalCoverage(
   const fields = getRequiredFields(ds.dataType);
   if (fields.length === 0) return [];
 
-  const fullText = [ds.contentGoal, ...(ds.hints ?? [])].join(' ').toLowerCase();
+  const fullText = [ds.contentGoal, ...(ds.hints ?? [])]
+    .join(' ')
+    .toLowerCase();
 
   return fields.map((field) => {
     if (field.name === 'externalId') return checkExternalId(fullText, ds);

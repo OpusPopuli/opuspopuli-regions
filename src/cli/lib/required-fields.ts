@@ -2,14 +2,27 @@ import type { FieldDetectionResult } from './field-detector.js';
 
 export type FieldSpec = {
   name: string;
-  detection: 'phone' | 'email' | 'date' | 'heading' | 'image' | 'link' | 'manual';
+  detection:
+    | 'phone'
+    | 'email'
+    | 'date'
+    | 'heading'
+    | 'image'
+    | 'link'
+    | 'manual';
   alwaysWarn?: boolean;
   warnMessage?: string;
 };
 
 const FIELDS: Record<string, FieldSpec[]> = {
   representatives: [
-    { name: 'externalId', detection: 'manual', alwaysWarn: true, warnMessage: 'NOT inferrable; add explicit construction rule to contentGoal' },
+    {
+      name: 'externalId',
+      detection: 'manual',
+      alwaysWarn: true,
+      warnMessage:
+        'NOT inferrable; add explicit construction rule to contentGoal',
+    },
     { name: 'name', detection: 'heading' },
     { name: 'district', detection: 'heading' },
     { name: 'phone', detection: 'phone' },
@@ -18,45 +31,115 @@ const FIELDS: Record<string, FieldSpec[]> = {
     { name: 'detailUrl', detection: 'link' },
   ],
   meetings: [
-    { name: 'externalId', detection: 'manual', alwaysWarn: true, warnMessage: 'NOT inferrable; add explicit construction rule to contentGoal' },
+    {
+      name: 'externalId',
+      detection: 'manual',
+      alwaysWarn: true,
+      warnMessage:
+        'NOT inferrable; add explicit construction rule to contentGoal',
+    },
     { name: 'title', detection: 'heading' },
     { name: 'scheduledAt', detection: 'date' },
-    { name: 'location', detection: 'manual', warnMessage: 'usually in page text; add hint to contentGoal' },
+    {
+      name: 'location',
+      detection: 'manual',
+      warnMessage: 'usually in page text; add hint to contentGoal',
+    },
     { name: 'agendaUrl', detection: 'link' },
     { name: 'minutesUrl', detection: 'link' },
   ],
   propositions: [
-    { name: 'externalId', detection: 'manual', alwaysWarn: true, warnMessage: 'NOT inferrable; add explicit construction rule to contentGoal' },
+    {
+      name: 'externalId',
+      detection: 'manual',
+      alwaysWarn: true,
+      warnMessage:
+        'NOT inferrable; add explicit construction rule to contentGoal',
+    },
     { name: 'title', detection: 'heading' },
     { name: 'electionDate', detection: 'date' },
-    { name: 'measureType', detection: 'manual', warnMessage: 'must be described in contentGoal' },
-    { name: 'description', detection: 'manual', warnMessage: 'must be described in contentGoal' },
+    {
+      name: 'measureType',
+      detection: 'manual',
+      warnMessage: 'must be described in contentGoal',
+    },
+    {
+      name: 'description',
+      detection: 'manual',
+      warnMessage: 'must be described in contentGoal',
+    },
   ],
   campaign_finance: [
-    { name: 'committeeId', detection: 'manual', alwaysWarn: true, warnMessage: 'NOT inferrable; add explicit construction rule to contentGoal' },
+    {
+      name: 'committeeId',
+      detection: 'manual',
+      alwaysWarn: true,
+      warnMessage:
+        'NOT inferrable; add explicit construction rule to contentGoal',
+    },
     { name: 'committeeName', detection: 'heading' },
     { name: 'filingDate', detection: 'date' },
-    { name: 'totalContributions', detection: 'manual', warnMessage: 'usually a currency value on the page' },
-    { name: 'totalExpenditures', detection: 'manual', warnMessage: 'usually a currency value on the page' },
+    {
+      name: 'totalContributions',
+      detection: 'manual',
+      warnMessage: 'usually a currency value on the page',
+    },
+    {
+      name: 'totalExpenditures',
+      detection: 'manual',
+      warnMessage: 'usually a currency value on the page',
+    },
   ],
   lobbying: [
-    { name: 'externalId', detection: 'manual', alwaysWarn: true, warnMessage: 'NOT inferrable; add explicit construction rule to contentGoal' },
+    {
+      name: 'externalId',
+      detection: 'manual',
+      alwaysWarn: true,
+      warnMessage:
+        'NOT inferrable; add explicit construction rule to contentGoal',
+    },
     { name: 'lobbyist', detection: 'heading' },
-    { name: 'employer', detection: 'manual', warnMessage: 'usually in page text; add hint to contentGoal' },
+    {
+      name: 'employer',
+      detection: 'manual',
+      warnMessage: 'usually in page text; add hint to contentGoal',
+    },
     { name: 'periodStart', detection: 'date' },
     { name: 'periodEnd', detection: 'date' },
-    { name: 'totalCompensation', detection: 'manual', warnMessage: 'usually a currency value on the page' },
+    {
+      name: 'totalCompensation',
+      detection: 'manual',
+      warnMessage: 'usually a currency value on the page',
+    },
   ],
   civics: [
     { name: 'title', detection: 'heading' },
-    { name: 'content', detection: 'manual', warnMessage: 'describe the content structure in contentGoal' },
+    {
+      name: 'content',
+      detection: 'manual',
+      warnMessage: 'describe the content structure in contentGoal',
+    },
   ],
   bills: [
-    { name: 'externalId', detection: 'manual', alwaysWarn: true, warnMessage: 'NOT inferrable; add explicit construction rule to contentGoal' },
+    {
+      name: 'externalId',
+      detection: 'manual',
+      alwaysWarn: true,
+      warnMessage:
+        'NOT inferrable; add explicit construction rule to contentGoal',
+    },
     { name: 'billNumber', detection: 'heading' },
     { name: 'title', detection: 'heading' },
-    { name: 'status', detection: 'manual', warnMessage: 'usually in page text; add hint to contentGoal' },
-    { name: 'author', detection: 'manual', warnMessage: 'usually in page text; add hint to contentGoal' },
+    {
+      name: 'status',
+      detection: 'manual',
+      warnMessage: 'usually in page text; add hint to contentGoal',
+    },
+    {
+      name: 'author',
+      detection: 'manual',
+      warnMessage: 'usually in page text; add hint to contentGoal',
+    },
   ],
 };
 
@@ -64,9 +147,17 @@ export function getRequiredFields(dataType: string): FieldSpec[] {
   return FIELDS[dataType] ?? [];
 }
 
-function checkImageField(detection: FieldDetectionResult): { ok: boolean; note: string } {
-  if (detection.imageCount === 0) return { ok: false, note: 'no images found on page' };
-  if (detection.hasRelativeImages) return { ok: false, note: 'relative URLs found; add absolutization hint to hints[]' };
+function checkImageField(detection: FieldDetectionResult): {
+  ok: boolean;
+  note: string;
+} {
+  if (detection.imageCount === 0)
+    return { ok: false, note: 'no images found on page' };
+  if (detection.hasRelativeImages)
+    return {
+      ok: false,
+      note: 'relative URLs found; add absolutization hint to hints[]',
+    };
   return { ok: true, note: `${detection.imageCount} image(s) found` };
 }
 
@@ -75,7 +166,10 @@ export function checkFieldDetection(
   detection: FieldDetectionResult,
 ): { ok: boolean; note: string } {
   if (field.alwaysWarn) {
-    return { ok: false, note: field.warnMessage ?? 'requires manual configuration' };
+    return {
+      ok: false,
+      note: field.warnMessage ?? 'requires manual configuration',
+    };
   }
 
   switch (field.detection) {
@@ -102,6 +196,9 @@ export function checkFieldDetection(
         ? { ok: true, note: `${detection.linkCount} link(s) found` }
         : { ok: false, note: 'no links found on page' };
     default:
-      return { ok: false, note: field.warnMessage ?? 'requires manual configuration' };
+      return {
+        ok: false,
+        note: field.warnMessage ?? 'requires manual configuration',
+      };
   }
 }

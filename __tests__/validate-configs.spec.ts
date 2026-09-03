@@ -7,7 +7,9 @@ const schemaPath = join(__dirname, '..', 'schema', 'region-plugin.schema.json');
 const regionsDir = join(__dirname, '..', 'regions');
 
 describe('Region config validation', () => {
-  const jsonFiles = walkJsonFiles(regionsDir).map((p) => relative(regionsDir, p));
+  const jsonFiles = walkJsonFiles(regionsDir).map((p) =>
+    relative(regionsDir, p),
+  );
 
   it('has at least one region config', () => {
     expect(jsonFiles.length).toBeGreaterThan(0);
@@ -35,18 +37,15 @@ describe('Region config validation', () => {
     expect(config.version).toMatch(/^\d+\.\d+\.\d+$/);
   });
 
-  it.each(jsonFiles)(
-    '%s has no duplicate data sources',
-    (file) => {
-      const config = JSON.parse(readFileSync(join(regionsDir, file), 'utf-8'));
-      const keys = config.config.dataSources.map(
-        (ds: { url: string; dataType: string; category?: string }) =>
-          `${ds.url}::${ds.dataType}::${ds.category ?? ''}`,
-      );
-      const unique = new Set(keys);
-      expect(keys.length).toBe(unique.size);
-    },
-  );
+  it.each(jsonFiles)('%s has no duplicate data sources', (file) => {
+    const config = JSON.parse(readFileSync(join(regionsDir, file), 'utf-8'));
+    const keys = config.config.dataSources.map(
+      (ds: { url: string; dataType: string; category?: string }) =>
+        `${ds.url}::${ds.dataType}::${ds.category ?? ''}`,
+    );
+    const unique = new Set(keys);
+    expect(keys.length).toBe(unique.size);
+  });
 
   describe('cross-file hierarchy assertions', () => {
     type RawConfig = {
@@ -60,19 +59,25 @@ describe('Region config validation', () => {
     const regionIdSet = new Set(allConfigs.map((c) => c.config.regionId));
 
     const subRegionFiles = jsonFiles.filter((f) => {
-      const c: RawConfig = JSON.parse(readFileSync(join(regionsDir, f), 'utf-8'));
+      const c: RawConfig = JSON.parse(
+        readFileSync(join(regionsDir, f), 'utf-8'),
+      );
       return !!c.config.parentRegionId;
     });
 
     const countyFiles = jsonFiles.filter((f) => {
-      const c: RawConfig = JSON.parse(readFileSync(join(regionsDir, f), 'utf-8'));
+      const c: RawConfig = JSON.parse(
+        readFileSync(join(regionsDir, f), 'utf-8'),
+      );
       return c.config.fipsCode?.length === 5 && !!c.config.parentRegionId;
     });
 
     it.each(subRegionFiles)(
       '%s parentRegionId references an existing region',
       (file) => {
-        const c: RawConfig = JSON.parse(readFileSync(join(regionsDir, file), 'utf-8'));
+        const c: RawConfig = JSON.parse(
+          readFileSync(join(regionsDir, file), 'utf-8'),
+        );
         expect(regionIdSet).toContain(c.config.parentRegionId);
       },
     );
@@ -80,7 +85,9 @@ describe('Region config validation', () => {
     it.each(countyFiles)(
       '%s county fipsCode starts with parent state fipsCode',
       (file) => {
-        const c: RawConfig = JSON.parse(readFileSync(join(regionsDir, file), 'utf-8'));
+        const c: RawConfig = JSON.parse(
+          readFileSync(join(regionsDir, file), 'utf-8'),
+        );
         const parent = allConfigs.find(
           (p) => p.config.regionId === c.config.parentRegionId,
         );

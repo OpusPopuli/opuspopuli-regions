@@ -16,7 +16,8 @@ export function buildDataSourceConfig(
     //     surface an invalid value as a no-op field-detection result
     //     (`getRequiredFields` returns []).
     dataType: dataType as DataSourceConfig['dataType'],
-    contentGoal: analysis.contentGoal || `Extract ${dataType} data from this page`,
+    contentGoal:
+      analysis.contentGoal || `Extract ${dataType} data from this page`,
   };
 
   if (analysis.hints.length > 0) {
@@ -24,10 +25,11 @@ export function buildDataSourceConfig(
   }
 
   const detailFieldEntries = Object.entries(analysis.detectedFields)
-    .filter(([field, info]) =>
-      field !== 'externalId' &&
-      (info.confidence === 'high' || info.confidence === 'medium') &&
-      info.cssSelector,
+    .filter(
+      ([field, info]) =>
+        field !== 'externalId' &&
+        (info.confidence === 'high' || info.confidence === 'medium') &&
+        info.cssSelector,
     )
     .map(([field, info]) => [field, info.cssSelector] as [string, string]);
 

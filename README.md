@@ -68,6 +68,7 @@ Each file follows the `RegionPluginFile` schema:
 ```
 
 **Validation rules enforced by `pnpm test`:**
+
 - `name` must equal `config.regionId`
 - Version must be valid semver
 - No duplicate data sources (same `url` + `dataType` + `category`)
@@ -76,32 +77,32 @@ Each file follows the `RegionPluginFile` schema:
 
 ### Geographic Hierarchy Fields
 
-| Field | Description |
-|---|---|
-| `parentRegionId` | `regionId` of the parent region. Omit for top-level (state, federal). Set to parent state's `regionId` for counties. |
-| `fipsCode` | Census FIPS code: 2 digits for states (`"06"`), 5 digits for counties (`"06001"`). Used as join key for user-to-district placement. |
+| Field            | Description                                                                                                                         |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `parentRegionId` | `regionId` of the parent region. Omit for top-level (state, federal). Set to parent state's `regionId` for counties.                |
+| `fipsCode`       | Census FIPS code: 2 digits for states (`"06"`), 5 digits for counties (`"06001"`). Used as join key for user-to-district placement. |
 
 ### Data Types
 
-| `dataType` | Description |
-|---|---|
-| `propositions` | Ballot measures and initiatives |
-| `representatives` | Elected officials, officeholders |
-| `meetings` | Committee hearings, board meetings, floor sessions; daily journals / minutes go here with `sourceType: pdf_archive` |
-| `campaign_finance` | Contribution and expenditure records |
-| `lobbying` | Lobbying disclosures |
-| `civics` | Region governmental structure, vocabulary, measure types, lifecycle stages — AI extracts structured shape plus a plain-language rewrite |
-| `bills` | Individual legislative bills (AB, SB, etc.) BFS-crawled from an official legislature site |
+| `dataType`         | Description                                                                                                                             |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `propositions`     | Ballot measures and initiatives                                                                                                         |
+| `representatives`  | Elected officials, officeholders                                                                                                        |
+| `meetings`         | Committee hearings, board meetings, floor sessions; daily journals / minutes go here with `sourceType: pdf_archive`                     |
+| `campaign_finance` | Contribution and expenditure records                                                                                                    |
+| `lobbying`         | Lobbying disclosures                                                                                                                    |
+| `civics`           | Region governmental structure, vocabulary, measure types, lifecycle stages — AI extracts structured shape plus a plain-language rewrite |
+| `bills`            | Individual legislative bills (AB, SB, etc.) BFS-crawled from an official legislature site                                               |
 
 ### Source Types
 
-| `sourceType` | Description | Required Config |
-|---|---|---|
-| `html_scrape` (default) | AI analyzes page structure, extracts with CSS selectors | `hints` |
-| `bulk_download` | Downloads ZIP/CSV/TSV, parses with column mappings | `bulk` |
-| `api` | Paginated REST API calls | `api` |
-| `pdf` | PDF text extraction + AI analysis | `pdf` |
-| `pdf_archive` | Paginated listing page → per-PDF extract; stores one Minutes record per document | `pdfArchive` |
+| `sourceType`            | Description                                                                      | Required Config |
+| ----------------------- | -------------------------------------------------------------------------------- | --------------- |
+| `html_scrape` (default) | AI analyzes page structure, extracts with CSS selectors                          | `hints`         |
+| `bulk_download`         | Downloads ZIP/CSV/TSV, parses with column mappings                               | `bulk`          |
+| `api`                   | Paginated REST API calls                                                         | `api`           |
+| `pdf`                   | PDF text extraction + AI analysis                                                | `pdf`           |
+| `pdf_archive`           | Paginated listing page → per-PDF extract; stores one Minutes record per document | `pdfArchive`    |
 
 ### Detail Page Enrichment
 
@@ -126,6 +127,7 @@ When the pipeline extracts items with a `detailUrl` field, it fetches each detai
 ```
 
 **Key features:**
+
 - Dot notation for nested fields: `"contactInfo.phone"` → `item.contactInfo.phone`
 - Attribute extraction: append `|attr:href` (or any attribute name) to extract an attribute instead of text
 - Structured arrays: use an object with `selector`, `children`, and `multiple: true` instead of a string selector
@@ -192,11 +194,11 @@ For `dataType: bills`, use `billDiscovery` to handle legislature sites that list
 
 Per-source fields that control crawl depth and LLM behavior:
 
-| Field | Default | Description |
-|---|---|---|
-| `crawlDepth` | `0` | BFS hops from the seed URL (scoped to same host + path prefix, HTML only) |
-| `crawlMaxPages` | `20` | Hard cap on pages visited per sync; bounds token spend |
-| `llmMaxTokens` | handler default | Override max generation tokens (e.g. `32000` for a 150-term glossary) |
+| Field                 | Default          | Description                                                               |
+| --------------------- | ---------------- | ------------------------------------------------------------------------- |
+| `crawlDepth`          | `0`              | BFS hops from the seed URL (scoped to same host + path prefix, HTML only) |
+| `crawlMaxPages`       | `20`             | Hard cap on pages visited per sync; bounds token spend                    |
+| `llmMaxTokens`        | handler default  | Override max generation tokens (e.g. `32000` for a 150-term glossary)     |
 | `llmRequestTimeoutMs` | provider default | Override LLM request timeout in ms (civics extraction can take 15–20 min) |
 
 ## Development

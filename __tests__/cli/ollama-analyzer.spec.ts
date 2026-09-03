@@ -23,8 +23,7 @@ describe('extractJson', () => {
     });
 
     it('ignores prose before the fence', () => {
-      const input =
-        "Here's the JSON you asked for:\n\n```json\n{\"a\":1}\n```";
+      const input = 'Here\'s the JSON you asked for:\n\n```json\n{"a":1}\n```';
       expect(extractJson(input)).toBe('{"a":1}');
     });
 

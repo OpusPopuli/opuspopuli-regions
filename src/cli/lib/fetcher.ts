@@ -11,7 +11,11 @@ export async function fetchHtml(url: string): Promise<FetchResult> {
     });
     if (!res.ok) return { error: `HTTP ${res.status}` };
     const html = await res.text();
-    return { html, bytes: new TextEncoder().encode(html).length, ms: Date.now() - start };
+    return {
+      html,
+      bytes: new TextEncoder().encode(html).length,
+      ms: Date.now() - start,
+    };
   } catch (err) {
     return { error: err instanceof Error ? err.message : String(err) };
   }

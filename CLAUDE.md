@@ -59,6 +59,7 @@ pnpm lint
 ## Geographic hierarchy
 
 Sub-regions must set `parentRegionId` to their parent's `regionId`. Counties must also set a 5-digit `fipsCode` (state 2-digit prefix + 3-digit county suffix). Tests enforce that:
+
 - `parentRegionId` references an existing region in the repo
 - County `fipsCode` starts with the parent state's `fipsCode`
 
@@ -96,7 +97,9 @@ Callers import types from `config-loader.ts` (which re-exports from `generated-t
 
 ```ts
 import manifest from '@opuspopuli/regions/dist/manifest.json';
-const alameda = manifest.configs.find((c) => c.regionId === 'california-alameda');
+const alameda = manifest.configs.find(
+  (c) => c.regionId === 'california-alameda',
+);
 // → { regionId: 'california-alameda', version: '0.2.2', file: '...' }
 ```
 

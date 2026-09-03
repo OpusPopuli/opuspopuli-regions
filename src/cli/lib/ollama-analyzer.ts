@@ -7,11 +7,14 @@ export type OllamaAnalysis = {
   pageType: 'detail' | 'listing' | 'unknown';
   contentGoal: string;
   hints: string[];
-  detectedFields: Record<string, {
-    cssSelector: string;
-    evidence: string;
-    confidence: 'high' | 'medium' | 'low';
-  }>;
+  detectedFields: Record<
+    string,
+    {
+      cssSelector: string;
+      evidence: string;
+      confidence: 'high' | 'medium' | 'low';
+    }
+  >;
 };
 
 /**
@@ -41,7 +44,8 @@ export function extractJson(content: string): string {
   }
   const objStart = content.indexOf('{');
   const objEnd = content.lastIndexOf('}');
-  if (objStart !== -1 && objEnd > objStart) return content.slice(objStart, objEnd + 1);
+  if (objStart !== -1 && objEnd > objStart)
+    return content.slice(objStart, objEnd + 1);
   return content.trim();
 }
 
@@ -49,7 +53,9 @@ function makeClient(host = DEFAULT_HOST): Ollama {
   return new Ollama({ host });
 }
 
-export async function checkOllamaReachable(host = DEFAULT_HOST): Promise<boolean> {
+export async function checkOllamaReachable(
+  host = DEFAULT_HOST,
+): Promise<boolean> {
   try {
     await makeClient(host).list();
     return true;
@@ -76,9 +82,13 @@ export async function analyzeWithOllama(
     options: { temperature: 0.1 },
   } as Parameters<typeof ollama.chat>[0]);
 
-  const raw = JSON.parse(extractJson(response.message.content)) as Partial<OllamaAnalysis>;
+  const raw = JSON.parse(
+    extractJson(response.message.content),
+  ) as Partial<OllamaAnalysis>;
   return {
-    pageType: (['detail', 'listing'].includes(raw.pageType ?? '') ? raw.pageType : 'unknown') as OllamaAnalysis['pageType'],
+    pageType: (['detail', 'listing'].includes(raw.pageType ?? '')
+      ? raw.pageType
+      : 'unknown') as OllamaAnalysis['pageType'],
     contentGoal: raw.contentGoal ?? '',
     hints: Array.isArray(raw.hints) ? raw.hints : [],
     detectedFields: raw.detectedFields ?? {},

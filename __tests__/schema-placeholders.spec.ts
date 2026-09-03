@@ -39,13 +39,15 @@ describe('Schema placeholder documentation (#41)', () => {
   });
 
   it('ApiSourceConfig.queryParams documents ${stateCode}', () => {
-    const desc = schema.definitions.ApiSourceConfig.properties.queryParams.description;
+    const desc =
+      schema.definitions.ApiSourceConfig.properties.queryParams.description;
     expect(desc).toMatch(/\$\{stateCode\}/);
     expect(desc).toMatch(/runtime/);
   });
 
   it('BulkDownloadConfig.filters documents ${stateCode}', () => {
-    const desc = schema.definitions.BulkDownloadConfig.properties.filters.description;
+    const desc =
+      schema.definitions.BulkDownloadConfig.properties.filters.description;
     expect(desc).toMatch(/\$\{stateCode\}/);
     expect(desc).toMatch(/runtime/);
   });
@@ -54,8 +56,10 @@ describe('Schema placeholder documentation (#41)', () => {
     // If new variables are added later (${countyFips}, ${regionId}, etc.),
     // they should be documented in BOTH descriptions to keep them in sync.
     // This test pins ${stateCode} as the current supported set.
-    const queryParamsDesc = schema.definitions.ApiSourceConfig.properties.queryParams.description;
-    const filtersDesc = schema.definitions.BulkDownloadConfig.properties.filters.description;
+    const queryParamsDesc =
+      schema.definitions.ApiSourceConfig.properties.queryParams.description;
+    const filtersDesc =
+      schema.definitions.BulkDownloadConfig.properties.filters.description;
     expect(queryParamsDesc).toMatch(/Supported variables: \$\{stateCode\}/);
     expect(filtersDesc).toMatch(/Supported variables: \$\{stateCode\}/);
   });
@@ -77,13 +81,14 @@ describe('TigerLayerConfig placeholder documentation (#804)', () => {
   });
 
   it('TigerLayerConfig.where documents ${fipsCode}', () => {
-    expect(schema.definitions.TigerLayerConfig.properties.where.description).toMatch(
-      /\$\{fipsCode\}/,
-    );
+    expect(
+      schema.definitions.TigerLayerConfig.properties.where.description,
+    ).toMatch(/\$\{fipsCode\}/);
   });
 
   it('TigerLayerConfig.ocdIdSegment documents both ${name} and ${district}', () => {
-    const desc = schema.definitions.TigerLayerConfig.properties.ocdIdSegment.description;
+    const desc =
+      schema.definitions.TigerLayerConfig.properties.ocdIdSegment.description;
     expect(desc).toMatch(/\$\{name\}/);
     expect(desc).toMatch(/\$\{district\}/);
   });
@@ -92,13 +97,15 @@ describe('TigerLayerConfig placeholder documentation (#804)', () => {
     // The whitespace-to-underscores + lowercase rule is a hidden contract —
     // without docs, region authors writing ocdIdSegment will pass mixed-case
     // names and get OCD-IDs the consumer normalizes silently. Pin the doc.
-    const desc = schema.definitions.TigerLayerConfig.properties.ocdIdSegment.description;
+    const desc =
+      schema.definitions.TigerLayerConfig.properties.ocdIdSegment.description;
     expect(desc).toMatch(/normaliz/i);
     expect(desc).toMatch(/underscore|lowercase/i);
   });
 
   it('TigerLayerConfig.nameTemplate documents the ${name}/${district}/${stateCode} set', () => {
-    const desc = schema.definitions.TigerLayerConfig.properties.nameTemplate.description;
+    const desc =
+      schema.definitions.TigerLayerConfig.properties.nameTemplate.description;
     expect(desc).toMatch(/\$\{name\}/);
     expect(desc).toMatch(/\$\{district\}/);
     expect(desc).toMatch(/\$\{stateCode\}/);

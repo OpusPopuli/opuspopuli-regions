@@ -13,7 +13,10 @@ function cssOnly(expression: string): string {
   return expression.split('|')[0].trim();
 }
 
-function trySelect($: ReturnType<typeof cheerio.load>, selector: string): number {
+function trySelect(
+  $: ReturnType<typeof cheerio.load>,
+  selector: string,
+): number {
   try {
     return $(selector).length;
   } catch {
@@ -35,13 +38,25 @@ function checkStaticManifest(
     ['itemSelector', sm.itemSelector],
   ] as [string, string][]) {
     const count = trySelect($, selector);
-    results.push({ origin: 'staticManifest', field, selector, found: count > 0, count: Math.max(count, 0) });
+    results.push({
+      origin: 'staticManifest',
+      field,
+      selector,
+      found: count > 0,
+      count: Math.max(count, 0),
+    });
   }
 
   for (const fm of sm.fieldMappings ?? []) {
     if (!fm.selector) continue;
     const count = trySelect($, fm.selector);
-    results.push({ origin: 'staticManifest', field: fm.fieldName, selector: fm.selector, found: count > 0, count: Math.max(count, 0) });
+    results.push({
+      origin: 'staticManifest',
+      field: fm.fieldName,
+      selector: fm.selector,
+      found: count > 0,
+      count: Math.max(count, 0),
+    });
   }
 
   return results;
@@ -60,12 +75,21 @@ function checkDetailFields(
     const selector = cssOnly(value);
     if (!selector) continue;
     const count = trySelect($, selector);
-    results.push({ origin: 'detailFields', field, selector, found: count > 0, count: Math.max(count, 0) });
+    results.push({
+      origin: 'detailFields',
+      field,
+      selector,
+      found: count > 0,
+      count: Math.max(count, 0),
+    });
   }
   return results;
 }
 
-export function checkSelectors(html: string, ds: DataSourceConfig): SelectorCheckResult[] {
+export function checkSelectors(
+  html: string,
+  ds: DataSourceConfig,
+): SelectorCheckResult[] {
   const $ = cheerio.load(html);
   return [...checkStaticManifest($, ds), ...checkDetailFields($, ds)];
 }

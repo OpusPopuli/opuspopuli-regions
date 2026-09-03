@@ -39,7 +39,9 @@ const FETCH_OPTS = {
   headers: { 'User-Agent': 'OpusPopuli-RegionCLI/1.0' },
 };
 
-async function fetchWithFallback(url: string): Promise<{ status: number; location: string | null }> {
+async function fetchWithFallback(
+  url: string,
+): Promise<{ status: number; location: string | null }> {
   const res = await fetch(url, { method: 'HEAD', ...FETCH_OPTS });
   if (res.status !== 405) {
     return { status: res.status, location: res.headers.get('location') };
@@ -48,7 +50,11 @@ async function fetchWithFallback(url: string): Promise<{ status: number; locatio
   return { status: getRes.status, location: getRes.headers.get('location') };
 }
 
-async function checkUrl(url: string, region: string, dataType: string): Promise<UrlResult> {
+async function checkUrl(
+  url: string,
+  region: string,
+  dataType: string,
+): Promise<UrlResult> {
   const start = Date.now();
   let current = url;
   let redirectCount = 0;
@@ -64,15 +70,41 @@ async function checkUrl(url: string, region: string, dataType: string): Promise<
         redirectCount++;
         continue;
       }
-      httpResult = { url, region, dataType, status, finalUrl: current, redirectCount, durationMs: Date.now() - start };
+      httpResult = {
+        url,
+        region,
+        dataType,
+        status,
+        finalUrl: current,
+        redirectCount,
+        durationMs: Date.now() - start,
+      };
       settled = true;
       break;
     }
     if (!settled) {
-      httpResult = { url, region, dataType, status: null, finalUrl: current, redirectCount, durationMs: Date.now() - start, error: 'Too many redirects' };
+      httpResult = {
+        url,
+        region,
+        dataType,
+        status: null,
+        finalUrl: current,
+        redirectCount,
+        durationMs: Date.now() - start,
+        error: 'Too many redirects',
+      };
     }
   } catch (err) {
-    httpResult = { url, region, dataType, status: null, finalUrl: current, redirectCount, durationMs: Date.now() - start, error: err instanceof Error ? err.message : String(err) };
+    httpResult = {
+      url,
+      region,
+      dataType,
+      status: null,
+      finalUrl: current,
+      redirectCount,
+      durationMs: Date.now() - start,
+      error: err instanceof Error ? err.message : String(err),
+    };
   }
 
   // If HTTP failed (network error, timeout, or 4xx/5xx), do a TCP probe
@@ -149,7 +181,11 @@ function printTcpDetail(probe: TcpProbeResult, tier: Tier): void {
   }
 }
 
-function formatCount(count: number, label: string, color: 'green' | 'yellow' | 'red'): string {
+function formatCount(
+  count: number,
+  label: string,
+  color: 'green' | 'yellow' | 'red',
+): string {
   const text = `${count} ${label}`;
   if (count === 0) return chalk.dim(text);
   if (color === 'green') return chalk.green(text);
@@ -160,7 +196,9 @@ function formatCount(count: number, label: string, color: 'green' | 'yellow' | '
 export function registerCheckUrls(program: Command): void {
   program
     .command('check-urls [path]')
-    .description('Check HTTP reachability of all data source URLs in region configs')
+    .description(
+      'Check HTTP reachability of all data source URLs in region configs',
+    )
     .action(async (pathArg?: string) => {
       const sources = collectSources(loadConfigsOrExit(pathArg));
 

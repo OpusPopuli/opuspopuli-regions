@@ -1,10 +1,7 @@
 import { readFileSync, statSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { validateRegionFile } from './schema-validator.js';
-import type {
-  DataSourceConfig,
-  RegionPluginFile,
-} from './generated-types.js';
+import type { DataSourceConfig, RegionPluginFile } from './generated-types.js';
 
 // Schema-derived types are the canonical contract — see `generated-types.ts`
 // and issue #39. Re-export so existing callers (`config-region`, `review`,
@@ -48,9 +45,7 @@ function loadOne(file: string): { file: string; region: RegionPluginFile } {
   try {
     raw = JSON.parse(readFileSync(file, 'utf-8'));
   } catch (err) {
-    throw new Error(
-      `JSON parse failed for ${file}: ${(err as Error).message}`,
-    );
+    throw new Error(`JSON parse failed for ${file}: ${(err as Error).message}`);
   }
   const result = validateRegionFile(raw);
   if (!result.valid) {
@@ -66,7 +61,9 @@ function loadOne(file: string): { file: string; region: RegionPluginFile } {
   return { file, region: raw as RegionPluginFile };
 }
 
-export function loadConfigs(pathOrDir: string): { file: string; region: RegionPluginFile }[] {
+export function loadConfigs(
+  pathOrDir: string,
+): { file: string; region: RegionPluginFile }[] {
   const stat = statSync(pathOrDir);
   if (stat.isFile()) {
     return [loadOne(pathOrDir)];

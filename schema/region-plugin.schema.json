@@ -33,7 +33,13 @@
   "definitions": {
     "DeclarativeRegionConfig": {
       "type": "object",
-      "required": ["regionId", "regionName", "description", "timezone", "dataSources"],
+      "required": [
+        "regionId",
+        "regionName",
+        "description",
+        "timezone",
+        "dataSources"
+      ],
       "additionalProperties": false,
       "properties": {
         "regionId": {
@@ -139,7 +145,21 @@
     },
     "JurisdictionTypeEnum": {
       "type": "string",
-      "enum": ["COUNTY", "CITY", "STATE_SENATE_DISTRICT", "STATE_ASSEMBLY_DISTRICT", "CONGRESSIONAL_DISTRICT", "SCHOOL_DISTRICT_UNIFIED", "SCHOOL_DISTRICT_ELEMENTARY", "SCHOOL_DISTRICT_HIGH", "COMMUNITY_COLLEGE_DISTRICT", "WATER_DISTRICT", "FIRE_DISTRICT", "TRANSIT_DISTRICT", "SPECIAL_DISTRICT"],
+      "enum": [
+        "COUNTY",
+        "CITY",
+        "STATE_SENATE_DISTRICT",
+        "STATE_ASSEMBLY_DISTRICT",
+        "CONGRESSIONAL_DISTRICT",
+        "SCHOOL_DISTRICT_UNIFIED",
+        "SCHOOL_DISTRICT_ELEMENTARY",
+        "SCHOOL_DISTRICT_HIGH",
+        "COMMUNITY_COLLEGE_DISTRICT",
+        "WATER_DISTRICT",
+        "FIRE_DISTRICT",
+        "TRANSIT_DISTRICT",
+        "SPECIAL_DISTRICT"
+      ],
       "description": "Maps each feature to a JurisdictionType row in the consumer's `jurisdictions` table. Single source of truth — TigerLayerConfig and GeoportalLayerConfig both reference this so a new jurisdiction type can't be added to one without the other."
     },
     "JurisdictionLevelEnum": {
@@ -150,7 +170,13 @@
     "TigerLayerConfig": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["layer", "outFields", "jurisdictionType", "level", "nameField"],
+      "required": [
+        "layer",
+        "outFields",
+        "jurisdictionType",
+        "level",
+        "nameField"
+      ],
       "description": "One TIGER/Line layer mapped to a JurisdictionType. The consumer hits `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/${layer}/query` with GeoJSON output. Supported placeholders inside `where`, `ocdIdSegment`, `nameTemplate`: ${fipsCode} (this region's fipsCode), ${stateCode} (two-letter code), ${name} (the layer's nameField value for a given feature), ${district} (the districtField value).",
       "properties": {
         "layer": {
@@ -203,7 +229,13 @@
     "GeoportalLayerConfig": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["url", "outFields", "jurisdictionType", "level", "nameField"],
+      "required": [
+        "url",
+        "outFields",
+        "jurisdictionType",
+        "level",
+        "nameField"
+      ],
       "description": "One arbitrary ArcGIS FeatureServer layer for jurisdictions Census TIGER doesn't cover. Same placeholder rules as TigerLayerConfig.",
       "properties": {
         "url": {
@@ -262,7 +294,15 @@
         },
         "dataType": {
           "type": "string",
-          "enum": ["propositions", "meetings", "representatives", "campaign_finance", "lobbying", "civics", "bills"],
+          "enum": [
+            "propositions",
+            "meetings",
+            "representatives",
+            "campaign_finance",
+            "lobbying",
+            "civics",
+            "bills"
+          ],
           "description": "What type of content this source provides. Daily journals / meeting minutes go under 'meetings' with sourceType=pdf_archive — the consumer partitions by sourceType internally. 'civics' marks a source of region governmental structure, process, and vocabulary; the civics-ingest handler scrapes it and uses the private prompt-service to extract structured shape (chambers, measure types, lifecycle stages with status patterns, glossary) plus a plain-language rewrite for laypeople. Verbatim source text and the AI rewrite are stored together — never one without the other. 'bills' marks a source of individual legislative bills (AB, SB, ACA, SCA, etc.) scraped from an official legislature website; the bills-ingest handler BFS-crawls from the seed URL and extracts one Bill record per detail page. See opuspopuli#686."
         },
         "contentGoal": {
@@ -336,7 +376,12 @@
               "type": "array",
               "items": {
                 "type": "object",
-                "required": ["fieldName", "selector", "extractionMethod", "required"],
+                "required": [
+                  "fieldName",
+                  "selector",
+                  "extractionMethod",
+                  "required"
+                ],
                 "additionalProperties": true,
                 "properties": {
                   "fieldName": { "type": "string" },

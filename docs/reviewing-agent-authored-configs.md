@@ -9,7 +9,7 @@ An operator ran the onboarding agent on their own node, **interactively confirme
 Two consequences frame the review:
 
 - **The config is field-tested.** It passed schema validation, connectivity checks, and a human review by the person who knows the jurisdiction best. You are not the first pair of eyes.
-- **Your gate protects the commons, not their node.** Their node runs this config whether or not the PR merges. The review question is: *should every other node be offered this config?* — not *does this work?*
+- **Your gate protects the commons, not their node.** Their node runs this config whether or not the PR merges. The review question is: _should every other node be offered this config?_ — not _does this work?_
 
 ## What the PR body carries
 

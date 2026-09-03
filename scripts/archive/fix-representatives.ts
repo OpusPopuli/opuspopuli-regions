@@ -14,12 +14,27 @@ import { join } from 'node:path';
 import { fetchHtml } from '../src/cli/lib/fetcher.js';
 import { simplifyHtml } from '../src/cli/lib/html-simplifier.js';
 import { buildStructuralPrompt } from '../src/cli/lib/prompts/structural-analysis.js';
-import { analyzeWithOllama, checkOllamaReachable } from '../src/cli/lib/ollama-analyzer.js';
+import {
+  analyzeWithOllama,
+  checkOllamaReachable,
+} from '../src/cli/lib/ollama-analyzer.js';
 
 const REGIONS_DIR = join(process.cwd(), 'regions', 'california', 'counties');
-const REQUIRED_FIELDS = ['externalId', 'name', 'district', 'party', 'photoUrl', 'detailUrl'];
+const REQUIRED_FIELDS = [
+  'externalId',
+  'name',
+  'district',
+  'party',
+  'photoUrl',
+  'detailUrl',
+];
 
-type FieldMapping = { fieldName: string; selector: string; extractionMethod: string; required: boolean };
+type FieldMapping = {
+  fieldName: string;
+  selector: string;
+  extractionMethod: string;
+  required: boolean;
+};
 type DataSource = {
   url: string;
   dataType: string;
@@ -27,7 +42,11 @@ type DataSource = {
   category?: string;
   hints?: string[];
   sourceType?: string;
-  staticManifest?: { containerSelector: string; itemSelector: string; fieldMappings: FieldMapping[] };
+  staticManifest?: {
+    containerSelector: string;
+    itemSelector: string;
+    fieldMappings: FieldMapping[];
+  };
   detailFields?: Record<string, string>;
 };
 type RegionFile = {
@@ -56,7 +75,8 @@ type CountyResult = {
 function addExternalIdRule(ds: DataSource, countySlug: string): void {
   const rule = `construct externalId as 'california-${countySlug}-supervisor-{district}' using the district number`;
   const goalLower = ds.contentGoal.toLowerCase();
-  if (goalLower.includes('construct') || goalLower.includes('externalid as')) return;
+  if (goalLower.includes('construct') || goalLower.includes('externalid as'))
+    return;
   ds.contentGoal = ds.contentGoal.trimEnd();
   if (!ds.contentGoal.endsWith('.')) ds.contentGoal += '.';
   ds.contentGoal += ` Construct externalId as 'california-${countySlug}-supervisor-{district}' using the district number.`;
@@ -68,12 +88,20 @@ function addExternalIdRule(ds: DataSource, countySlug: string): void {
   }
 }
 
-async function analyzeRepresentatives(ds: DataSource, countySlug: string): Promise<string[] | null> {
+async function analyzeRepresentatives(
+  ds: DataSource,
+  countySlug: string,
+): Promise<string[] | null> {
   const fetched = await fetchHtml(ds.url);
   if ('error' in fetched) return null;
 
   const simplified = simplifyHtml(fetched.html);
-  const prompt = buildStructuralPrompt(ds.url, 'representatives', REQUIRED_FIELDS, simplified);
+  const prompt = buildStructuralPrompt(
+    ds.url,
+    'representatives',
+    REQUIRED_FIELDS,
+    simplified,
+  );
 
   try {
     const analysis = await analyzeWithOllama(prompt);
@@ -104,16 +132,30 @@ async function processCounty(countyDir: string): Promise<CountyResult> {
   const region = JSON.parse(readFileSync(filePath, 'utf-8')) as RegionFile;
 
   const dsIndex = region.config.dataSources.findIndex(
-    (ds) => ds.dataType === 'representatives' && (!ds.category || ds.category.toLowerCase().includes('supervisor')),
+    (ds) =>
+      ds.dataType === 'representatives' &&
+      (!ds.category || ds.category.toLowerCase().includes('supervisor')),
   );
   if (dsIndex === -1) {
-    return { county: countySlug, status: 'no_change', note: 'no representatives source found' };
+    return {
+      county: countySlug,
+      status: 'no_change',
+      note: 'no representatives source found',
+    };
   }
 
   // Skip if already fully updated (version ≥ 0.3.0 means AI analysis succeeded in a prior run)
   const [, , patch] = region.version.split('.').map(Number);
-  if (region.version !== '0.1.0' && region.version !== '0.2.0' && (patch ?? 0) >= 3) {
-    return { county: countySlug, status: 'no_change', note: `already at v${region.version} — skipped` };
+  if (
+    region.version !== '0.1.0' &&
+    region.version !== '0.2.0' &&
+    (patch ?? 0) >= 3
+  ) {
+    return {
+      county: countySlug,
+      status: 'no_change',
+      note: `already at v${region.version} — skipped`,
+    };
   }
 
   const ds = region.config.dataSources[dsIndex];
@@ -127,7 +169,11 @@ async function processCounty(countyDir: string): Promise<CountyResult> {
     ds.hints = newHints;
     region.version = bumpVersion(region.version, true);
     writeFileSync(filePath, JSON.stringify(region, null, 2) + '\n', 'utf-8');
-    return { county: countySlug, status: 'updated', note: `→ v${region.version}` };
+    return {
+      county: countySlug,
+      status: 'updated',
+      note: `→ v${region.version}`,
+    };
   }
 
   // URL failed or Ollama failed — still save the externalId fix if not already there
@@ -139,7 +185,11 @@ async function processCounty(countyDir: string): Promise<CountyResult> {
   if (isNetworkError) {
     return { county: countySlug, status: 'skipped_url', note: fetched.error };
   }
-  return { county: countySlug, status: 'skipped_ollama', note: 'Ollama analysis failed — externalId rule added' };
+  return {
+    county: countySlug,
+    status: 'skipped_ollama',
+    note: 'Ollama analysis failed — externalId rule added',
+  };
 }
 
 async function main(): Promise<void> {
@@ -163,7 +213,9 @@ async function main(): Promise<void> {
   let i = 0;
   for (const county of counties) {
     i++;
-    process.stdout.write(`[${String(i).padStart(2)}/${counties.length}] ${county.padEnd(24)} `);
+    process.stdout.write(
+      `[${String(i).padStart(2)}/${counties.length}] ${county.padEnd(24)} `,
+    );
     const result = await processCounty(county);
     results.push(result);
     let icon: string;
@@ -187,10 +239,15 @@ async function main(): Promise<void> {
     for (const r of brokenUrl) {
       const filePath = join(REGIONS_DIR, r.county, `${r.county}.json`);
       const region = JSON.parse(readFileSync(filePath, 'utf-8')) as RegionFile;
-      const ds = region.config.dataSources.find((d) => d.dataType === 'representatives');
+      const ds = region.config.dataSources.find(
+        (d) => d.dataType === 'representatives',
+      );
       console.log(`  ${r.county}: ${ds?.url ?? 'unknown'} (${r.note})`);
     }
   }
 }
 
-main().catch((err) => { console.error(err); process.exit(1); });
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
