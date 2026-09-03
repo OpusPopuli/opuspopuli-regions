@@ -30,6 +30,16 @@
           "ocdIdSegment": "/place:${name}"
         },
         {
+          "layer": "Legislative/MapServer/0",
+          "outFields": "GEOID,NAME,CD120",
+          "jurisdictionType": "CONGRESSIONAL_DISTRICT",
+          "level": "FEDERAL",
+          "nameField": "NAME",
+          "fipsPrefix": "cd-",
+          "districtField": "CD120",
+          "ocdIdSegment": "/cd:${district}"
+        },
+        {
           "layer": "Legislative/MapServer/1",
           "outFields": "GEOID,NAME,SLDU",
           "jurisdictionType": "STATE_SENATE_DISTRICT",
