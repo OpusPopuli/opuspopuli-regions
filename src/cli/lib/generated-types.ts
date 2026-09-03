@@ -16,6 +16,89 @@
  * See issue #39.
  */
 
+export type BulkDownloadConfig = {
+  [k: string]: any;
+} & {
+  /**
+   * File format
+   */
+  format: 'tsv' | 'csv' | 'zip_tsv' | 'zip_csv' | 'xlsx';
+  /**
+   * For ZIP archives: path/glob of target file(s) within the ZIP
+   */
+  filePattern?: string;
+  /**
+   * Column delimiter override
+   */
+  delimiter?: string;
+  /**
+   * Number of header lines to skip
+   */
+  headerLines?: number;
+  /**
+   * Explicit column headers for files without a header row (e.g., FEC bulk files)
+   */
+  headers?: string[];
+  /**
+   * Column name mappings: source column name -> domain field name
+   */
+  columnMappings?: {
+    [k: string]: string;
+  };
+  /**
+   * Source columns joined with ':' to form externalId, for feeds where no single column identifies a row. Order is significant and must stay stable — it defines the upsert identity, so changing it re-keys every row. Takes precedence over any externalId in columnMappings. Empty cells become empty segments so positions never shift; a column missing from the file's headers fails the parse rather than emitting short keys that would collapse distinct rows onto one externalId. Example (CAL-ACCESS RCPT_CD, where TRAN_ID repeats across filings): ["FILING_ID", "AMEND_ID", "LINE_ITEM", "TRAN_ID"]
+   *
+   * @minItems 2
+   */
+  compositeKey?: [string, string, ...string[]];
+  /**
+   * Filter expressions applied during parse. Values support ${variableName} placeholders that the consumer resolves at runtime from the active local region. Supported variables: ${stateCode} (the 2-letter US state code of the active local region, e.g. 'CA'). Placeholders must appear verbatim. Example: '"STATE": "${stateCode}"' on an FEC bulk filter.
+   */
+  filters?: {
+    [k: string]: string;
+  };
+  /**
+   * Records per batch for streaming processing (default: 10000)
+   */
+  batchSize?: number;
+  /**
+   * Layout of a pivot-shaped .xlsx sheet, read by the domain handler that consumes the source rather than by the generic bulk path.
+   */
+  xlsx?: {
+    /**
+     * 1-based worksheet number (default 1)
+     */
+    sheet?: number;
+    /**
+     * Column holding the row label, e.g. the county name (default 0)
+     */
+    labelColumn?: number;
+    /**
+     * Rows whose label matches are not data. These files interleave a Percent row after every county; matching by pattern rather than position survives a vintage that adds a row.
+     */
+    skipRowPattern?: string;
+    /**
+     * Aggregate rows such as 'State Totals'. Reconciled against the sum of the members before being excluded — that check is what proves the parse read the right columns.
+     */
+    excludeLabels?: string[];
+    /**
+     * Sum every numeric column on the row. Elections Code §9118 counts votes cast for ALL candidates, not the winner's total, so reading a single column understates every threshold.
+     */
+    sumAllValueColumns?: boolean;
+    /**
+     * Read a single 0-based column instead of summing
+     */
+    valueColumn?: number;
+    /**
+     * Election year the figures describe, when the file itself does not say
+     */
+    electionYear?: number;
+    /**
+     * Publication date of the figures, ISO YYYY-MM-DD
+     */
+    asOf?: string;
+  };
+};
 /**
  * Maps each feature to a JurisdictionType row in the consumer's `jurisdictions` table. Single source of truth — TigerLayerConfig and GeoportalLayerConfig both reference this so a new jurisdiction type can't be added to one without the other.
  */
@@ -128,7 +211,15 @@ export interface DataSourceConfig {
   /**
    * What type of content this source provides. Daily journals / meeting minutes go under 'meetings' with sourceType=pdf_archive — the consumer partitions by sourceType internally. 'civics' marks a source of region governmental structure, process, and vocabulary; the civics-ingest handler scrapes it and uses the private prompt-service to extract structured shape (chambers, measure types, lifecycle stages with status patterns, glossary) plus a plain-language rewrite for laypeople. Verbatim source text and the AI rewrite are stored together — never one without the other. 'bills' marks a source of individual legislative bills (AB, SB, ACA, SCA, etc.) scraped from an official legislature website; the bills-ingest handler BFS-crawls from the seed URL and extracts one Bill record per detail page. See opuspopuli#686.
    */
-  dataType: 'propositions' | 'meetings' | 'representatives' | 'campaign_finance' | 'lobbying' | 'civics' | 'bills';
+  dataType:
+    | 'propositions'
+    | 'meetings'
+    | 'representatives'
+    | 'campaign_finance'
+    | 'lobbying'
+    | 'civics'
+    | 'bills'
+    | 'county_thresholds';
   /**
    * Natural language description of what to find/extract
    */
@@ -210,50 +301,6 @@ export interface DataSourceConfig {
    * Per-source override for the LLM provider request timeout (milliseconds). Useful when a single source legitimately runs much longer than the platform-wide default — civics-glossary extraction on qwen3.5:9b can take 15-20 min, while bio gen finishes in 2 min on the same hardware. Overrides the provider's constructor-configured default.
    */
   llmRequestTimeoutMs?: number;
-}
-export interface BulkDownloadConfig {
-  /**
-   * File format
-   */
-  format: 'tsv' | 'csv' | 'zip_tsv' | 'zip_csv';
-  /**
-   * For ZIP archives: path/glob of target file(s) within the ZIP
-   */
-  filePattern?: string;
-  /**
-   * Column delimiter override
-   */
-  delimiter?: string;
-  /**
-   * Number of header lines to skip
-   */
-  headerLines?: number;
-  /**
-   * Explicit column headers for files without a header row (e.g., FEC bulk files)
-   */
-  headers?: string[];
-  /**
-   * Column name mappings: source column name -> domain field name
-   */
-  columnMappings: {
-    [k: string]: string;
-  };
-  /**
-   * Source columns joined with ':' to form externalId, for feeds where no single column identifies a row. Order is significant and must stay stable — it defines the upsert identity, so changing it re-keys every row. Takes precedence over any externalId in columnMappings. Empty cells become empty segments so positions never shift; a column missing from the file's headers fails the parse rather than emitting short keys that would collapse distinct rows onto one externalId. Example (CAL-ACCESS RCPT_CD, where TRAN_ID repeats across filings): ["FILING_ID", "AMEND_ID", "LINE_ITEM", "TRAN_ID"]
-   *
-   * @minItems 2
-   */
-  compositeKey?: [string, string, ...string[]];
-  /**
-   * Filter expressions applied during parse. Values support ${variableName} placeholders that the consumer resolves at runtime from the active local region. Supported variables: ${stateCode} (the 2-letter US state code of the active local region, e.g. 'CA'). Placeholders must appear verbatim. Example: '"STATE": "${stateCode}"' on an FEC bulk filter.
-   */
-  filters?: {
-    [k: string]: string;
-  };
-  /**
-   * Records per batch for streaming processing (default: 10000)
-   */
-  batchSize?: number;
 }
 export interface ApiSourceConfig {
   /**

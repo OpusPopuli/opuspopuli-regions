@@ -104,6 +104,56 @@
     },
     "dataSources": [
       {
+        "url": "https://elections.cdn.sos.ca.gov/sov/2022-general/sov/19-governor.xlsx",
+        "dataType": "county_thresholds",
+        "syncCadence": "0 4 15 * *",
+        "sourceType": "bulk_download",
+        "contentGoal": "County totals for every gubernatorial candidate at the November 2022 general — the Elections Code \u00a79118 denominator for a county initiative",
+        "category": "Statement of Vote \u2014 Governor",
+        "bulk": {
+          "format": "xlsx",
+          "xlsx": {
+            "sheet": 1,
+            "labelColumn": 0,
+            "skipRowPattern": "^\\s*Percent",
+            "excludeLabels": ["State Totals"],
+            "sumAllValueColumns": true,
+            "electionYear": 2022
+          }
+        },
+        "hints": [
+          "Pivot-shaped: row 1 is candidate names, row 2 is party codes, one column per candidate, and a Percent row follows every county",
+          "\u00a79118 counts votes cast for ALL candidates, NOT the winner's total — sumAllValueColumns is load-bearing, not a convenience",
+          "The State Totals row is reconciled against the sum of the 58 counties before being excluded; a mismatch aborts the load",
+          "Column A of the header rows is empty because candidate names start at column B, above the county labels",
+          "Update after the November 2026 gubernatorial general — the URL carries the cycle"
+        ]
+      },
+      {
+        "url": "https://elections.cdn.sos.ca.gov/ror/ror-odd-year-2025/county.xlsx",
+        "dataType": "county_thresholds",
+        "syncCadence": "0 4 15 * *",
+        "sourceType": "bulk_download",
+        "contentGoal": "Registered voters by county, for the share-of-registered view",
+        "category": "Report of Registration",
+        "bulk": {
+          "format": "xlsx",
+          "xlsx": {
+            "sheet": 1,
+            "labelColumn": 0,
+            "skipRowPattern": "^\\s*Percent",
+            "excludeLabels": ["State Totals"],
+            "valueColumn": 2,
+            "asOf": "2025-02-10"
+          }
+        },
+        "hints": [
+          "Columns are County | Eligible | Total Registered | party breakdowns — valueColumn 2 is Total Registered, NOT Eligible",
+          "Display only. Registered voters are never the \u00a79118 basis for a county initiative",
+          "Republished several times a year, which is why this is a sync rather than a one-shot backfill"
+        ]
+      },
+      {
         "url": "https://www.sos.ca.gov/elections/ballot-measures/qualified-ballot-measures",
         "dataType": "propositions",
         "syncCadence": "0 2 * * 0",
