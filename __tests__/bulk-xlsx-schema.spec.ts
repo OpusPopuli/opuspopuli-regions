@@ -90,4 +90,55 @@ describe('BulkDownloadConfig — xlsx (#1107)', () => {
       valid({ format: 'xlsx', xlsx: { valueColumn: 2 } }, 'county_thresholds'),
     ).toBe(true);
   });
+
+  describe('csv layout for a domain-read source (#1131)', () => {
+    const census = {
+      field: 'population',
+      fipsColumns: ['STATE', 'COUNTY'],
+      nameColumn: 'CTYNAME',
+      valueColumn: 'POPESTIMATE2024',
+      rowFilter: { SUMLEV: '050', STATE: '06' },
+      asOf: '2024-07-01',
+    };
+
+    it('accepts a csv source with a layout and no columnMappings', () => {
+      // Read by the domain handler column-by-column, not ingested wholesale.
+      expect(valid({ format: 'csv', csv: census })).toBe(true);
+    });
+
+    it('STILL requires columnMappings for a csv source with no layout', () => {
+      // The generic bulk path needs them, and the exemption must not leak to
+      // every csv source just because one kind is exempt.
+      expect(valid({ format: 'csv' }, 'campaign_finance')).toBe(false);
+      expect(valid({ format: 'tsv' }, 'campaign_finance')).toBe(false);
+    });
+
+    it('requires the fields that make the file readable at all', () => {
+      const omit = (key: keyof typeof census) => {
+        const copy: Record<string, unknown> = { ...census };
+        delete copy[key];
+        return copy;
+      };
+      const noField = omit('field');
+      const noFips = omit('fipsColumns');
+      const noValue = omit('valueColumn');
+      expect(valid({ format: 'csv', csv: noField })).toBe(false);
+      expect(valid({ format: 'csv', csv: noFips })).toBe(false);
+      expect(valid({ format: 'csv', csv: noValue })).toBe(false);
+    });
+
+    it('rejects a field it does not know how to write', () => {
+      expect(valid({ format: 'csv', csv: { ...census, field: 'gdp' } })).toBe(
+        false,
+      );
+    });
+
+    it('rejects an unknown key inside csv', () => {
+      // A typo like `rowFilters` would otherwise be ignored, and every
+      // state-level row would be written as a county.
+      expect(valid({ format: 'csv', csv: { ...census, rowFilters: {} } })).toBe(
+        false,
+      );
+    });
+  });
 });

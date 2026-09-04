@@ -130,6 +130,32 @@
         ]
       },
       {
+        "url": "https://www2.census.gov/programs-surveys/popest/datasets/2020-2024/counties/totals/co-est2024-alldata.csv",
+        "dataType": "county_thresholds",
+        "syncCadence": "0 4 15 * *",
+        "sourceType": "bulk_download",
+        "contentGoal": "County population estimates, for context beside the signature requirement",
+        "category": "Census Population Estimates",
+        "bulk": {
+          "format": "csv",
+          "csv": {
+            "field": "population",
+            "fipsColumns": ["STATE", "COUNTY"],
+            "nameColumn": "CTYNAME",
+            "valueColumn": "POPESTIMATE2024",
+            "rowFilter": { "SUMLEV": "050", "STATE": "06" },
+            "aggregateFilter": { "SUMLEV": "040", "STATE": "06" },
+            "asOf": "2024-07-01"
+          }
+        },
+        "hints": [
+          "SUMLEV 050 is a county; the same file carries state rows as 040. Writing a state row as a county would put 39,431,263 on a county page and look entirely plausible",
+          "FIPS is split across STATE and COUNTY and must be concatenated: 06 + 057 = 06057",
+          "Population is display-only. It is never the \u00a79118 basis, which counts votes cast",
+          "Bump valueColumn to the newest POPESTIMATE column when Census publishes a new vintage; the URL carries the vintage too"
+        ]
+      },
+      {
         "url": "https://elections.cdn.sos.ca.gov/ror/ror-odd-year-2025/county.xlsx",
         "dataType": "county_thresholds",
         "syncCadence": "0 4 15 * *",
