@@ -65,12 +65,38 @@ fi
 # Blocks on HIGH and CRITICAL CVEs in production dependencies.
 echo ""
 echo "Running dependency vulnerability audit..."
-pnpm audit --prod --audit-level=high 2>&1
-AUDIT_EXIT=$?
+# `&& ... || ...` keeps the real exit code without tripping `set -e`.
+AUDIT_OUT=$(pnpm audit --prod --audit-level=high 2>&1) && AUDIT_EXIT=0 || AUDIT_EXIT=$?
+printf '%s\n' "$AUDIT_OUT"
 if [ $AUDIT_EXIT -ne 0 ]; then
-  printf '\nPush blocked: HIGH or CRITICAL CVEs found in production dependencies.\n'
-  printf 'Fix with: pnpm audit --fix   or add a version override to package.json > pnpm.overrides\n'
-  exit 1
+  # Distinguish "the audit could not run" from "the audit found something".
+  # Both exit non-zero, and conflating them reports a network outage as a
+  # critical security finding — the false positive most likely to teach
+  # someone that this gate is noise to route around with --no-verify, which
+  # is what waves a real finding through later. Mirrors opuspopuli#1129.
+  #
+  # Findings are checked FIRST and win: pnpm prints "ERR_SOCKET_TIMEOUT ...
+  # Will retry" and can then succeed on a later attempt and report real CVEs,
+  # so one run's output can carry both a transport signature and a genuine
+  # verdict. Unrecognised failures still block — fail closed.
+  if printf '%s' "$AUDIT_OUT" | grep -qEi 'vulnerabilit(y|ies) found|Severity:.*(high|critical)'; then
+    AUDIT_VERDICT=findings
+  elif printf '%s' "$AUDIT_OUT" | grep -qE 'ERR_PNPM_AUDIT_BAD_RESPONSE|being retired|410|ERR_SOCKET_TIMEOUT|Socket timeout|ETIMEDOUT|ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|FetchError|ERR_PNPM_FETCH'; then
+    AUDIT_VERDICT=unreachable
+  else
+    AUDIT_VERDICT=findings
+  fi
+
+  if [ "$AUDIT_VERDICT" = unreachable ]; then
+    printf '\nWarning: the dependency audit did NOT run — the npm advisory endpoint was\n'
+    printf 'unreachable or retired. This is a transport failure, NOT a clean result:\n'
+    printf 'no packages were assessed.\n'
+    printf '\nNot blocking this push. CI runs the same audit and still gates the PR.\n'
+  else
+    printf '\nPush blocked: HIGH or CRITICAL CVEs found in production dependencies.\n'
+    printf 'Fix with: pnpm audit --fix   or add a version override to package.json > pnpm.overrides\n'
+    exit 1
+  fi
 fi
 
 # ── 6. Trivy filesystem scan ──────────────────────────────────────────────────
