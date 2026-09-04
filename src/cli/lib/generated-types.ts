@@ -62,6 +62,45 @@ export type BulkDownloadConfig = {
    */
   batchSize?: number;
   /**
+   * Layout of a flat delimited file read by a domain handler to fill in specific fields on rows it already owns. Distinct from columnMappings, which describes a feed the generic bulk path ingests wholesale.
+   */
+  csv?: {
+    /**
+     * Which figure this source supplies. Explicit rather than inferred from column names, so a second delimited source cannot silently be mistaken for this one.
+     */
+    field: 'population';
+    /**
+     * Columns concatenated, in order, to form the FIPS code. The Census splits it: STATE 06 + COUNTY 057 = 06057. Concatenating beats matching county names, which requires two publishers to agree on spelling forever.
+     *
+     * @minItems 1
+     */
+    fipsColumns: [string, ...string[]];
+    /**
+     * Column holding the display name. Used in errors, never as the key.
+     */
+    nameColumn?: string;
+    /**
+     * Column holding the value.
+     */
+    valueColumn: string;
+    /**
+     * A row is data only if every one of these columns equals its value. Census county files carry state-level rows too (SUMLEV 040 alongside 050); writing one as a county would put a state's population on a county page and look entirely plausible.
+     */
+    rowFilter?: {
+      [k: string]: string;
+    };
+    /**
+     * Identifies the publisher's own total row, so the members can be reconciled against it before it is excluded. California's 58 counties sum to 39,431,263 and so does the state row; a mismatch means rowFilter kept the wrong rows and the load aborts.
+     */
+    aggregateFilter?: {
+      [k: string]: string;
+    };
+    /**
+     * Publication date of the figures, ISO YYYY-MM-DD.
+     */
+    asOf?: string;
+  };
+  /**
    * Layout of a pivot-shaped .xlsx sheet, read by the domain handler that consumes the source rather than by the generic bulk path.
    */
   xlsx?: {
