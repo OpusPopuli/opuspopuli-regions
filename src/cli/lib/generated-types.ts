@@ -529,9 +529,13 @@ export interface BoundarySourcesConfig {
  */
 export interface TigerLayerConfig {
   /**
-   * TIGER MapServer service+layer path, e.g. 'State_County/MapServer/1', 'Legislative/MapServer/1' (state senate), 'Legislative/MapServer/2' (state assembly), 'School/MapServer/0' (unified school districts).
+   * TIGER MapServer path. With `layerName`: the SERVICE root, e.g. 'Legislative/MapServer'. Without it (legacy): a literal service+index path like 'State_County/MapServer/1' — avoid for new configs; indexes shift every time Census adds a vintage group.
    */
   layer: string;
+  /**
+   * Exact TIGERweb layer NAME, resolved against the service directory at fetch time — e.g. '119th Congressional Districts', '2024 State Legislative Districts - Upper', 'Counties'. Prefer this over index addressing: TIGERweb PREPENDS new vintage groups, renumbering every layer — which is how index 0 silently changed from the 119th to the 120th Congressional Districts and a whole state's district resolution answered for the wrong Congress. The name pins the legal identity; duplicates across vintage groups resolve to the lowest index (newest geometry benchmark); a missing name fails loudly instead of guessing.
+   */
+  layerName?: string;
   /**
    * ESRI WHERE clause filtering features. Defaults to `STATE='${fipsCode}'` when omitted. Use `${fipsCode}` / `${stateCode}` placeholders.
    */

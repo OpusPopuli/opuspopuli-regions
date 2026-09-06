@@ -14,7 +14,8 @@
       "ocdIdPrefix": "ocd-division/country:us/state:ca",
       "tigerLayers": [
         {
-          "layer": "State_County/MapServer/1",
+          "layer": "State_County/MapServer",
+          "layerName": "Counties",
           "outFields": "GEOID,NAME",
           "jurisdictionType": "COUNTY",
           "level": "COUNTY",
@@ -22,7 +23,8 @@
           "ocdIdSegment": "/county:${name}"
         },
         {
-          "layer": "Places_CouSub_ConCity_SubMCD/MapServer/4",
+          "layer": "Places_CouSub_ConCity_SubMCD/MapServer",
+          "layerName": "Incorporated Places",
           "outFields": "GEOID,NAME",
           "jurisdictionType": "CITY",
           "level": "MUNICIPAL",
@@ -30,17 +32,19 @@
           "ocdIdSegment": "/place:${name}"
         },
         {
-          "layer": "Legislative/MapServer/0",
-          "outFields": "GEOID,NAME,CD120",
+          "layer": "Legislative/MapServer",
+          "layerName": "119th Congressional Districts",
+          "outFields": "GEOID,NAME,CD119",
           "jurisdictionType": "CONGRESSIONAL_DISTRICT",
           "level": "FEDERAL",
           "nameField": "NAME",
           "fipsPrefix": "cd-",
-          "districtField": "CD120",
+          "districtField": "CD119",
           "ocdIdSegment": "/cd:${district}"
         },
         {
-          "layer": "Legislative/MapServer/1",
+          "layer": "Legislative/MapServer",
+          "layerName": "2024 State Legislative Districts - Upper",
           "outFields": "GEOID,NAME,SLDU",
           "jurisdictionType": "STATE_SENATE_DISTRICT",
           "level": "STATE",
@@ -51,7 +55,8 @@
           "nameTemplate": "California State Senate District ${district}"
         },
         {
-          "layer": "Legislative/MapServer/2",
+          "layer": "Legislative/MapServer",
+          "layerName": "2024 State Legislative Districts - Lower",
           "outFields": "GEOID,NAME,SLDL",
           "jurisdictionType": "STATE_ASSEMBLY_DISTRICT",
           "level": "STATE",
@@ -62,21 +67,24 @@
           "nameTemplate": "California State Assembly District ${district}"
         },
         {
-          "layer": "School/MapServer/0",
+          "layer": "School/MapServer",
+          "layerName": "Unified School Districts",
           "outFields": "GEOID,NAME",
           "jurisdictionType": "SCHOOL_DISTRICT_UNIFIED",
           "level": "DISTRICT",
           "nameField": "NAME"
         },
         {
-          "layer": "School/MapServer/1",
+          "layer": "School/MapServer",
+          "layerName": "Secondary School Districts",
           "outFields": "GEOID,NAME",
           "jurisdictionType": "SCHOOL_DISTRICT_HIGH",
           "level": "DISTRICT",
           "nameField": "NAME"
         },
         {
-          "layer": "School/MapServer/2",
+          "layer": "School/MapServer",
+          "layerName": "Elementary School Districts",
           "outFields": "GEOID,NAME",
           "jurisdictionType": "SCHOOL_DISTRICT_ELEMENTARY",
           "level": "DISTRICT",

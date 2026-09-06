@@ -34,9 +34,8 @@
           "fieldMappings": [
             {
               "fieldName": "name",
-              "selector": "img",
-              "extractionMethod": "attribute",
-              "attribute": "alt",
+              "selector": "h3 a",
+              "extractionMethod": "text",
               "required": true
             },
             {
@@ -107,7 +106,7 @@
         ]
       },
       {
-        "url": "https://sonomacounty.ca.gov/administrative-support-and-fiscal-services/clerk-recorder-assessor-registrar-of-voters/registrar-of-voters/elections",
+        "url": "https://sonomacounty.gov/administrative-support-and-fiscal-services/registrar-of-voters/elections",
         "dataType": "propositions",
         "category": "Ballot Measures",
         "contentGoal": "Extract current and past ballot measures for Sonoma County — measure identifier (letter/number), full title, election date, sponsoring jurisdiction, measure type (bond, tax, initiative, ordinance, charter amendment, etc.), summary description, and official outcome (passed/failed) where available.",
@@ -118,7 +117,7 @@
         ]
       },
       {
-        "url": "https://netfile.com/connect2/api/public/?aid=SON",
+        "url": "https://netfile.com/public/landing/SON/campaign",
         "dataType": "campaign_finance",
         "category": "Campaign Disclosure",
         "contentGoal": "Extract campaign finance disclosure filings for Sonoma County — committee name, filer type (candidate/measure committee), election, total contributions received, total expenditures made, and top contributors with amounts.",
