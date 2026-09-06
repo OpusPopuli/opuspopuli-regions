@@ -158,7 +158,8 @@
         "WATER_DISTRICT",
         "FIRE_DISTRICT",
         "TRANSIT_DISTRICT",
-        "SPECIAL_DISTRICT"
+        "SPECIAL_DISTRICT",
+        "COUNTY_SUPERVISOR_DISTRICT"
       ],
       "description": "Maps each feature to a JurisdictionType row in the consumer's `jurisdictions` table. Single source of truth — TigerLayerConfig and GeoportalLayerConfig both reference this so a new jurisdiction type can't be added to one without the other."
     },
@@ -276,6 +277,11 @@
         "fipsPrefix": {
           "type": "string",
           "description": "Optional prefix prepended to fipsField, mirroring TigerLayerConfig.fipsPrefix."
+        },
+        "districtField": {
+          "type": "string",
+          "minLength": 1,
+          "description": "FeatureServer attribute key supplying ${district} substitutions. Added for county supervisorial layers (#1136) — most geoportal layers (fire/water) have no district numbers, but county-published political districts do (e.g. Sonoma's SupNum)."
         },
         "ocdIdSegment": {
           "type": "string",

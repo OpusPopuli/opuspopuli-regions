@@ -154,7 +154,8 @@ export type JurisdictionTypeEnum =
   | 'WATER_DISTRICT'
   | 'FIRE_DISTRICT'
   | 'TRANSIT_DISTRICT'
-  | 'SPECIAL_DISTRICT';
+  | 'SPECIAL_DISTRICT'
+  | 'COUNTY_SUPERVISOR_DISTRICT';
 /**
  * Hierarchy level for the resulting jurisdiction rows. Single source of truth — referenced from TigerLayerConfig and GeoportalLayerConfig.
  */
@@ -601,6 +602,10 @@ export interface GeoportalLayerConfig {
    * Optional prefix prepended to fipsField, mirroring TigerLayerConfig.fipsPrefix.
    */
   fipsPrefix?: string;
+  /**
+   * FeatureServer attribute key supplying ${district} substitutions. Added for county supervisorial layers (#1136) — most geoportal layers (fire/water) have no district numbers, but county-published political districts do (e.g. Sonoma's SupNum).
+   */
+  districtField?: string;
   /**
    * Appended to boundarySources.ocdIdPrefix. Supports ${name} placeholder. Same OCD-ID normalization as TigerLayerConfig.ocdIdSegment — whitespace to underscores, lowercased.
    */
