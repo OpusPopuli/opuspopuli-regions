@@ -11,6 +11,23 @@
     "description": "Sonoma County civic data from official county government websites",
     "timezone": "America/Los_Angeles",
     "stateCode": "CA",
+    "boundarySources": {
+      "ocdIdPrefix": "ocd-division/country:us/state:ca/county:sonoma",
+      "geoportalLayers": [
+        {
+          "url": "https://socogis.sonomacounty.ca.gov/map/rest/services/BASEPublic/Supervisorial_Districts/FeatureServer/0",
+          "outFields": "SupNum,SupDstr,Supervisor",
+          "jurisdictionType": "COUNTY_SUPERVISOR_DISTRICT",
+          "level": "COUNTY",
+          "nameField": "SupDstr",
+          "districtField": "SupNum",
+          "fipsField": "SupNum",
+          "fipsPrefix": "sup-06097-",
+          "ocdIdSegment": "/supervisorial_district:${district}",
+          "nameTemplate": "Sonoma County Supervisorial District ${district}"
+        }
+      ]
+    },
     "dataSources": [
       {
         "url": "https://sonoma-county.legistar.com/Calendar.aspx",
