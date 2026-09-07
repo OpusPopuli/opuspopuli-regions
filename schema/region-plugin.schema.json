@@ -366,6 +366,9 @@
         "billDiscovery": {
           "$ref": "#/definitions/BillDiscoveryConfig"
         },
+        "linkDiscovery": {
+          "$ref": "#/definitions/LinkDiscoveryConfig"
+        },
         "detailFields": {
           "type": "object",
           "additionalProperties": {
@@ -443,6 +446,46 @@
           "type": "integer",
           "minimum": 1,
           "description": "Per-source override for the LLM provider request timeout (milliseconds). Useful when a single source legitimately runs much longer than the platform-wide default — civics-glossary extraction on qwen3.5:9b can take 15-20 min, while bio gen finishes in 2 min on the same hardware. Overrides the provider's constructor-configured default."
+        }
+      }
+    },
+    "LinkDiscoveryConfig": {
+      "type": "object",
+      "required": ["steps"],
+      "additionalProperties": false,
+      "description": "Declarative hub navigation for html_scrape sources whose seed URL is a multi-level hub rather than the page holding the data (e.g. a registrar /elections page linking to per-election pages that link to a measures list). The pipeline fetches the seed once, follows each step's matching links in order, and runs extraction on the resulting leaf pages instead of the seed. Deterministic (no LLM); navigation is scoped to the seed's host, HTTPS only. A step that matches zero links across all pages it is applied to is a pipeline error, so a site restructure fails loudly instead of yielding an empty sync. Replaces crawlDepth for targeted hub-to-leaf shapes where BFS wastes crawlMaxPages on nav links (see opuspopuli#1164; same rationale as BillDiscoveryConfig).",
+      "properties": {
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/LinkDiscoveryStep" },
+          "description": "Ordered navigation steps from the seed page. Step 1 is applied to the seed page's links; step N is applied to the links of every page selected by step N-1. Pages selected by the final step are the extraction targets."
+        },
+        "maxLeafPages": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Cap on total leaf pages extracted per sync run (default 5). Each leaf page gets its own structural manifest and extraction pass, so this bounds runtime + token spend."
+        }
+      }
+    },
+    "LinkDiscoveryStep": {
+      "type": "object",
+      "required": ["textPattern"],
+      "additionalProperties": false,
+      "description": "One navigation hop: which anchor(s) to follow on the current page.",
+      "properties": {
+        "textPattern": {
+          "type": "string",
+          "description": "Regex (case-insensitive) matched against each anchor's visible text. Example: \"(Primary|General|Special) Election\"."
+        },
+        "hrefPattern": {
+          "type": "string",
+          "description": "Optional regex additionally matched against the anchor's resolved absolute URL. Both patterns must match when set."
+        },
+        "select": {
+          "type": "string",
+          "enum": ["first", "all"],
+          "description": "Whether to follow only the first matching link on a page or every matching link (default 'first'). Non-final steps with 'all' fan out; the maxLeafPages cap still bounds the walk."
         }
       }
     },

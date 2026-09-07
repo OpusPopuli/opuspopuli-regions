@@ -2,7 +2,7 @@
   "name": "california-sonoma",
   "displayName": "Sonoma County",
   "description": "Sonoma County civic data from official county government websites",
-  "version": "0.8.3",
+  "version": "0.9.0",
   "config": {
     "regionId": "california-sonoma",
     "regionName": "Sonoma County",
@@ -126,11 +126,30 @@
         "url": "https://sonomacounty.gov/administrative-support-and-fiscal-services/registrar-of-voters/elections",
         "dataType": "propositions",
         "category": "Ballot Measures",
-        "contentGoal": "Extract current and past ballot measures for Sonoma County — measure identifier (letter/number), full title, election date, sponsoring jurisdiction, measure type (bond, tax, initiative, ordinance, charter amendment, etc.), summary description, and official outcome (passed/failed) where available.",
+        "contentGoal": "Extract the ballot measures filed for each Sonoma County election. The seed URL is a hub; linkDiscovery navigates to each election's 'List of Local Measures That Have Been Filed' page, which is the extraction target. Each measure yields externalId, title, electionDate, summary, and status.",
+        "linkDiscovery": {
+          "steps": [
+            {
+              "textPattern": "(Primary|General|Special) Election",
+              "hrefPattern": "/registrar-of-voters/elections/",
+              "select": "all"
+            },
+            {
+              "textPattern": "Local Measures That Have Been Filed",
+              "select": "first"
+            }
+          ],
+          "maxLeafPages": 4
+        },
         "hints": [
-          "Sonoma County Registrar of Voters publishes ballot measures at this URL",
-          "Extract current and past ballot measures — measure letter/number, title, election date, jurisdiction (county, city, district), measure type (bond, tax, initiative, etc.), short description, and outcome when available",
-          "Use these EXACT field names: externalId, title, electionDate, jurisdiction, measureType, description, outcome"
+          "This IS the measures list page — each list entry is one filed ballot measure (e.g. 'Measure E: Waugh School District Bond … Filed 6/26/26')",
+          "Use these EXACT field names: externalId, title, electionDate, summary, status",
+          "externalId: construct as 'california-sonoma-' + election date (YYYY-MM-DD) + '-measure-' + the measure letter lowercased, e.g. 'california-sonoma-2026-11-03-measure-e'",
+          "title: the measure letter plus its subject, e.g. 'Measure E: Waugh School District Bond'",
+          "electionDate: the election this page belongs to, from the page heading or URL (e.g. 'november-3-2026-general-election' → 2026-11-03) — the same date for every measure on the page",
+          "summary: the measure's subject plus its sponsoring jurisdiction and measure type when shown (e.g. 'Waugh School District bond measure')",
+          "status MUST be exactly one of: pending, passed, failed, withdrawn — a filed measure with no result is 'pending'; any other value is rejected by schema validation and drops the row",
+          "Do NOT extract navigation links, argument-submission deadlines, or contact info as measures"
         ]
       },
       {
