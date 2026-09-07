@@ -310,6 +310,10 @@ export interface DataSourceConfig {
       fieldName: string;
       selector: string;
       extractionMethod: string;
+      /**
+       * For extractionMethod='composite': builds this field from values already extracted for the same item, using {fieldName} placeholders with optional formatters ({field:date|lower|upper|slug|trim}) and dot paths. Referenced fields must be declared earlier in fieldMappings; if any placeholder resolves to nothing the whole field is dropped rather than emitting a half-built key. Use it when the discriminating value sits once per page (an election date in a heading) and the rest is per item — e.g. "california-sonoma-{electionDate:date}-measure-{measureLetter:lower}". HTML counterpart of BulkDownloadConfig.compositeKey; see opuspopuli#1164.
+       */
+      template?: string;
       attribute?: string;
       regexPattern?: string;
       regexGroup?: number;

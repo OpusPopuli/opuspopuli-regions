@@ -142,14 +142,16 @@
           "maxLeafPages": 4
         },
         "hints": [
-          "This IS the measures list page — each list entry is one filed ballot measure (e.g. 'Measure E: Waugh School District Bond … Filed 6/26/26')",
-          "Use these EXACT field names: externalId, title, electionDate, summary, status",
-          "externalId: construct as 'california-sonoma-' + election date (YYYY-MM-DD) + '-measure-' + the measure letter lowercased, e.g. 'california-sonoma-2026-11-03-measure-e'",
-          "title: the measure letter plus its subject, e.g. 'Measure E: Waugh School District Bond'",
-          "electionDate: the election this page belongs to, from the page heading or URL (e.g. 'november-3-2026-general-election' → 2026-11-03) — the same date for every measure on the page",
-          "summary: the measure's subject plus its sponsoring jurisdiction and measure type when shown (e.g. 'Waugh School District bond measure')",
+          "This IS the measures list page — each entry is one filed ballot measure (e.g. 'Measure E: Waugh School District Bond … Filed 6/26/26')",
+          "The page has NO semantic CSS classes for measures: it is a plain nested <ul>/<li> list with inline styles. Do NOT invent class selectors such as '.measure-item' or '.ballot-measure-item'.",
+          "Use containerSelector '#content' — it is unique. Do NOT use '.tray', which matches two elements on this page, the first of which holds no measures.",
+          "Use itemSelector 'li:has(> ul)' — each measure is a top-level <li> whose nested <ul> holds its Filed date and deadlines. This correctly excludes the prose notes ('The letter \"F\" is skipped.') which have no nested list.",
+          "Measure identifiers are NOT always a single letter — 'Measure AB' occurs. Match [A-Z]+ when capturing the letter.",
+          "A 'composite' field builds its value from fields already extracted for the SAME item, using {fieldName} placeholders with optional formatters {field:date|lower|upper|slug|trim}. Dependencies must be declared EARLIER in fieldMappings. Use it for externalId and title here — the election date exists only once per page (in the h1), not per measure.",
+          "Do NOT use the '_text' pseudo-selector or extractionMethod 'structured' for title/summary — '_text' is only valid inside a 'structured' field's children map, and title must be a single string.",
           "status MUST be exactly one of: pending, passed, failed, withdrawn — a filed measure with no result is 'pending'; any other value is rejected by schema validation and drops the row",
-          "Do NOT extract navigation links, argument-submission deadlines, or contact info as measures"
+          "Do NOT extract navigation links, argument-submission deadlines, Statement of Accuracy links, or contact info as measures",
+          "Use EXACTLY these fieldMappings (verified against this page — they yield all 12 measures with zero warnings): [{\"fieldName\":\"electionDate\",\"selector\":\"h1\",\"extractionMethod\":\"text\",\"scope\":\"container\",\"transform\":{\"type\":\"date_parse\"},\"required\":true},{\"fieldName\":\"measureLetter\",\"selector\":\"strong\",\"extractionMethod\":\"regex\",\"regexPattern\":\"^Measure\\\\s+([A-Z]+)\",\"regexGroup\":1,\"required\":true},{\"fieldName\":\"measureSubject\",\"selector\":\"li:has(> ul)\",\"extractionMethod\":\"regex\",\"regexPattern\":\"^Measure\\\\s+[A-Z]+\\\\s*:\\\\s*([^\\\\n]+)\",\"regexGroup\":1,\"required\":true},{\"fieldName\":\"title\",\"selector\":\"\",\"extractionMethod\":\"composite\",\"template\":\"Measure {measureLetter}: {measureSubject:trim}\",\"required\":true},{\"fieldName\":\"summary\",\"selector\":\"\",\"extractionMethod\":\"composite\",\"template\":\"{measureSubject:trim}\",\"required\":false},{\"fieldName\":\"externalId\",\"selector\":\"\",\"extractionMethod\":\"composite\",\"template\":\"california-sonoma-{electionDate:date}-measure-{measureLetter:lower}\",\"required\":true},{\"fieldName\":\"status\",\"selector\":\"\",\"extractionMethod\":\"constant\",\"defaultValue\":\"pending\",\"required\":false}]"
         ]
       },
       {
