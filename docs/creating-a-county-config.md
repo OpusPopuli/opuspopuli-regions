@@ -147,12 +147,46 @@ Then open a pull request to `main` on GitHub. CI will validate the schema and ch
 
 ## Common problems
 
-| Problem                                      | Fix                                                                                                                                                                                                   |
-| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `check-urls` shows 403 for a government site | Some sites block automated requests. Try the URL in a browser — if it works, add a `rateLimitOverride` to the data source.                                                                            |
-| AI suggests wrong CSS selectors              | Add a `staticManifest` with the correct selectors, or improve `hints` with exact class names you can see in the page source.                                                                          |
-| `validate-extraction` warns about all fields | The page may require JavaScript to render. Note this in `contentGoal` hints.                                                                                                                          |
-| Schema validation fails with "must be uri"   | The URL has a typo or uses `http` where `https` is required.                                                                                                                                          |
-| `JSON parse failed for ...`                  | The JSON file has a syntax error — a stray comma, an unterminated string, missing closing brace. The error message names the file; open it and look for an obvious typo.                              |
-| `Schema validation failed for ...`           | The JSON is parseable but doesn't match the schema. The error lists the path (e.g. `/config/dataSources/0/url`) and the issue (`must be uri`, `must have required property "version"`). Fix in place. |
-| `externalId` warning won't go away           | This is expected — it's always ⚠ because it must be constructed, not extracted. As long as `contentGoal` describes the construction rule, you're fine.                                                |
+| Problem                                      | Fix                                                                                                                                                                                                                    |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `check-urls` shows 403 for a government site | Some sites block automated requests. Try the URL in a browser — if it works, add a `rateLimitOverride` to the data source.                                                                                             |
+| AI suggests wrong CSS selectors              | Add a `staticManifest` with the correct selectors, or improve `hints` with exact class names you can see in the page source.                                                                                           |
+| `validate-extraction` warns about all fields | The page may require JavaScript to render. Note this in `contentGoal` hints.                                                                                                                                           |
+| Schema validation fails with "must be uri"   | The URL has a typo or uses `http` where `https` is required.                                                                                                                                                           |
+| `JSON parse failed for ...`                  | The JSON file has a syntax error — a stray comma, an unterminated string, missing closing brace. The error message names the file; open it and look for an obvious typo.                                               |
+| `Schema validation failed for ...`           | The JSON is parseable but doesn't match the schema. The error lists the path (e.g. `/config/dataSources/0/url`) and the issue (`must be uri`, `must have required property "version"`). Fix in place.                  |
+| `externalId` warning won't go away           | This is expected — it's always ⚠ because it must be constructed, not extracted. As long as `contentGoal` describes the construction rule, you're fine.                                                                 |
+| The URL is a hub, not the data page          | Registrar sites often link hub → per-election page → measures list, and the stable URL is the hub. Add a `linkDiscovery` block (see below) instead of pointing at a per-cycle leaf URL that goes stale every election. |
+
+## Hub pages: `linkDiscovery`
+
+Some counties never publish the data on a stable URL — e.g. Sonoma's registrar
+lists ballot measures on a per-election "List of Local Measures That Have Been
+Filed" page, two clicks below the stable `/elections` hub, at a new URL every
+cycle. Point the source at the **hub** and declare the click path:
+
+```json
+"linkDiscovery": {
+  "steps": [
+    { "textPattern": "(Primary|General|Special) Election", "hrefPattern": "/registrar-of-voters/elections/", "select": "all" },
+    { "textPattern": "Local Measures That Have Been Filed", "select": "first" }
+  ],
+  "maxLeafPages": 4
+}
+```
+
+The pipeline follows each step's matching links in order (anchor **text**
+regex, case-insensitive; optional `hrefPattern` against the resolved URL;
+same host as the seed, HTTPS only) and extracts from the pages the final step
+selects. Link _text_ is what stays stable across election cycles, so the
+config survives cycles without hand-editing.
+
+Two behaviors to know:
+
+- **Staleness alarm** — a step that matches zero links on _every_ page fails
+  the sync loudly instead of quietly writing 0 rows. If the county restructures
+  its site, the fix is a one-line pattern edit here.
+- **New-cycle cold start** — each leaf URL gets its own structural manifest,
+  so the first sync that sees a new election's leaf yields 0 rows while the
+  manifest is derived in the background; the next sync extracts. This is the
+  platform's normal async-analysis behavior, not a config bug.
