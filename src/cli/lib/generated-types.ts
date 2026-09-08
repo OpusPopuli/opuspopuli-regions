@@ -362,9 +362,15 @@ export interface ApiSourceConfig {
   apiKeyHeader?: string;
   pagination?: ApiPaginationConfig;
   /**
-   * JSON path to the items array in the response
+   * JSON path to the items array in the response (default 'results'). Use "$" when the response body IS the array — OData services such as Legistar's Web API return a bare [...] with no envelope. A bare array is accepted even if this is omitted.
    */
   resultsPath?: string;
+  /**
+   * Fields built by interpolating other fields of the same record, applied AFTER fieldMappings (so templates reference the renamed names). Same {field} placeholders and :date|lower|upper|slug|trim formatters as the HTML extractor's 'composite' method, and all-or-nothing for the same reason: a missing placeholder yields no value rather than a half-built one. Use it when an API splits one domain value across two response fields — e.g. {"scheduledAt": "{EventDate:date} {EventTime}"} for Legistar, which returns date and time separately. See opuspopuli#1162.
+   */
+  compositeFields?: {
+    [k: string]: string;
+  };
   /**
    * Query parameters appended to every request. Values support ${variableName} placeholders that the consumer resolves at runtime from the active local region. Supported variables: ${stateCode} (the 2-letter US state code of the active local region, e.g. 'CA'). Placeholders must appear verbatim — no escaping, no nested expressions. Example: '"contributor_state": "${stateCode}"'.
    */
@@ -395,6 +401,10 @@ export interface ApiPaginationConfig {
    * Number of items per page
    */
   limit?: number;
+  /**
+   * Cap on pages fetched per run (default 10). Raise it for sources whose full archive exceeds limit × 10 — Legistar's event history is ~500 rows and growing. Hitting the cap is reported as a warning on the sync result, never a silent truncation.
+   */
+  maxPages?: number;
 }
 export interface PdfSourceConfig {
   /**
