@@ -50,14 +50,15 @@
           "fieldMappings": {
             "EventBodyName": "body",
             "EventLocation": "location",
-            "EventAgendaFile": "agendaUrl",
-            "EventMinutesFile": "minutes",
-            "EventInSiteURL": "sourceUrl"
+            "EventAgendaFile": "agendaUrl"
           },
           "compositeFields": {
             "externalId": "california-sonoma-legistar-{EventId}",
             "title": "{body} — {EventDate:date}",
-            "scheduledAt": "{EventDate:date} {EventTime}"
+            "scheduledAt": {
+              "template": "{EventDate:date} {EventTime}",
+              "timezone": "America/Los_Angeles"
+            }
           }
         }
       },

@@ -669,8 +669,24 @@
         },
         "compositeFields": {
           "type": "object",
-          "additionalProperties": { "type": "string" },
-          "description": "Fields built by interpolating other fields of the same record, applied AFTER fieldMappings (so templates reference the renamed names). Same {field} placeholders and :date|lower|upper|slug|trim formatters as the HTML extractor's 'composite' method, and all-or-nothing for the same reason: a missing placeholder yields no value rather than a half-built one. Use it when an API splits one domain value across two response fields — e.g. {\"scheduledAt\": \"{EventDate:date} {EventTime}\"} for Legistar, which returns date and time separately. See opuspopuli#1162."
+          "additionalProperties": {
+            "oneOf": [
+              { "type": "string" },
+              {
+                "type": "object",
+                "required": ["template"],
+                "additionalProperties": false,
+                "properties": {
+                  "template": { "type": "string" },
+                  "timezone": {
+                    "type": "string",
+                    "description": "IANA zone the built string is read as wall-clock time in (e.g. 'America/Los_Angeles'); the result is an ISO-8601 instant. REQUIRED whenever the API publishes local time with no offset — otherwise new Date() resolves it in the server's zone, and containers run UTC, so a 2:45 PM Pacific meeting lands 7 hours early."
+                  }
+                }
+              }
+            ]
+          },
+          "description": "Fields built by interpolating other fields of the same record, applied AFTER fieldMappings (so templates reference the renamed names) and resolved in declaration order, so a later template may reference an earlier one — reordering keys changes behaviour. Same {field} placeholders and :date|lower|upper|slug|trim formatters as the HTML extractor's 'composite' method, and all-or-nothing for the same reason: a missing placeholder yields no value rather than a half-built one. Use it when an API splits one domain value across two response fields — e.g. Legistar returns EventDate and EventTime separately. See opuspopuli#1162."
         },
         "queryParams": {
           "type": "object",

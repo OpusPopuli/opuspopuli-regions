@@ -366,10 +366,18 @@ export interface ApiSourceConfig {
    */
   resultsPath?: string;
   /**
-   * Fields built by interpolating other fields of the same record, applied AFTER fieldMappings (so templates reference the renamed names). Same {field} placeholders and :date|lower|upper|slug|trim formatters as the HTML extractor's 'composite' method, and all-or-nothing for the same reason: a missing placeholder yields no value rather than a half-built one. Use it when an API splits one domain value across two response fields — e.g. {"scheduledAt": "{EventDate:date} {EventTime}"} for Legistar, which returns date and time separately. See opuspopuli#1162.
+   * Fields built by interpolating other fields of the same record, applied AFTER fieldMappings (so templates reference the renamed names) and resolved in declaration order, so a later template may reference an earlier one — reordering keys changes behaviour. Same {field} placeholders and :date|lower|upper|slug|trim formatters as the HTML extractor's 'composite' method, and all-or-nothing for the same reason: a missing placeholder yields no value rather than a half-built one. Use it when an API splits one domain value across two response fields — e.g. Legistar returns EventDate and EventTime separately. See opuspopuli#1162.
    */
   compositeFields?: {
-    [k: string]: string;
+    [k: string]:
+      | string
+      | {
+          template: string;
+          /**
+           * IANA zone the built string is read as wall-clock time in (e.g. 'America/Los_Angeles'); the result is an ISO-8601 instant. REQUIRED whenever the API publishes local time with no offset — otherwise new Date() resolves it in the server's zone, and containers run UTC, so a 2:45 PM Pacific meeting lands 7 hours early.
+           */
+          timezone?: string;
+        };
   };
   /**
    * Query parameters appended to every request. Values support ${variableName} placeholders that the consumer resolves at runtime from the active local region. Supported variables: ${stateCode} (the 2-letter US state code of the active local region, e.g. 'CA'). Placeholders must appear verbatim — no escaping, no nested expressions. Example: '"contributor_state": "${stateCode}"'.
