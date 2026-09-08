@@ -293,6 +293,7 @@ export interface DataSourceConfig {
   pdf?: PdfSourceConfig;
   pdfArchive?: PdfArchiveConfig;
   billDiscovery?: BillDiscoveryConfig;
+  linkDiscovery?: LinkDiscoveryConfig;
   /**
    * Detail page extraction plan: maps domain field names to CSS selectors (string) or structured array configs (object). Supports dot notation and '|attr:name' suffix.
    */
@@ -309,6 +310,10 @@ export interface DataSourceConfig {
       fieldName: string;
       selector: string;
       extractionMethod: string;
+      /**
+       * For extractionMethod='composite': builds this field from values already extracted for the same item, using {fieldName} placeholders with optional formatters ({field:date|lower|upper|slug|trim}) and dot paths. Referenced fields must be declared earlier in fieldMappings; if any placeholder resolves to nothing the whole field is dropped rather than emitting a half-built key. Use it when the discriminating value sits once per page (an election date in a heading) and the rest is per item — e.g. "california-sonoma-{electionDate:date}-measure-{measureLetter:lower}". HTML counterpart of BulkDownloadConfig.compositeKey; see opuspopuli#1164.
+       */
+      template?: string;
       attribute?: string;
       regexPattern?: string;
       regexGroup?: number;
@@ -458,6 +463,38 @@ export interface BillDiscoveryConfig {
    * Optional URL path + query template for the bill text page. When set, the sync fetches this page before LLM extraction to check the 'Date Published' timestamp and skip unchanged bills. Example: "/faces/billTextClient.xhtml?bill_id={bill_id}"
    */
   textPageTemplate?: string;
+}
+/**
+ * Declarative hub navigation for html_scrape sources whose seed URL is a multi-level hub rather than the page holding the data (e.g. a registrar /elections page linking to per-election pages that link to a measures list). The pipeline fetches the seed once, follows each step's matching links in order, and runs extraction on the resulting leaf pages instead of the seed. Deterministic (no LLM); navigation is scoped to the seed's host, HTTPS only. A step that matches zero links across all pages it is applied to is a pipeline error, so a site restructure fails loudly instead of yielding an empty sync. Replaces crawlDepth for targeted hub-to-leaf shapes where BFS wastes crawlMaxPages on nav links (see opuspopuli#1164; same rationale as BillDiscoveryConfig).
+ */
+export interface LinkDiscoveryConfig {
+  /**
+   * Ordered navigation steps from the seed page. Step 1 is applied to the seed page's links; step N is applied to the links of every page selected by step N-1. Pages selected by the final step are the extraction targets.
+   *
+   * @minItems 1
+   */
+  steps: [LinkDiscoveryStep, ...LinkDiscoveryStep[]];
+  /**
+   * Cap on total leaf pages extracted per sync run (default 5). Each leaf page gets its own structural manifest and extraction pass, so this bounds runtime + token spend.
+   */
+  maxLeafPages?: number;
+}
+/**
+ * One navigation hop: which anchor(s) to follow on the current page.
+ */
+export interface LinkDiscoveryStep {
+  /**
+   * Regex (case-insensitive) matched against each anchor's visible text. Example: "(Primary|General|Special) Election".
+   */
+  textPattern: string;
+  /**
+   * Optional regex additionally matched against the anchor's resolved absolute URL. Both patterns must match when set.
+   */
+  hrefPattern?: string;
+  /**
+   * Whether to follow only the first matching link on a page or every matching link (default 'first'). Non-final steps with 'all' fan out; the maxLeafPages cap still bounds the walk.
+   */
+  select?: 'first' | 'all';
 }
 export interface StructuredFieldConfig {
   /**

@@ -2,7 +2,7 @@
   "name": "california-sonoma",
   "displayName": "Sonoma County",
   "description": "Sonoma County civic data from official county government websites",
-  "version": "0.8.3",
+  "version": "0.9.0",
   "config": {
     "regionId": "california-sonoma",
     "regionName": "Sonoma County",
@@ -126,11 +126,32 @@
         "url": "https://sonomacounty.gov/administrative-support-and-fiscal-services/registrar-of-voters/elections",
         "dataType": "propositions",
         "category": "Ballot Measures",
-        "contentGoal": "Extract current and past ballot measures for Sonoma County — measure identifier (letter/number), full title, election date, sponsoring jurisdiction, measure type (bond, tax, initiative, ordinance, charter amendment, etc.), summary description, and official outcome (passed/failed) where available.",
+        "contentGoal": "Extract the ballot measures filed for each Sonoma County election. The seed URL is a hub; linkDiscovery navigates to each election's 'List of Local Measures That Have Been Filed' page, which is the extraction target. Each measure yields externalId, title, electionDate, summary, and status.",
+        "linkDiscovery": {
+          "steps": [
+            {
+              "textPattern": "(Primary|General|Special) Election",
+              "hrefPattern": "/registrar-of-voters/elections/",
+              "select": "all"
+            },
+            {
+              "textPattern": "Local Measures That Have Been Filed",
+              "select": "first"
+            }
+          ],
+          "maxLeafPages": 4
+        },
         "hints": [
-          "Sonoma County Registrar of Voters publishes ballot measures at this URL",
-          "Extract current and past ballot measures — measure letter/number, title, election date, jurisdiction (county, city, district), measure type (bond, tax, initiative, etc.), short description, and outcome when available",
-          "Use these EXACT field names: externalId, title, electionDate, jurisdiction, measureType, description, outcome"
+          "This IS the measures list page — each entry is one filed ballot measure (e.g. 'Measure E: Waugh School District Bond … Filed 6/26/26')",
+          "The page has NO semantic CSS classes for measures: it is a plain nested <ul>/<li> list with inline styles. Do NOT invent class selectors such as '.measure-item' or '.ballot-measure-item'.",
+          "Use containerSelector '#content' — it is unique. Do NOT use '.tray', which matches two elements on this page, the first of which holds no measures.",
+          "Use itemSelector 'li:has(> ul)' — each measure is a top-level <li> whose nested <ul> holds its Filed date and deadlines. This correctly excludes the prose notes ('The letter \"F\" is skipped.') which have no nested list.",
+          "Measure identifiers are NOT always a single letter — 'Measure AB' occurs. Match [A-Z]+ when capturing the letter.",
+          "A 'composite' field builds its value from fields already extracted for the SAME item, using {fieldName} placeholders with optional formatters {field:date|lower|upper|slug|trim}. Dependencies must be declared EARLIER in fieldMappings. Use it for externalId and title here — the election date exists only once per page (in the h1), not per measure.",
+          "Do NOT use the '_text' pseudo-selector or extractionMethod 'structured' for title/summary — '_text' is only valid inside a 'structured' field's children map, and title must be a single string.",
+          "status MUST be exactly one of: pending, passed, failed, withdrawn — a filed measure with no result is 'pending'; any other value is rejected by schema validation and drops the row",
+          "Do NOT extract navigation links, argument-submission deadlines, Statement of Accuracy links, or contact info as measures",
+          "Use EXACTLY these fieldMappings (verified against this page — they yield all 12 measures with zero warnings): [{\"fieldName\":\"electionDate\",\"selector\":\"h1\",\"extractionMethod\":\"text\",\"scope\":\"container\",\"transform\":{\"type\":\"date_parse\"},\"required\":true},{\"fieldName\":\"measureLetter\",\"selector\":\"strong\",\"extractionMethod\":\"regex\",\"regexPattern\":\"^Measure\\\\s+([A-Z]+)\",\"regexGroup\":1,\"required\":true},{\"fieldName\":\"measureSubject\",\"selector\":\"li:has(> ul)\",\"extractionMethod\":\"regex\",\"regexPattern\":\"^Measure\\\\s+[A-Z]+\\\\s*:\\\\s*([^\\\\n]+)\",\"regexGroup\":1,\"required\":true},{\"fieldName\":\"title\",\"selector\":\"\",\"extractionMethod\":\"composite\",\"template\":\"Measure {measureLetter}: {measureSubject:trim}\",\"required\":true},{\"fieldName\":\"summary\",\"selector\":\"\",\"extractionMethod\":\"composite\",\"template\":\"{measureSubject:trim}\",\"required\":false},{\"fieldName\":\"externalId\",\"selector\":\"\",\"extractionMethod\":\"composite\",\"template\":\"california-sonoma-{electionDate:date}-measure-{measureLetter:lower}\",\"required\":true},{\"fieldName\":\"status\",\"selector\":\"\",\"extractionMethod\":\"constant\",\"defaultValue\":\"pending\",\"required\":false}]"
         ]
       },
       {
