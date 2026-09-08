@@ -2,7 +2,7 @@
   "name": "california-sonoma",
   "displayName": "Sonoma County",
   "description": "Sonoma County civic data from official county government websites",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "config": {
     "regionId": "california-sonoma",
     "regionName": "Sonoma County",
@@ -30,15 +30,37 @@
     },
     "dataSources": [
       {
-        "url": "https://sonoma-county.legistar.com/Calendar.aspx",
+        "url": "https://webapi.legistar.com/v1/sonoma-county/events",
         "dataType": "meetings",
         "category": "Board of Supervisors",
-        "contentGoal": "Extract scheduled and past Sonoma County Board of Supervisors meetings — meeting date, time, location, agenda PDF link, and minutes link when available. Each item should yield one Meeting record with externalId (date + body slug), title, body ('Sonoma County Board of Supervisors'), scheduledAt (combined date + time), location, agendaUrl, minutesUrl.",
-        "hints": [
-          "Sonoma County Board of Supervisors publishes meeting agendas at this URL",
-          "Use these EXACT field names: externalId, title, body, scheduledAt, location, agendaUrl, minutesUrl",
-          "Past meetings and upcoming meetings may live on the same page or on tabbed/paginated sections — capture both when present"
-        ]
+        "sourceType": "api",
+        "contentGoal": "Sonoma County Board of Supervisors meetings from the Legistar Web API — date, time, location, agenda PDF and minutes links.",
+        "api": {
+          "resultsPath": "$",
+          "queryParams": {
+            "$orderby": "EventDate desc"
+          },
+          "pagination": {
+            "type": "offset",
+            "pageParam": "$skip",
+            "limitParam": "$top",
+            "limit": 100,
+            "maxPages": 20
+          },
+          "fieldMappings": {
+            "EventBodyName": "body",
+            "EventLocation": "location",
+            "EventAgendaFile": "agendaUrl"
+          },
+          "compositeFields": {
+            "externalId": "california-sonoma-legistar-{EventId}",
+            "title": "{body} — {EventDate:date}",
+            "scheduledAt": {
+              "template": "{EventDate:date} {EventTime}",
+              "timezone": "America/Los_Angeles"
+            }
+          }
+        }
       },
       {
         "url": "https://sonomacounty.gov/administrative-support-and-fiscal-services/board-of-supervisors",

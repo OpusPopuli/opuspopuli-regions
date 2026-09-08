@@ -665,7 +665,28 @@
         },
         "resultsPath": {
           "type": "string",
-          "description": "JSON path to the items array in the response"
+          "description": "JSON path to the items array in the response (default 'results'). Use \"$\" when the response body IS the array — OData services such as Legistar's Web API return a bare [...] with no envelope. A bare array is accepted even if this is omitted."
+        },
+        "compositeFields": {
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              { "type": "string" },
+              {
+                "type": "object",
+                "required": ["template"],
+                "additionalProperties": false,
+                "properties": {
+                  "template": { "type": "string" },
+                  "timezone": {
+                    "type": "string",
+                    "description": "IANA zone the built string is read as wall-clock time in (e.g. 'America/Los_Angeles'); the result is an ISO-8601 instant. REQUIRED whenever the API publishes local time with no offset — otherwise new Date() resolves it in the server's zone, and containers run UTC, so a 2:45 PM Pacific meeting lands 7 hours early."
+                  }
+                }
+              }
+            ]
+          },
+          "description": "Fields built by interpolating other fields of the same record, applied AFTER fieldMappings (so templates reference the renamed names) and resolved in declaration order, so a later template may reference an earlier one — reordering keys changes behaviour. Same {field} placeholders and :date|lower|upper|slug|trim formatters as the HTML extractor's 'composite' method, and all-or-nothing for the same reason: a missing placeholder yields no value rather than a half-built one. Use it when an API splits one domain value across two response fields — e.g. Legistar returns EventDate and EventTime separately. See opuspopuli#1162."
         },
         "queryParams": {
           "type": "object",
@@ -701,6 +722,11 @@
           "type": "integer",
           "minimum": 1,
           "description": "Number of items per page"
+        },
+        "maxPages": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Cap on pages fetched per run (default 10). Raise it for sources whose full archive exceeds limit × 10 — Legistar's event history is ~500 rows and growing. Hitting the cap is reported as a warning on the sync result, never a silent truncation."
         }
       }
     },
