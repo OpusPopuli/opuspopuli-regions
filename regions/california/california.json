@@ -116,8 +116,8 @@
         "dataType": "county_thresholds",
         "syncCadence": "0 4 15 * *",
         "sourceType": "bulk_download",
-        "contentGoal": "County totals for every gubernatorial candidate at the November 2022 general — the Elections Code \u00a79118 denominator for a county initiative",
-        "category": "Statement of Vote \u2014 Governor",
+        "contentGoal": "County totals for every gubernatorial candidate at the November 2022 general — the Elections Code §9118 denominator for a county initiative",
+        "category": "Statement of Vote — Governor",
         "bulk": {
           "format": "xlsx",
           "xlsx": {
@@ -131,7 +131,7 @@
         },
         "hints": [
           "Pivot-shaped: row 1 is candidate names, row 2 is party codes, one column per candidate, and a Percent row follows every county",
-          "\u00a79118 counts votes cast for ALL candidates, NOT the winner's total — sumAllValueColumns is load-bearing, not a convenience",
+          "§9118 counts votes cast for ALL candidates, NOT the winner's total — sumAllValueColumns is load-bearing, not a convenience",
           "The State Totals row is reconciled against the sum of the 58 counties before being excluded; a mismatch aborts the load",
           "Column A of the header rows is empty because candidate names start at column B, above the county labels",
           "Update after the November 2026 gubernatorial general — the URL carries the cycle"
@@ -151,15 +151,21 @@
             "fipsColumns": ["STATE", "COUNTY"],
             "nameColumn": "CTYNAME",
             "valueColumn": "POPESTIMATE2024",
-            "rowFilter": { "SUMLEV": "050", "STATE": "06" },
-            "aggregateFilter": { "SUMLEV": "040", "STATE": "06" },
+            "rowFilter": {
+              "SUMLEV": "050",
+              "STATE": "06"
+            },
+            "aggregateFilter": {
+              "SUMLEV": "040",
+              "STATE": "06"
+            },
             "asOf": "2024-07-01"
           }
         },
         "hints": [
           "SUMLEV 050 is a county; the same file carries state rows as 040. Writing a state row as a county would put 39,431,263 on a county page and look entirely plausible",
           "FIPS is split across STATE and COUNTY and must be concatenated: 06 + 057 = 06057",
-          "Population is display-only. It is never the \u00a79118 basis, which counts votes cast",
+          "Population is display-only. It is never the §9118 basis, which counts votes cast",
           "Bump valueColumn to the newest POPESTIMATE column when Census publishes a new vintage; the URL carries the vintage too"
         ]
       },
@@ -183,7 +189,7 @@
         },
         "hints": [
           "Columns are County | Eligible | Total Registered | party breakdowns — valueColumn 2 is Total Registered, NOT Eligible",
-          "Display only. Registered voters are never the \u00a79118 basis for a county initiative",
+          "Display only. Registered voters are never the §9118 basis for a county initiative",
           "Republished several times a year, which is why this is a sync rather than a one-shot backfill",
           "Its aggregate row is \"State Total\" (singular). The Statement of Vote says \"State Totals\" (plural) — the two files genuinely differ, so do not \"correct\" this to match the other source. Getting it wrong counts the state total as a 59th county and silently skips the reconciliation."
         ]
@@ -221,11 +227,12 @@
         "hints": [
           "This IS the item-list page — do NOT crawl anywhere for the list. The initiatives are rows of a single Drupal Views table on THIS exact URL. containerSelector 'table.views-table tbody'; itemSelector 'tr' — each <tr> is one initiative. Verified against the live DOM 2026-08-20.",
           "externalId (AG number, e.g. '26-0005'): { fieldName: 'externalId', scope: 'item', selector: 'td.views-field-field-initiative-related-doc a', extractionMethod: 'text', required: true }. The anchor text is the code (wrapped in <strong>). It is the join key the petition scanner matches a scanned sheet against.",
-          "detailUrl (full-text PDF): { fieldName: 'detailUrl', scope: 'item', selector: 'td.views-field-field-initiative-related-doc a', attribute: 'href', extractionMethod: 'attribute', required: true }. Resolves to oag.ca.gov/system/files/initiatives/pdfs/*.pdf — the official initiative text; the ~100-word summary is inside this PDF, harvested on the detail pass.",
+          "detailUrl (full-text PDF): { fieldName: 'detailUrl', scope: 'item', selector: 'td.views-field-field-initiative-related-doc a', attribute: 'href', extractionMethod: 'attribute', required: true }. Resolves to oag.ca.gov/system/files/initiatives/pdfs/*.pdf. This is the PROPONENT'S SUBMISSION — it opens with the proponent's letterhead and covering letter, then the measure text. It is NOT reliably the Attorney General's circulating title-and-summary: verified 2026-09-13 across the 52 production rows that carry it, the phrase 'circulating title' appears in 34 and 'title and summary' in 43, so roughly a third have neither. The PDF text is also itself OCR-derived and noisy ('Strevt' for 'Street', 'Foundur' for 'Founder'). Harvest it into fullText and treat anything read out of it as needing verification — do NOT treat it as an authoritative ~100-word summary. The AG's circulating summary is a SEPARATE PDF on the same row — see the summaryUrl hint. It cannot be in this one: the proponent submits first and the Attorney General writes the title and summary afterwards, which is why the issued title appears in 0 of the 52 production fullText values. (An earlier version of this hint asserted the summary was in this PDF, and that is what sent opuspopuli#1219 looking in the wrong place.)",
           "title: { fieldName: 'title', scope: 'item', selector: 'td.views-field-field-initiative-title .left', extractionMethod: 'text', required: true }. div.left leads with the title, then '<br><strong>Proponent(s):</strong><br> NAME <br><strong>Submitted for Title and Summary</strong> on DATE'. The title is the leading text before 'Proponent(s):'.",
           "proponent (optional): { fieldName: 'proponent', scope: 'item', selector: 'td.views-field-field-initiative-title .left', extractionMethod: 'regex', regexPattern: 'Proponent\\(s\\):</strong><br>\\s*(.+?)\\s*<br>', regexGroup: 1 }. The regex runs on the cell's RAW HTML, where the label is '<strong>Proponent(s):</strong><br> NAME <br>' — note the </strong> sits BETWEEN 'Proponent(s):' and the <br>. An earlier manifest used 'Proponent\\(s\\):\\s*<br>' (no </strong>) and matched nothing in 100% of items.",
           "submittedDate: { scope: 'item', selector: 'td.views-field-field-initiative-title span.date-display-single', extractionMethod: 'text' } — e.g. 'July 22, 2026'; the ISO form is also on that span's 'content' attribute.",
-          "status: set a CONSTANT defaultValue of 'pending' — every item on the Active Measures list is circulating / awaiting a vote. CRITICAL: the Proposition schema's status enum accepts ONLY 'pending' | 'passed' | 'failed' | 'withdrawn'. Do NOT use 'active' — it is rejected by schema validation and drops every extracted item. Produce verbatim: { fieldName: 'status', scope: 'container', defaultValue: 'pending', extractionMethod: 'text' }."
+          "status: set a CONSTANT defaultValue of 'pending' — every item on the Active Measures list is circulating / awaiting a vote. CRITICAL: the Proposition schema's status enum accepts ONLY 'pending' | 'passed' | 'failed' | 'withdrawn'. Do NOT use 'active' — it is rejected by schema validation and drops every extracted item. Produce verbatim: { fieldName: 'status', scope: 'container', defaultValue: 'pending', extractionMethod: 'text' }.",
+          "summaryUrl (the Attorney General's title-and-summary PDF): { fieldName: 'summaryUrl', scope: 'item', selector: \"td.views-field-field-initiative-title a[href*='Title%20and%20Summary']\", attribute: 'href', extractionMethod: 'attribute' }. This is the anchor labelled 'Title and Summary Issued on DATE' and it resolves to oag.ca.gov/system/files/initiatives/pdfs/Title%20and%20Summary%20(NN-NNNN).pdf. THIS is the Attorney General's circulating title and summary — the text actually printed at the top of the physical petition sheet, and therefore the text a scan photographs. Verified 2026-09-13 by fetching 26-0004's: 1,090 characters opening 'The Attorney General of California has prepared the following title and summary of the chief purpose and points of the proposed measure:' followed by the title in caps and the numbered summary. Absent on rows that have only been SUBMITTED for title and summary and not yet issued one — in that case emit no summaryUrl rather than falling back to another link."
         ]
       },
       {
