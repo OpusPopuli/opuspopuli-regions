@@ -229,11 +229,66 @@
           "externalId (AG number, e.g. '26-0005'): { fieldName: 'externalId', scope: 'item', selector: 'td.views-field-field-initiative-related-doc a', extractionMethod: 'text', required: true }. The anchor text is the code (wrapped in <strong>). It is the join key the petition scanner matches a scanned sheet against.",
           "detailUrl (full-text PDF): { fieldName: 'detailUrl', scope: 'item', selector: 'td.views-field-field-initiative-related-doc a', attribute: 'href', extractionMethod: 'attribute', required: true }. Resolves to oag.ca.gov/system/files/initiatives/pdfs/*.pdf. This is the PROPONENT'S SUBMISSION — it opens with the proponent's letterhead and covering letter, then the measure text. It is NOT reliably the Attorney General's circulating title-and-summary: verified 2026-09-13 across the 52 production rows that carry it, the phrase 'circulating title' appears in 34 and 'title and summary' in 43, so roughly a third have neither. The PDF text is also itself OCR-derived and noisy ('Strevt' for 'Street', 'Foundur' for 'Founder'). Harvest it into fullText and treat anything read out of it as needing verification — do NOT treat it as an authoritative ~100-word summary. The AG's circulating summary is a SEPARATE PDF on the same row — see the summaryUrl hint. It cannot be in this one: the proponent submits first and the Attorney General writes the title and summary afterwards, which is why the issued title appears in 0 of the 52 production fullText values. (An earlier version of this hint asserted the summary was in this PDF, and that is what sent opuspopuli#1219 looking in the wrong place.)",
           "title: { fieldName: 'title', scope: 'item', selector: 'td.views-field-field-initiative-title .left', extractionMethod: 'text', required: true }. div.left leads with the title, then '<br><strong>Proponent(s):</strong><br> NAME <br><strong>Submitted for Title and Summary</strong> on DATE'. The title is the leading text before 'Proponent(s):'.",
-          "proponent (optional): { fieldName: 'proponent', scope: 'item', selector: 'td.views-field-field-initiative-title .left', extractionMethod: 'regex', regexPattern: 'Proponent\\(s\\):</strong><br>\\s*(.+?)\\s*<br>', regexGroup: 1 }. The regex runs on the cell's RAW HTML, where the label is '<strong>Proponent(s):</strong><br> NAME <br>' — note the </strong> sits BETWEEN 'Proponent(s):' and the <br>. An earlier manifest used 'Proponent\\(s\\):\\s*<br>' (no </strong>) and matched nothing in 100% of items.",
+          "proponent (optional): extractionMethod 'regex' runs against the element's TEXT, not its raw HTML — verified against manifest-extractor.service.ts, which calls `first.text()`. An earlier version of this hint asserted the opposite and every regex written against markup ('Proponent\\(s\\):</strong><br>') matched nothing in 100% of items, across every manifest version generated since 2026-08-20. Match on text: 'Proponent\\(s\\):\\s*(.+)'. This source now ships a staticManifest, so these hints are documentation rather than instructions to a model.",
           "submittedDate: { scope: 'item', selector: 'td.views-field-field-initiative-title span.date-display-single', extractionMethod: 'text' } — e.g. 'July 22, 2026'; the ISO form is also on that span's 'content' attribute.",
           "status: set a CONSTANT defaultValue of 'pending' — every item on the Active Measures list is circulating / awaiting a vote. CRITICAL: the Proposition schema's status enum accepts ONLY 'pending' | 'passed' | 'failed' | 'withdrawn'. Do NOT use 'active' — it is rejected by schema validation and drops every extracted item. Produce verbatim: { fieldName: 'status', scope: 'container', defaultValue: 'pending', extractionMethod: 'text' }.",
           "summaryUrl (the Attorney General's title-and-summary PDF): { fieldName: 'summaryUrl', scope: 'item', selector: \"td.views-field-field-initiative-title a[href*='Title%20and%20Summary']\", attribute: 'href', extractionMethod: 'attribute' }. This is the anchor labelled 'Title and Summary Issued on DATE' and it resolves to oag.ca.gov/system/files/initiatives/pdfs/Title%20and%20Summary%20(NN-NNNN).pdf. THIS is the Attorney General's circulating title and summary — the text actually printed at the top of the physical petition sheet, and therefore the text a scan photographs. Verified 2026-09-13 by fetching 26-0004's: 1,090 characters opening 'The Attorney General of California has prepared the following title and summary of the chief purpose and points of the proposed measure:' followed by the title in caps and the numbered summary. Absent on rows that have only been SUBMITTED for title and summary and not yet issued one — in that case emit no summaryUrl rather than falling back to another link."
-        ]
+        ],
+        "staticManifest": {
+          "containerSelector": "table.views-table tbody",
+          "itemSelector": "tr",
+          "fieldMappings": [
+            {
+              "fieldName": "externalId",
+              "selector": "td.views-field-field-initiative-related-doc a",
+              "extractionMethod": "text",
+              "required": true
+            },
+            {
+              "fieldName": "title",
+              "selector": "td.views-field-field-initiative-title .left",
+              "extractionMethod": "regex",
+              "regexPattern": "^\\s*(.+)",
+              "regexGroup": 1,
+              "required": true
+            },
+            {
+              "fieldName": "detailUrl",
+              "selector": "td.views-field-field-initiative-related-doc a",
+              "extractionMethod": "attribute",
+              "attribute": "href",
+              "required": true
+            },
+            {
+              "fieldName": "summaryUrl",
+              "selector": "td.views-field-field-initiative-title a[href*='Title%20and%20Summary']",
+              "extractionMethod": "attribute",
+              "attribute": "href",
+              "required": false
+            },
+            {
+              "fieldName": "submittedDate",
+              "selector": "td.views-field-field-initiative-title span.date-display-single",
+              "extractionMethod": "text",
+              "required": false
+            },
+            {
+              "fieldName": "status",
+              "selector": "",
+              "extractionMethod": "constant",
+              "defaultValue": "pending",
+              "required": false
+            },
+            {
+              "fieldName": "proponent",
+              "selector": "td.views-field-field-initiative-title .left",
+              "extractionMethod": "regex",
+              "regexPattern": "Proponent\\(s\\):\\s*(.+)",
+              "regexGroup": 1,
+              "required": false
+            }
+          ]
+        }
       },
       {
         "url": "https://www.assembly.ca.gov/schedules-publications/daily-file",
