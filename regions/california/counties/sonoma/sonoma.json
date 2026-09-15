@@ -148,7 +148,7 @@
         "url": "https://sonomacounty.gov/administrative-support-and-fiscal-services/registrar-of-voters/elections",
         "dataType": "propositions",
         "category": "Ballot Measures",
-        "contentGoal": "Extract the ballot measures filed for each Sonoma County election. The seed URL is a hub; linkDiscovery navigates to each election's 'List of Local Measures That Have Been Filed' page, which is the extraction target. Each measure yields externalId, title, electionDate, summary, and status.",
+        "contentGoal": "Extract the ballot measures filed for each Sonoma County election. The seed URL is a hub; linkDiscovery navigates to each election's 'List of Local Measures That Were Filed' page, which is the extraction target. Each measure yields externalId, title, electionDate, summary, and status.",
         "linkDiscovery": {
           "steps": [
             {
@@ -157,7 +157,7 @@
               "select": "all"
             },
             {
-              "textPattern": "Local Measures That Have Been Filed",
+              "textPattern": "Local Measures.*Filed",
               "select": "first"
             }
           ],
