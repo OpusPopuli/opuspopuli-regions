@@ -773,7 +773,7 @@
         "crawlDepth": 2,
         "crawlMaxPages": 12,
         "llmMaxTokens": 64000,
-        "llmRequestTimeoutMs": 1320000,
+        "llmRequestTimeoutMs": 3600000,
         "hints": [
           "Seed page is the canonical CA Assembly description of how a bill becomes law; sibling pages under /resources/ include the glossary and other civic-process references",
           "Vote thresholds: 41 (Assembly majority), 21 (Senate majority), 54 (Assembly 2/3), 27 (Senate 2/3)",
@@ -795,7 +795,7 @@
         "crawlDepth": 2,
         "crawlMaxPages": 8,
         "llmMaxTokens": 64000,
-        "llmRequestTimeoutMs": 1320000,
+        "llmRequestTimeoutMs": 3600000,
         "hints": [
           "Seed is the CA Senate Citizens' Guide legislative-process page. The Senate glossary of legislative terms is at https://www.senate.ca.gov/glossary and 'Information to help you follow the process' at https://www.senate.ca.gov/informationtohelpfollowtheprocess — both same-host and in crawl scope.",
           "Emit a chambers[] entry for the Senate: name 'Senate', abbreviation 'S', size 40, termYears 4, leadershipRoles including 'President pro Tempore', 'Majority Leader', 'Minority Leader'.",
@@ -812,7 +812,7 @@
         "crawlDepth": 2,
         "crawlMaxPages": 10,
         "llmMaxTokens": 64000,
-        "llmRequestTimeoutMs": 1320000,
+        "llmRequestTimeoutMs": 3600000,
         "hints": [
           "Seed is the CA SoS 'How to Qualify an Initiative' page. Sibling process pages under /elections/ballot-measures/ include 'Referendum', 'Initiative and Referendum Qualification Status', and 'Resources and Historical Information' — all same-host, in crawl scope.",
           "measureTypes here are DIRECT-DEMOCRACY measures — Initiative Statute, Initiative Constitutional Amendment, Referendum, Recall — every one has reachesGovernor: false (they go to the voters, not the Governor). votingThreshold is 'majority' (approved by a majority of voters).",
