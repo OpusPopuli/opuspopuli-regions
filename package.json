@@ -1,6 +1,6 @@
 {
   "name": "@opuspopuli/regions",
-  "version": "1.0.98",
+  "version": "1.0.99",
   "packageManager": "pnpm@10.33.0",
   "description": "Declarative region configuration files for Opus Populi civic data platform",
   "type": "module",
