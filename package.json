@@ -1,6 +1,6 @@
 {
   "name": "@opuspopuli/regions",
-  "version": "1.0.99",
+  "version": "1.0.100",
   "packageManager": "pnpm@10.33.0",
   "description": "Declarative region configuration files for Opus Populi civic data platform",
   "type": "module",
@@ -67,7 +67,7 @@
   "pnpm": {
     "overrides": {
       "fast-uri": ">=3.1.6 <4",
-      "undici": ">=7.29.0 <8"
+      "undici": ">=7.29.1 <8"
     }
   },
   "devDependencies": {
