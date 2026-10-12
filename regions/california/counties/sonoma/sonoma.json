@@ -147,6 +147,93 @@
       {
         "url": "https://sonomacounty.gov/administrative-support-and-fiscal-services/registrar-of-voters/elections",
         "dataType": "propositions",
+        "category": "Ballot Measures — Voter Guide",
+        "contentGoal": "Attach the County Voter Information Guide document to each local ballot measure, so the measure's own text can be read and analysed. The seed URL is a hub; linkDiscovery navigates to each election's measures-on-the-ballot page, where every local measure links its guide as a PDF. That PDF carries the ballot question, the County Counsel's impartial analysis, the Auditor's fiscal impact statement, the arguments and rebuttals, and the FULL TEXT of the measure (the ordinance or resolution). Each measure yields externalId, title, electionDate, status and detailUrl; detailUrl is what the pipeline turns into fullText.",
+        "sourceType": "html_scrape",
+        "staticManifest": {
+          "containerSelector": "#content",
+          "itemSelector": "tr:has(a[href$=\"_EN.pdf\"])",
+          "fieldMappings": [
+            {
+              "fieldName": "electionDate",
+              "selector": "h1",
+              "extractionMethod": "text",
+              "scope": "container",
+              "transform": { "type": "date_parse" },
+              "required": true
+            },
+            {
+              "fieldName": "measureLetter",
+              "selector": "a[href$=\"_EN.pdf\"]",
+              "extractionMethod": "attribute",
+              "attribute": "href",
+              "transform": {
+                "type": "regex_replace",
+                "params": {
+                  "pattern": "^.*_Meas([A-Z]+)[-_].*$",
+                  "replacement": "$1"
+                }
+              },
+              "required": true
+            },
+            {
+              "fieldName": "detailUrl",
+              "selector": "a[href$=\"_EN.pdf\"]",
+              "extractionMethod": "attribute",
+              "attribute": "href",
+              "required": true
+            },
+            {
+              "fieldName": "externalId",
+              "selector": "",
+              "extractionMethod": "composite",
+              "template": "california-sonoma-{electionDate:date}-measure-{measureLetter:lower}",
+              "required": true
+            },
+            {
+              "fieldName": "title",
+              "selector": "",
+              "extractionMethod": "composite",
+              "template": "Measure {measureLetter}",
+              "required": true
+            },
+            {
+              "fieldName": "status",
+              "selector": "",
+              "extractionMethod": "constant",
+              "defaultValue": "pending",
+              "required": false
+            }
+          ]
+        },
+        "linkDiscovery": {
+          "steps": [
+            {
+              "textPattern": "(Primary|General|Special) Election",
+              "hrefPattern": "/registrar-of-voters/elections/",
+              "select": "all"
+            },
+            {
+              "textPattern": "Measures on the Ballot",
+              "select": "first"
+            }
+          ],
+          "maxLeafPages": 4
+        },
+        "hints": [
+          "THIS SOURCE MUST STAY ABOVE the 'Ballot Measures' filings source below it, and the order is load-bearing. Both sources emit the same externalIds on purpose, so they merge onto one row; `fetchByDataType` concatenates sources in this array's order and the upsert runs in that order, so the LAST source to emit a field wins it. This source can only name a measure 'Measure H' — the two election pages lay their tables out differently (November: Letter / District / Brief Description; June: one combined 'Letter / District / Description' cell), so no single selector yields the subject. The filings source below extracts the subject and therefore must overwrite this title. `fullText` survives that overwrite because the filings source emits no fullText and Prisma skips `undefined` fields on update.",
+          "The measure letter is taken from the PDF's own filename, NOT from a table cell, because the cell differs per election page while the filename does not: 'SoCo_Nov2026GenElec_9451_MeasH_SoCoRegParks_SalesTax_EN.pdf' and 'SoCo_June2026StatewideDirPrimary_9390_MeasA-TwinHillsUnionSD_EN.pdf'. Note the separator after the letter is '_' on one and '-' on the other, which is why the pattern ends '[-_]'. Letters are not always one character — 'Measure AB' occurs — so match [A-Z]+.",
+          "containerSelector MUST be '#content' and not the measures table: `electionDate` is read from the h1 with scope 'container', and the h1 sits outside the table. Verified both ways — scoping to the table tbody yields 15 items with a warning per item and no electionDate, which collapses externalId too.",
+          "itemSelector 'tr:has(a[href$=\"_EN.pdf\"])' is what separates local measures from the state propositions table on the same page. State propositions link out to voterguide.sos.ca.gov and have no _EN.pdf anywhere, so they cannot match; the header row cannot match either. Do NOT add class selectors — this page has none, only inline styles.",
+          "Take the ENGLISH guide (_EN.pdf). Every measure also offers _SP.pdf, and some offer MP3 audio of the analysis and arguments; a selector that is not anchored on '_EN.pdf' will match two or three links per measure and the first one wins arbitrarily.",
+          "The hrefs are page-relative with NO leading slash ('Main%20County%20Site/...') and the page carries <base href=\"https://sonomacounty.gov/\" />. Resolving them against the page URL yields '.../registrar-of-voters/elections/Main%20County%20Site/...', which has never existed. The pipeline honours <base href> when it reads an href attribute, so do NOT prefix the origin here — that would double it.",
+          "status MUST be exactly one of: pending, passed, failed, withdrawn — any other value is rejected by schema validation and drops the row. 'pending' is the honest constant: this page lists what is ON the ballot, and the county publishes results elsewhere.",
+          "Verified against both live pages with the real extractor: November 3 2026 yields 12 items and June 2 2026 yields 3, with ZERO warnings, and all 15 externalIds match the rows already in the database exactly — so this source attaches guides to existing measures rather than creating duplicates."
+        ]
+      },
+      {
+        "url": "https://sonomacounty.gov/administrative-support-and-fiscal-services/registrar-of-voters/elections",
+        "dataType": "propositions",
         "category": "Ballot Measures",
         "contentGoal": "Extract the ballot measures filed for each Sonoma County election. The seed URL is a hub; linkDiscovery navigates to each election's 'List of Local Measures That Were Filed' page, which is the extraction target. Each measure yields externalId, title, electionDate, summary, and status.",
         "linkDiscovery": {
