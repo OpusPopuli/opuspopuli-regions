@@ -301,6 +301,25 @@ export interface DataSourceConfig {
     [k: string]: string | StructuredFieldConfig;
   };
   /**
+   * A second per-item page to fetch, for content the primary detail page does not carry (#1383). A representative's committees and offices are on the chamber roster detail page while their biography is on the member's own caucus site; this is additive because repointing the detail URL at the biography would lose the roster fields. Selector-only: a miss produces nothing and warns rather than dumping page text into the field.
+   */
+  secondaryDetail?: {
+    /**
+     * Item field holding the base URL, dot-notated (e.g. 'contactInfo.website'), resolved AFTER primary detail extraction. An item missing this field is skipped silently — a representative with no website is not an error.
+     */
+    urlFrom: string;
+    /**
+     * Path segment appended to that URL (e.g. 'biography'). Joined with exactly one '/' whether or not the base URL ends in one — both forms occur in live data.
+     */
+    urlSuffix?: string;
+    /**
+     * Selectors applied to the secondary page, same shape as detailFields. May only FILL fields the primary extraction left empty; a secondary page can never overwrite primary data.
+     */
+    fields: {
+      [k: string]: string | StructuredFieldConfig;
+    };
+  };
+  /**
    * Explicit extraction selectors that bypass AI structural analysis entirely. Use when the page structure is known and stable, or when the local LLM consistently generates wrong selectors.
    */
   staticManifest?: {
