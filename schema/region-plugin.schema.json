@@ -379,6 +379,32 @@
           },
           "description": "Detail page extraction plan: maps domain field names to CSS selectors (string) or structured array configs (object). Supports dot notation and '|attr:name' suffix."
         },
+        "secondaryDetail": {
+          "type": "object",
+          "required": ["urlFrom", "fields"],
+          "additionalProperties": false,
+          "description": "A second per-item page to fetch, for content the primary detail page does not carry (#1383). A representative's committees and offices are on the chamber roster detail page while their biography is on the member's own caucus site; this is additive because repointing the detail URL at the biography would lose the roster fields. Selector-only: a miss produces nothing and warns rather than dumping page text into the field.",
+          "properties": {
+            "urlFrom": {
+              "type": "string",
+              "description": "Item field holding the base URL, dot-notated (e.g. 'contactInfo.website'), resolved AFTER primary detail extraction. An item missing this field is skipped silently — a representative with no website is not an error."
+            },
+            "urlSuffix": {
+              "type": "string",
+              "description": "Path segment appended to that URL (e.g. 'biography'). Joined with exactly one '/' whether or not the base URL ends in one — both forms occur in live data."
+            },
+            "fields": {
+              "type": "object",
+              "additionalProperties": {
+                "oneOf": [
+                  { "type": "string" },
+                  { "$ref": "#/definitions/StructuredFieldConfig" }
+                ]
+              },
+              "description": "Selectors applied to the secondary page, same shape as detailFields. May only FILL fields the primary extraction left empty; a secondary page can never overwrite primary data."
+            }
+          }
+        },
         "staticManifest": {
           "type": "object",
           "required": ["containerSelector", "itemSelector", "fieldMappings"],
