@@ -349,6 +349,13 @@
             },
             "multiple": true
           }
+        },
+        "secondaryDetail": {
+          "urlFrom": "contactInfo.website",
+          "urlSuffix": "biography",
+          "fields": {
+            "bio": "article .node__content .field--name-body"
+          }
         }
       },
       {
