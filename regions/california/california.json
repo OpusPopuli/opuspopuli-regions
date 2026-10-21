@@ -456,6 +456,11 @@
               }
             }
           ]
+        },
+        "detailFields": {
+          "bio": "aside .field--name-body",
+          "contactInfo.website": "link[rel=canonical]|attr:href",
+          "contactInfo.email": "a[href^=mailto]"
         }
       },
       {
@@ -838,6 +843,20 @@
     "cacheTtlMs": 900000,
     "requestTimeoutMs": 30000,
     "normalizeExternalIdDistrict": true,
-    "bioNoisePatterns": ["^Home\\b", "Latest News"]
+    "bioNoisePatterns": [
+      "^Home\\b",
+      "Latest News",
+      "^Sign Up For The Latest Updates",
+      "^Our Annual Report"
+    ],
+    "bioTrimPatterns": [
+      "^Body\\s+",
+      "^Senate District \\d+\\s+",
+      "^Meet Senator\\s+",
+      "^ABOUT YOUR Senator\\s+",
+      "^Representing California Senate District \\d+ State Senator\\s+",
+      "^Senate President Pro Tempore Emeritus Senator\\s+",
+      "\\s*(?:Read Bio|Read More|Learn More(?:\\s+About\\s+[\\w\u2019'.-]+)?)\\s*$"
+    ]
   }
 }

@@ -241,6 +241,10 @@ export interface DeclarativeRegionConfig {
    * Regex pattern strings (case-insensitive) matched against scraped representative bio text. Bios matching any pattern are treated as nav junk and discarded. Defaults to no filtering if omitted.
    */
   bioNoisePatterns?: string[];
+  /**
+   * Regex pattern strings (case-insensitive) REMOVED from a scraped representative bio wherever they match, unlike bioNoisePatterns which discards the whole bio. For page chrome a container selector cannot exclude: a heading above the prose ("Meet Senator", "Senate District 03") or a call-to-action below it ("Read Bio", "Learn More About Jesse"). Anchor with ^ or $. Applied in order, with whitespace collapsed after each, so an earlier match cannot stop a later anchored pattern from matching. Defaults to no trimming if omitted.
+   */
+  bioTrimPatterns?: string[];
   boundarySources?: BoundarySourcesConfig;
 }
 export interface DataSourceConfig {
