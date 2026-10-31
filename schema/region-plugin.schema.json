@@ -341,6 +341,20 @@
           "minimum": 0,
           "description": "Override rate limit for this specific source"
         },
+        "timezone": {
+          "type": "string",
+          "minLength": 1,
+          "description": "IANA zone for wall-clock times the source prints with no offset (e.g. a hearing at '5pm'). Defaults to the region's timezone; set it only for a source that publishes in another zone."
+        },
+        "dateQueryParams": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[+-]?\\d{1,4}d$"
+          },
+          "description": "Query parameters set at fetch time to a date relative to today, as YYYY-MM-DD in the source's timezone. Each value is a day offset, e.g. { \"startDate\": \"-30d\", \"endDate\": \"+60d\" }. For a calendar that lists only the dates its query names. The url stays the key the source is cached and tracked under."
+        },
         "syncCadence": {
           "type": "string",
           "pattern": "^[^ ]+ [^ ]+ [^ ]+ [^ ]+ [^ ]+$",
