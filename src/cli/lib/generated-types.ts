@@ -281,6 +281,16 @@ export interface DataSourceConfig {
    */
   rateLimitOverride?: number;
   /**
+   * IANA zone for wall-clock times the source prints with no offset (e.g. a hearing at '5pm'). Defaults to the region's timezone; set it only for a source that publishes in another zone.
+   */
+  timezone?: string;
+  /**
+   * Query parameters set at fetch time to a date relative to today, as YYYY-MM-DD in the source's timezone. Each value is a day offset, e.g. { "startDate": "-30d", "endDate": "+60d" }. For a calendar that lists only the dates its query names. The url stays the key the source is cached and tracked under.
+   */
+  dateQueryParams?: {
+    [k: string]: string;
+  };
+  /**
    * 5-field cron expression (minute hour dom month dow) controlling how often this source is synced. The worker applies a deterministic per-source minute offset at registration time to spread load across gov hosts — the minute field you specify is the base, not the exact fire time. Omit to inherit the global daily fallback. Common patterns: '0 2 * * *' daily at 2 AM, '0 2 * * 0' weekly on Sunday, '0 * * * *' hourly.
    */
   syncCadence?: string;
@@ -337,6 +347,10 @@ export interface DataSourceConfig {
        * For extractionMethod='composite': builds this field from values already extracted for the same item, using {fieldName} placeholders with optional formatters ({field:date|lower|upper|slug|trim}) and dot paths. Referenced fields must be declared earlier in fieldMappings; if any placeholder resolves to nothing the whole field is dropped rather than emitting a half-built key. Use it when the discriminating value sits once per page (an election date in a heading) and the rest is per item — e.g. "california-sonoma-{electionDate:date}-measure-{measureLetter:lower}". HTML counterpart of BulkDownloadConfig.compositeKey; see opuspopuli#1164.
        */
       template?: string;
+      /**
+       * Read this field from the item's nearest ancestor matching this selector, instead of from the item. For a value printed once per group of items, e.g. a calendar that heads each day's hearings with the date so no hearing carries its own. Takes precedence over scope; an item with no such ancestor is a miss for this field.
+       */
+      closest?: string;
       attribute?: string;
       regexPattern?: string;
       regexGroup?: number;
