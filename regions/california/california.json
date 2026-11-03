@@ -652,9 +652,10 @@
         "bulk": {
           "format": "zip_tsv",
           "filePattern": "S496_CD.TSV",
+          "compositeKey": ["FILING_ID", "LINE_ITEM", "TRAN_ID"],
           "columnMappings": {
-            "TRAN_ID": "externalId",
             "FILING_ID": "filingId",
+            "AMEND_ID": "amendId",
             "AMOUNT": "amount",
             "EXP_DATE": "date",
             "EXPN_DSCR": "description"
@@ -663,7 +664,9 @@
         "hints": [
           "S496 = Form 496 late independent expenditure reports",
           "Filed within 24 hours of making an IE of $1,000+ in the 90 days before an election",
-          "S496_CD is line-item detail only — no committee/candidate/measure. FILING_ID joins each line to its Form 496 cover page (see the 'CAL-ACCESS IE Cover Pages' source) so the IE linker can attribute committee + target (#955)."
+          "S496_CD is line-item detail only — no committee/candidate/measure. FILING_ID joins each line to its Form 496 cover page (see the 'CAL-ACCESS IE Cover Pages' source) so the IE linker can attribute committee + target (#955).",
+          "TRAN_ID is unique only within one filing's amendment, so externalId is FILING_ID + LINE_ITEM + TRAN_ID, as for RCPT_CD/EXPN_CD. Keyed on TRAN_ID alone, the 2026-11-02 export's 80,135 lines collapsed to 23,076 rows, and stored independent expenditures came to $279M against $1,228M in each filing's latest amendment (#97).",
+          "AMEND_ID is mapped but deliberately EXCLUDED from the key: an amendment restates the filing, sometimes under new TRAN_IDs, and amendment supersession keeps only the highest AMEND_ID per filing. Without it, 6,876 superseded rows ($151M) would count twice."
         ]
       },
       {
@@ -705,9 +708,10 @@
         "bulk": {
           "format": "zip_tsv",
           "filePattern": "CVR2_CAMPAIGN_DISCLOSURE_CD.TSV",
+          "compositeKey": ["FILING_ID", "LINE_ITEM", "TRAN_ID"],
           "columnMappings": {
-            "TRAN_ID": "externalId",
             "FILING_ID": "filingId",
+            "AMEND_ID": "amendId",
             "BAL_NAME": "ballotName",
             "BAL_NUM": "ballotNumber",
             "BAL_JURIS": "ballotJurisdiction",
@@ -717,7 +721,7 @@
         "hints": [
           "Same dbwebexport.zip as RCPT_CD/EXPN_CD/S496_CD — only one download per sync cycle",
           "Most CVR2 rows are entity declarations on non-ballot-measure filings; the linker filters at resolve time by ballotName/ballotNumber being non-empty and supportOrOppose being S or O",
-          "TRAN_ID is unique per record; FILING_ID + LINE_ITEM is a composite alternative if TRAN_ID ever proves unstable",
+          "TRAN_ID is NOT unique: 182,209 lines carry 9,410 distinct TRAN_IDs on the 2026-11-02 export. externalId is FILING_ID + LINE_ITEM + TRAN_ID, with AMEND_ID mapped for supersession and kept out of the key, as for S496_CD (#97)",
           "SUP_OPP_CD values: S = support, O = oppose. Other values (N = neutral, blank) are skipped by the linker",
           "Joins to existing Contribution/Expenditure rows by FILING_ID — relies on those scrapes having run first to know which committee owns each filing"
         ]
