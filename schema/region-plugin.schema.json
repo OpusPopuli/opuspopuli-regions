@@ -320,7 +320,7 @@
             "bills",
             "county_thresholds"
           ],
-          "description": "What type of content this source provides. Daily journals / meeting minutes go under 'meetings' with sourceType=pdf_archive — the consumer partitions by sourceType internally. 'civics' marks a source of region governmental structure, process, and vocabulary; the civics-ingest handler scrapes it and uses the private prompt-service to extract structured shape (chambers, measure types, lifecycle stages with status patterns, glossary) plus a plain-language rewrite for laypeople. Verbatim source text and the AI rewrite are stored together — never one without the other. 'bills' marks a source of individual legislative bills (AB, SB, ACA, SCA, etc.) scraped from an official legislature website; the bills-ingest handler BFS-crawls from the seed URL and extracts one Bill record per detail page. See opuspopuli#686."
+          "description": "What type of content this source provides. Daily journals / meeting minutes go under 'meetings' with sourceType=pdf_archive — the consumer partitions by sourceType internally. 'civics' marks a source of region governmental structure, process, and vocabulary; the civics-ingest handler scrapes it and uses the private prompt-service to extract structured shape (chambers, measure types, lifecycle stages with status patterns, glossary) plus a plain-language rewrite for laypeople. Verbatim source text and the AI rewrite are stored together — never one without the other. 'bills' marks a source of individual legislative bills (AB, SB, ACA, SCA, etc.): either an official legislature website, which the bills-ingest handler crawls from the seed URL extracting one Bill record per detail page, or (sourceType=bulk_download) one table of a legislature's published database export. See opuspopuli#686."
         },
         "contentGoal": {
           "type": "string",
@@ -363,7 +363,21 @@
         "statusScanCadence": {
           "type": "string",
           "pattern": "^[^ ]+ [^ ]+ [^ ]+ [^ ]+ [^ ]+$",
-          "description": "5-field cron expression for a periodic full status-page sweep of all bills (dataType='bills' only). Runs forceStatusRecheck=true — bypasses the needsStatusRecheck flag and the sourcePublishedAt skip to catch governor actions and off-session changes the journal linker can't see. Per-source minute offset is applied like syncCadence. Typical: '0 2 * * 0' weekly Sunday 2 AM. See #689."
+          "description": "5-field cron expression for a periodic full status-page sweep of all bills (dataType='bills', page sources only). Runs forceStatusRecheck=true, which skips the cheap status-page comparison and sends every existing bill on to full extraction. Extraction still skips a bill whose text page reports an unchanged Date Published, so a status change with no new text is not caught by this sweep (opuspopuli docs/plans/bills-phase-b.md, B1). Per-source minute offset is applied like syncCadence. Typical: '0 2 * * 0' weekly Sunday 2 AM. See #689."
+        },
+        "billStatusLifecycle": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "string",
+            "enum": ["active", "enacted", "dead"]
+          },
+          "description": "For a bulk bills source that carries an official status column: each status value the source publishes, mapped to where it leaves the bill. 'active' can still move and is shown in the personalized feed; 'enacted' finished successfully (chaptered into law, or an adopted resolution); 'dead' died, failed or was vetoed. A status missing from the map is logged and the bill keeps its stored lifecycle rather than being guessed. Replaces status-string patterns for regions whose source publishes structured status."
+        },
+        "coldAfterDays": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Bills only. A bill that is no longer active becomes cold this many days after its last action; dead bills are cold at once. Cold bills are not summarized in the batch pass and get their summary on first read instead. Default 180."
         },
         "sourceType": {
           "type": "string",
@@ -558,6 +572,12 @@
           "then": { "required": ["columnMappings"] }
         }
       ],
+      "dependencies": {
+        "lobColumns": {
+          "$comment": "A .lob cell names another entry in the same ZIP, so lobColumns has nothing to resolve against in a bare tsv or csv.",
+          "properties": { "format": { "enum": ["zip_tsv", "zip_csv"] } }
+        }
+      },
       "additionalProperties": false,
       "properties": {
         "format": {
@@ -572,6 +592,44 @@
         "delimiter": {
           "type": "string",
           "description": "Column delimiter override"
+        },
+        "quoteChar": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1,
+          "description": "Character that may wrap a cell, stripped from both ends (default '\"'). The California Legislature's pubinfo export wraps text cells in a backtick."
+        },
+        "nullToken": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Literal cell value that means 'no value' and is read as empty, e.g. 'NULL' in the pubinfo export. Without it the word itself would be stored as data."
+        },
+        "lobColumns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "uniqueItems": true,
+          "description": "Columns whose cell names another file inside the same ZIP that holds the cell's real content (pubinfo writes bill text to BILL_VERSION_TBL_<n>.lob and puts that name in the row). The named file's content replaces the cell. The names are renumbered on every export, so a row's identity hash covers the content, not the name."
+        },
+        "rotatingFile": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "publishedAfter"],
+          "description": "For a publisher that rotates its export by weekday. The file fetched is name, with {weekday} replaced by the three-letter day (Mon..Sun) of the newest file in the source's timezone, resolved against url (the directory it is published in). The url stays the source's identity for skip and resume, so the rotating name does not reset them.",
+          "properties": {
+            "name": {
+              "type": "string",
+              "pattern": "^[^/]*\\{weekday\\}[^/]*$",
+              "description": "File name carrying {weekday}, e.g. pubinfo_daily_{weekday}.zip. No path."
+            },
+            "publishedAfter": {
+              "type": "string",
+              "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$",
+              "description": "Local time (HH:MM) a day's file exists from. Before it, the previous day's file is the newest. pubinfo publishes at about 21:23 Pacific, so '21:30'."
+            }
+          }
         },
         "headerLines": {
           "type": "integer",
