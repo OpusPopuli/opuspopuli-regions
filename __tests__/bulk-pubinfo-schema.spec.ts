@@ -4,8 +4,8 @@
  * token, .lob side files, a file that rotates by weekday, and the bill status
  * lifecycle map.
  *
- * The rules worth pinning are the ones that narrow: a url template is allowed
- * only on a rotating source, lobColumns only on a zip, and a lifecycle value
+ * The rules worth pinning are the ones that narrow: a rotating name must carry
+ * {weekday} and no path, lobColumns needs a zip, and a lifecycle value comes
  * only from the three the consumer understands.
  */
 
@@ -14,8 +14,7 @@ import { validateRegionFile } from '../src/cli/lib/schema-validator';
 
 const schemaPath = join(__dirname, '..', 'schema', 'region-plugin.schema.json');
 
-const ROTATING_URL =
-  'https://downloads.leginfo.legislature.ca.gov/pubinfo_daily_{weekday}.zip';
+const DIRECTORY_URL = 'https://downloads.leginfo.legislature.ca.gov/';
 
 function withSource(source: Record<string, unknown>) {
   return {
@@ -32,7 +31,7 @@ function withSource(source: Record<string, unknown>) {
       fipsCode: '06',
       dataSources: [
         {
-          url: ROTATING_URL,
+          url: DIRECTORY_URL,
           dataType: 'bills',
           contentGoal: 'placeholder',
           sourceType: 'bulk_download',
@@ -50,7 +49,10 @@ const pubinfoBulk = (extra: Record<string, unknown> = {}) => ({
   quoteChar: '`',
   nullToken: 'NULL',
   columnMappings: { bill_id: 'externalId', current_status: 'currentStatus' },
-  publishedAfter: '21:30',
+  rotatingFile: {
+    name: 'pubinfo_daily_{weekday}.zip',
+    publishedAfter: '21:30',
+  },
   ...extra,
 });
 
@@ -74,7 +76,7 @@ describe('BulkDownloadConfig — pubinfo (bills-phase-b D9)', () => {
         url: 'https://example.gov/bills.tsv',
         bulk: pubinfoBulk({
           format: 'tsv',
-          publishedAfter: undefined,
+          rotatingFile: undefined,
           lobColumns: ['bill_xml'],
         }),
       }),
@@ -86,23 +88,49 @@ describe('BulkDownloadConfig — pubinfo (bills-phase-b D9)', () => {
   });
 
   it('rejects a publishedAfter that is not HH:MM', () => {
-    expect(valid({ bulk: pubinfoBulk({ publishedAfter: '9:30pm' }) })).toBe(
-      false,
-    );
-  });
-
-  it('rejects a {weekday} url on a source that does not rotate', () => {
-    // Without publishedAfter nothing resolves the placeholder, and the
-    // consumer would fetch the literal braces.
-    expect(valid({ bulk: pubinfoBulk({ publishedAfter: undefined }) })).toBe(
-      false,
-    );
-  });
-
-  it('rejects a rotating source whose url has no {weekday}', () => {
     expect(
       valid({
-        url: 'https://downloads.leginfo.legislature.ca.gov/pubinfo_daily_Thu.zip',
+        bulk: pubinfoBulk({
+          rotatingFile: {
+            name: 'pubinfo_daily_{weekday}.zip',
+            publishedAfter: '9:30pm',
+          },
+        }),
+      }),
+    ).toBe(false);
+  });
+
+  it('rejects a rotating name with no {weekday}', () => {
+    expect(
+      valid({
+        bulk: pubinfoBulk({
+          rotatingFile: {
+            name: 'pubinfo_daily_Thu.zip',
+            publishedAfter: '21:30',
+          },
+        }),
+      }),
+    ).toBe(false);
+  });
+
+  it('rejects a rotating name that carries a path', () => {
+    // The name resolves against url; a path in it could leave the directory.
+    expect(
+      valid({
+        bulk: pubinfoBulk({
+          rotatingFile: {
+            name: '../other/{weekday}.zip',
+            publishedAfter: '21:30',
+          },
+        }),
+      }),
+    ).toBe(false);
+  });
+
+  it('keeps a plain url strict', () => {
+    expect(
+      valid({
+        url: 'https://downloads.leginfo.legislature.ca.gov/pubinfo_daily_{weekday}.zip',
         bulk: pubinfoBulk(),
       }),
     ).toBe(false);

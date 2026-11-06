@@ -753,7 +753,7 @@
         ]
       },
       {
-        "url": "https://downloads.leginfo.legislature.ca.gov/pubinfo_daily_{weekday}.zip",
+        "url": "https://downloads.leginfo.legislature.ca.gov/",
         "dataType": "bills",
         "syncCadence": "0 2 * * *",
         "sourceType": "bulk_download",
@@ -798,7 +798,10 @@
             "current_house": "currentHouse",
             "current_status": "currentStatus"
           },
-          "publishedAfter": "21:30"
+          "rotatingFile": {
+            "name": "pubinfo_daily_{weekday}.zip",
+            "publishedAfter": "21:30"
+          }
         },
         "coldAfterDays": 180,
         "billStatusLifecycle": {
@@ -822,7 +825,7 @@
         ]
       },
       {
-        "url": "https://downloads.leginfo.legislature.ca.gov/pubinfo_daily_{weekday}.zip",
+        "url": "https://downloads.leginfo.legislature.ca.gov/",
         "dataType": "bills",
         "syncCadence": "0 2 * * *",
         "sourceType": "bulk_download",
@@ -868,12 +871,15 @@
             "taxlevy": "taxlevy",
             "bill_xml": "billXml"
           },
-          "publishedAfter": "21:30",
+          "rotatingFile": {
+            "name": "pubinfo_daily_{weekday}.zip",
+            "publishedAfter": "21:30"
+          },
           "lobColumns": ["bill_xml"]
         }
       },
       {
-        "url": "https://downloads.leginfo.legislature.ca.gov/pubinfo_daily_{weekday}.zip",
+        "url": "https://downloads.leginfo.legislature.ca.gov/",
         "dataType": "bills",
         "syncCadence": "0 2 * * *",
         "sourceType": "bulk_download",
@@ -904,7 +910,10 @@
             "contribution": "contribution",
             "primary_author_flg": "primaryAuthorFlg"
           },
-          "publishedAfter": "21:30",
+          "rotatingFile": {
+            "name": "pubinfo_daily_{weekday}.zip",
+            "publishedAfter": "21:30"
+          },
           "compositeKey": [
             "bill_version_id",
             "type",
@@ -915,7 +924,7 @@
         }
       },
       {
-        "url": "https://downloads.leginfo.legislature.ca.gov/pubinfo_daily_{weekday}.zip",
+        "url": "https://downloads.leginfo.legislature.ca.gov/",
         "dataType": "bills",
         "syncCadence": "0 2 * * *",
         "sourceType": "bulk_download",
@@ -950,11 +959,14 @@
             "action_code": "actionCode",
             "action_status": "actionStatus"
           },
-          "publishedAfter": "21:30"
+          "rotatingFile": {
+            "name": "pubinfo_daily_{weekday}.zip",
+            "publishedAfter": "21:30"
+          }
         }
       },
       {
-        "url": "https://downloads.leginfo.legislature.ca.gov/pubinfo_daily_{weekday}.zip",
+        "url": "https://downloads.leginfo.legislature.ca.gov/",
         "dataType": "bills",
         "syncCadence": "0 2 * * *",
         "sourceType": "bulk_download",
@@ -993,7 +1005,10 @@
             "abstain": "abstain",
             "vote_result": "voteResult"
           },
-          "publishedAfter": "21:30",
+          "rotatingFile": {
+            "name": "pubinfo_daily_{weekday}.zip",
+            "publishedAfter": "21:30"
+          },
           "compositeKey": [
             "bill_id",
             "location_code",
@@ -1004,7 +1019,7 @@
         }
       },
       {
-        "url": "https://downloads.leginfo.legislature.ca.gov/pubinfo_daily_{weekday}.zip",
+        "url": "https://downloads.leginfo.legislature.ca.gov/",
         "dataType": "bills",
         "syncCadence": "0 2 * * *",
         "sourceType": "bulk_download",
@@ -1038,7 +1053,10 @@
             "vote_code": "voteCode",
             "motion_id": "motionId"
           },
-          "publishedAfter": "21:30",
+          "rotatingFile": {
+            "name": "pubinfo_daily_{weekday}.zip",
+            "publishedAfter": "21:30"
+          },
           "compositeKey": [
             "bill_id",
             "location_code",
@@ -1050,7 +1068,7 @@
         }
       },
       {
-        "url": "https://downloads.leginfo.legislature.ca.gov/pubinfo_daily_{weekday}.zip",
+        "url": "https://downloads.leginfo.legislature.ca.gov/",
         "dataType": "bills",
         "syncCadence": "0 2 * * *",
         "sourceType": "bulk_download",
@@ -1066,11 +1084,14 @@
             "motion_id": "externalId",
             "motion_text": "motionText"
           },
-          "publishedAfter": "21:30"
+          "rotatingFile": {
+            "name": "pubinfo_daily_{weekday}.zip",
+            "publishedAfter": "21:30"
+          }
         }
       },
       {
-        "url": "https://downloads.leginfo.legislature.ca.gov/pubinfo_daily_{weekday}.zip",
+        "url": "https://downloads.leginfo.legislature.ca.gov/",
         "dataType": "bills",
         "syncCadence": "0 2 * * *",
         "sourceType": "bulk_download",
@@ -1109,7 +1130,10 @@
             "last_name": "lastName",
             "party": "party"
           },
-          "publishedAfter": "21:30",
+          "rotatingFile": {
+            "name": "pubinfo_daily_{weekday}.zip",
+            "publishedAfter": "21:30"
+          },
           "compositeKey": [
             "session_year",
             "district",
@@ -1119,7 +1143,7 @@
         }
       },
       {
-        "url": "https://downloads.leginfo.legislature.ca.gov/pubinfo_daily_{weekday}.zip",
+        "url": "https://downloads.leginfo.legislature.ca.gov/",
         "dataType": "bills",
         "syncCadence": "0 2 * * *",
         "sourceType": "bulk_download",
@@ -1149,7 +1173,10 @@
             "description": "description",
             "long_description": "longDescription"
           },
-          "publishedAfter": "21:30",
+          "rotatingFile": {
+            "name": "pubinfo_daily_{weekday}.zip",
+            "publishedAfter": "21:30"
+          },
           "compositeKey": [
             "session_year",
             "location_code",

@@ -302,25 +302,11 @@
       "type": "object",
       "required": ["url", "dataType", "contentGoal"],
       "additionalProperties": false,
-      "allOf": [
-        {
-          "$comment": "A url is a plain uri unless the source rotates its file by weekday (bulk.publishedAfter), when it is an RFC 6570 template carrying {weekday}. Kept to that one case so every other url stays strictly validated.",
-          "if": {
-            "required": ["bulk"],
-            "properties": { "bulk": { "required": ["publishedAfter"] } }
-          },
-          "then": {
-            "properties": {
-              "url": { "format": "uri-template", "pattern": "\\{weekday\\}" }
-            }
-          },
-          "else": { "properties": { "url": { "format": "uri" } } }
-        }
-      ],
       "properties": {
         "url": {
           "type": "string",
-          "description": "URL to fetch data from. A plain URL, except on a bulk source with publishedAfter, where it carries {weekday}."
+          "format": "uri",
+          "description": "URL to fetch data from"
         },
         "dataType": {
           "type": "string",
@@ -628,10 +614,23 @@
           "uniqueItems": true,
           "description": "Columns whose cell names another file inside the same ZIP that holds the cell's real content (pubinfo writes bill text to BILL_VERSION_TBL_<n>.lob and puts that name in the row). The named file's content replaces the cell. The names are renumbered on every export, so a row's identity hash covers the content, not the name."
         },
-        "publishedAfter": {
-          "type": "string",
-          "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$",
-          "description": "For a publisher that rotates files by weekday: replace {weekday} in url with the three-letter day (Mon..Sun) of the newest file, in the source's timezone. The file for a day is published at this local time (HH:MM); before it, the previous day's file is the newest. The pubinfo export publishes pubinfo_daily_<Day>.zip at about 21:23 Pacific, so '21:30'. Identity for skip and resume uses the url as written, not the resolved one, so the rotating name does not reset them."
+        "rotatingFile": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "publishedAfter"],
+          "description": "For a publisher that rotates its export by weekday. The file fetched is name, with {weekday} replaced by the three-letter day (Mon..Sun) of the newest file in the source's timezone, resolved against url (the directory it is published in). The url stays the source's identity for skip and resume, so the rotating name does not reset them.",
+          "properties": {
+            "name": {
+              "type": "string",
+              "pattern": "^[^/]*\\{weekday\\}[^/]*$",
+              "description": "File name carrying {weekday}, e.g. pubinfo_daily_{weekday}.zip. No path."
+            },
+            "publishedAfter": {
+              "type": "string",
+              "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$",
+              "description": "Local time (HH:MM) a day's file exists from. Before it, the previous day's file is the newest. pubinfo publishes at about 21:23 Pacific, so '21:30'."
+            }
+          }
         },
         "headerLines": {
           "type": "integer",

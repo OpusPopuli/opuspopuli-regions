@@ -16,301 +16,6 @@
  * See issue #39.
  */
 
-export type DataSourceConfig = {
-  [k: string]: any;
-} & {
-  /**
-   * URL to fetch data from. A plain URL, except on a bulk source with publishedAfter, where it carries {weekday}.
-   */
-  url: string;
-  /**
-   * What type of content this source provides. Daily journals / meeting minutes go under 'meetings' with sourceType=pdf_archive — the consumer partitions by sourceType internally. 'civics' marks a source of region governmental structure, process, and vocabulary; the civics-ingest handler scrapes it and uses the private prompt-service to extract structured shape (chambers, measure types, lifecycle stages with status patterns, glossary) plus a plain-language rewrite for laypeople. Verbatim source text and the AI rewrite are stored together — never one without the other. 'bills' marks a source of individual legislative bills (AB, SB, ACA, SCA, etc.): either an official legislature website, which the bills-ingest handler crawls from the seed URL extracting one Bill record per detail page, or (sourceType=bulk_download) one table of a legislature's published database export. See opuspopuli#686.
-   */
-  dataType:
-    | 'propositions'
-    | 'meetings'
-    | 'representatives'
-    | 'campaign_finance'
-    | 'lobbying'
-    | 'civics'
-    | 'bills'
-    | 'county_thresholds';
-  /**
-   * Natural language description of what to find/extract
-   */
-  contentGoal: string;
-  /**
-   * Sub-category for grouping (e.g., 'Assembly', 'Senate')
-   */
-  category?: string;
-  /**
-   * Hints to help the AI find the right content
-   */
-  hints?: string[];
-  /**
-   * Override rate limit for this specific source
-   */
-  rateLimitOverride?: number;
-  /**
-   * IANA zone for wall-clock times the source prints with no offset (e.g. a hearing at '5pm'). Defaults to the region's timezone; set it only for a source that publishes in another zone.
-   */
-  timezone?: string;
-  /**
-   * Query parameters set at fetch time to a date relative to today, as YYYY-MM-DD in the source's timezone. Each value is a day offset, e.g. { "startDate": "-30d", "endDate": "+60d" }. For a calendar that lists only the dates its query names. The url stays the key the source is cached and tracked under.
-   */
-  dateQueryParams?: {
-    [k: string]: string;
-  };
-  /**
-   * 5-field cron expression (minute hour dom month dow) controlling how often this source is synced. The worker applies a deterministic per-source minute offset at registration time to spread load across gov hosts — the minute field you specify is the base, not the exact fire time. Omit to inherit the global daily fallback. Common patterns: '0 2 * * *' daily at 2 AM, '0 2 * * 0' weekly on Sunday, '0 * * * *' hourly.
-   */
-  syncCadence?: string;
-  /**
-   * 5-field cron expression for a periodic full status-page sweep of all bills (dataType='bills', page sources only). Runs forceStatusRecheck=true, which skips the cheap status-page comparison and sends every existing bill on to full extraction. Extraction still skips a bill whose text page reports an unchanged Date Published, so a status change with no new text is not caught by this sweep (opuspopuli docs/plans/bills-phase-b.md, B1). Per-source minute offset is applied like syncCadence. Typical: '0 2 * * 0' weekly Sunday 2 AM. See #689.
-   */
-  statusScanCadence?: string;
-  /**
-   * For a bulk bills source that carries an official status column: each status value the source publishes, mapped to where it leaves the bill. 'active' can still move and is shown in the personalized feed; 'enacted' finished successfully (chaptered into law, or an adopted resolution); 'dead' died, failed or was vetoed. A status missing from the map is logged and the bill keeps its stored lifecycle rather than being guessed. Replaces status-string patterns for regions whose source publishes structured status.
-   */
-  billStatusLifecycle?: {
-    [k: string]: 'active' | 'enacted' | 'dead';
-  };
-  /**
-   * Bills only. A bill that is no longer active becomes cold this many days after its last action; dead bills are cold at once. Cold bills are not summarized in the batch pass and get their summary on first read instead. Default 180.
-   */
-  coldAfterDays?: number;
-  /**
-   * Source type determines the extraction strategy (default: html_scrape). 'pdf_archive' selects the listing-walk + per-PDF-extract pipeline: the URL is a paginated listing page that links to a series of dated PDF documents, each fetched and parsed (text only at V1) into one Minutes record.
-   */
-  sourceType?: 'html_scrape' | 'bulk_download' | 'api' | 'pdf' | 'pdf_archive';
-  bulk?: BulkDownloadConfig;
-  api?: ApiSourceConfig;
-  pdf?: PdfSourceConfig;
-  pdfArchive?: PdfArchiveConfig;
-  billDiscovery?: BillDiscoveryConfig;
-  linkDiscovery?: LinkDiscoveryConfig;
-  /**
-   * Detail page extraction plan: maps domain field names to CSS selectors (string) or structured array configs (object). Supports dot notation and '|attr:name' suffix.
-   */
-  detailFields?: {
-    [k: string]: string | StructuredFieldConfig;
-  };
-  /**
-   * A second per-item page to fetch, for content the primary detail page does not carry (#1383). A representative's committees and offices are on the chamber roster detail page while their biography is on the member's own caucus site; this is additive because repointing the detail URL at the biography would lose the roster fields. Selector-only: a miss produces nothing and warns rather than dumping page text into the field.
-   */
-  secondaryDetail?: {
-    /**
-     * Item field holding the base URL, dot-notated (e.g. 'contactInfo.website'), resolved AFTER primary detail extraction. An item missing this field is skipped silently — a representative with no website is not an error.
-     */
-    urlFrom: string;
-    /**
-     * Path segment appended to that URL (e.g. 'biography'). Joined with exactly one '/' whether or not the base URL ends in one — both forms occur in live data.
-     */
-    urlSuffix?: string;
-    /**
-     * Selectors applied to the secondary page, same shape as detailFields. May only FILL fields the primary extraction left empty; a secondary page can never overwrite primary data.
-     */
-    fields: {
-      [k: string]: string | StructuredFieldConfig;
-    };
-  };
-  /**
-   * Explicit extraction selectors that bypass AI structural analysis entirely. Use when the page structure is known and stable, or when the local LLM consistently generates wrong selectors.
-   */
-  staticManifest?: {
-    containerSelector: string;
-    itemSelector: string;
-    fieldMappings: {
-      fieldName: string;
-      selector: string;
-      extractionMethod: string;
-      /**
-       * For extractionMethod='composite': builds this field from values already extracted for the same item, using {fieldName} placeholders with optional formatters ({field:date|lower|upper|slug|trim}) and dot paths. Referenced fields must be declared earlier in fieldMappings; if any placeholder resolves to nothing the whole field is dropped rather than emitting a half-built key. Use it when the discriminating value sits once per page (an election date in a heading) and the rest is per item — e.g. "california-sonoma-{electionDate:date}-measure-{measureLetter:lower}". HTML counterpart of BulkDownloadConfig.compositeKey; see opuspopuli#1164.
-       */
-      template?: string;
-      /**
-       * Read this field from the item's nearest ancestor matching this selector, instead of from the item. For a value printed once per group of items, e.g. a calendar that heads each day's hearings with the date so no hearing carries its own. Takes precedence over scope; an item with no such ancestor is a miss for this field.
-       */
-      closest?: string;
-      attribute?: string;
-      regexPattern?: string;
-      regexGroup?: number;
-      transform?: {};
-      required: boolean;
-      defaultValue?: string;
-      scope?: 'item' | 'container';
-      /**
-       * For extractionMethod='structured': child field selectors. Each value is a string shortcut or a ChildFieldConfig object.
-       */
-      children?: {
-        [k: string]: string | ChildFieldConfig;
-      };
-      [k: string]: any;
-    }[];
-  };
-  /**
-   * Crawl depth from the seed URL for sync handlers that walk a site's link graph (currently civics — see opuspopuli#669). 0 (default) = no crawl, fetch only the seed. N = N hops from seed. Crawls are scoped to same host + same path prefix as the seed, HTML responses only.
-   */
-  crawlDepth?: number;
-  /**
-   * Cap on total pages a crawler will visit per sync run regardless of crawlDepth. Defaults to 20. Each page costs one LLM call, so this bounds runtime + token spend.
-   */
-  crawlMaxPages?: number;
-  /**
-   * Per-source override for the LLM maxTokens generation cap. Useful when a source needs a much longer or shorter output than its siblings (e.g., a 150-term glossary needs ~32000; a short bio prompt finishes well under 2000). Overrides the sync handler's hardcoded default.
-   */
-  llmMaxTokens?: number;
-  /**
-   * Per-source override for the LLM provider request timeout (milliseconds). Useful when a single source legitimately runs much longer than the platform-wide default — civics-glossary extraction on qwen3.5:9b can take 15-20 min, while bio gen finishes in 2 min on the same hardware. Overrides the provider's constructor-configured default.
-   */
-  llmRequestTimeoutMs?: number;
-} & {
-  /**
-   * URL to fetch data from. A plain URL, except on a bulk source with publishedAfter, where it carries {weekday}.
-   */
-  url: string;
-  /**
-   * What type of content this source provides. Daily journals / meeting minutes go under 'meetings' with sourceType=pdf_archive — the consumer partitions by sourceType internally. 'civics' marks a source of region governmental structure, process, and vocabulary; the civics-ingest handler scrapes it and uses the private prompt-service to extract structured shape (chambers, measure types, lifecycle stages with status patterns, glossary) plus a plain-language rewrite for laypeople. Verbatim source text and the AI rewrite are stored together — never one without the other. 'bills' marks a source of individual legislative bills (AB, SB, ACA, SCA, etc.): either an official legislature website, which the bills-ingest handler crawls from the seed URL extracting one Bill record per detail page, or (sourceType=bulk_download) one table of a legislature's published database export. See opuspopuli#686.
-   */
-  dataType:
-    | 'propositions'
-    | 'meetings'
-    | 'representatives'
-    | 'campaign_finance'
-    | 'lobbying'
-    | 'civics'
-    | 'bills'
-    | 'county_thresholds';
-  /**
-   * Natural language description of what to find/extract
-   */
-  contentGoal: string;
-  /**
-   * Sub-category for grouping (e.g., 'Assembly', 'Senate')
-   */
-  category?: string;
-  /**
-   * Hints to help the AI find the right content
-   */
-  hints?: string[];
-  /**
-   * Override rate limit for this specific source
-   */
-  rateLimitOverride?: number;
-  /**
-   * IANA zone for wall-clock times the source prints with no offset (e.g. a hearing at '5pm'). Defaults to the region's timezone; set it only for a source that publishes in another zone.
-   */
-  timezone?: string;
-  /**
-   * Query parameters set at fetch time to a date relative to today, as YYYY-MM-DD in the source's timezone. Each value is a day offset, e.g. { "startDate": "-30d", "endDate": "+60d" }. For a calendar that lists only the dates its query names. The url stays the key the source is cached and tracked under.
-   */
-  dateQueryParams?: {
-    [k: string]: string;
-  };
-  /**
-   * 5-field cron expression (minute hour dom month dow) controlling how often this source is synced. The worker applies a deterministic per-source minute offset at registration time to spread load across gov hosts — the minute field you specify is the base, not the exact fire time. Omit to inherit the global daily fallback. Common patterns: '0 2 * * *' daily at 2 AM, '0 2 * * 0' weekly on Sunday, '0 * * * *' hourly.
-   */
-  syncCadence?: string;
-  /**
-   * 5-field cron expression for a periodic full status-page sweep of all bills (dataType='bills', page sources only). Runs forceStatusRecheck=true, which skips the cheap status-page comparison and sends every existing bill on to full extraction. Extraction still skips a bill whose text page reports an unchanged Date Published, so a status change with no new text is not caught by this sweep (opuspopuli docs/plans/bills-phase-b.md, B1). Per-source minute offset is applied like syncCadence. Typical: '0 2 * * 0' weekly Sunday 2 AM. See #689.
-   */
-  statusScanCadence?: string;
-  /**
-   * For a bulk bills source that carries an official status column: each status value the source publishes, mapped to where it leaves the bill. 'active' can still move and is shown in the personalized feed; 'enacted' finished successfully (chaptered into law, or an adopted resolution); 'dead' died, failed or was vetoed. A status missing from the map is logged and the bill keeps its stored lifecycle rather than being guessed. Replaces status-string patterns for regions whose source publishes structured status.
-   */
-  billStatusLifecycle?: {
-    [k: string]: 'active' | 'enacted' | 'dead';
-  };
-  /**
-   * Bills only. A bill that is no longer active becomes cold this many days after its last action; dead bills are cold at once. Cold bills are not summarized in the batch pass and get their summary on first read instead. Default 180.
-   */
-  coldAfterDays?: number;
-  /**
-   * Source type determines the extraction strategy (default: html_scrape). 'pdf_archive' selects the listing-walk + per-PDF-extract pipeline: the URL is a paginated listing page that links to a series of dated PDF documents, each fetched and parsed (text only at V1) into one Minutes record.
-   */
-  sourceType?: 'html_scrape' | 'bulk_download' | 'api' | 'pdf' | 'pdf_archive';
-  bulk?: BulkDownloadConfig;
-  api?: ApiSourceConfig;
-  pdf?: PdfSourceConfig;
-  pdfArchive?: PdfArchiveConfig;
-  billDiscovery?: BillDiscoveryConfig;
-  linkDiscovery?: LinkDiscoveryConfig;
-  /**
-   * Detail page extraction plan: maps domain field names to CSS selectors (string) or structured array configs (object). Supports dot notation and '|attr:name' suffix.
-   */
-  detailFields?: {
-    [k: string]: string | StructuredFieldConfig;
-  };
-  /**
-   * A second per-item page to fetch, for content the primary detail page does not carry (#1383). A representative's committees and offices are on the chamber roster detail page while their biography is on the member's own caucus site; this is additive because repointing the detail URL at the biography would lose the roster fields. Selector-only: a miss produces nothing and warns rather than dumping page text into the field.
-   */
-  secondaryDetail?: {
-    /**
-     * Item field holding the base URL, dot-notated (e.g. 'contactInfo.website'), resolved AFTER primary detail extraction. An item missing this field is skipped silently — a representative with no website is not an error.
-     */
-    urlFrom: string;
-    /**
-     * Path segment appended to that URL (e.g. 'biography'). Joined with exactly one '/' whether or not the base URL ends in one — both forms occur in live data.
-     */
-    urlSuffix?: string;
-    /**
-     * Selectors applied to the secondary page, same shape as detailFields. May only FILL fields the primary extraction left empty; a secondary page can never overwrite primary data.
-     */
-    fields: {
-      [k: string]: string | StructuredFieldConfig;
-    };
-  };
-  /**
-   * Explicit extraction selectors that bypass AI structural analysis entirely. Use when the page structure is known and stable, or when the local LLM consistently generates wrong selectors.
-   */
-  staticManifest?: {
-    containerSelector: string;
-    itemSelector: string;
-    fieldMappings: {
-      fieldName: string;
-      selector: string;
-      extractionMethod: string;
-      /**
-       * For extractionMethod='composite': builds this field from values already extracted for the same item, using {fieldName} placeholders with optional formatters ({field:date|lower|upper|slug|trim}) and dot paths. Referenced fields must be declared earlier in fieldMappings; if any placeholder resolves to nothing the whole field is dropped rather than emitting a half-built key. Use it when the discriminating value sits once per page (an election date in a heading) and the rest is per item — e.g. "california-sonoma-{electionDate:date}-measure-{measureLetter:lower}". HTML counterpart of BulkDownloadConfig.compositeKey; see opuspopuli#1164.
-       */
-      template?: string;
-      /**
-       * Read this field from the item's nearest ancestor matching this selector, instead of from the item. For a value printed once per group of items, e.g. a calendar that heads each day's hearings with the date so no hearing carries its own. Takes precedence over scope; an item with no such ancestor is a miss for this field.
-       */
-      closest?: string;
-      attribute?: string;
-      regexPattern?: string;
-      regexGroup?: number;
-      transform?: {};
-      required: boolean;
-      defaultValue?: string;
-      scope?: 'item' | 'container';
-      /**
-       * For extractionMethod='structured': child field selectors. Each value is a string shortcut or a ChildFieldConfig object.
-       */
-      children?: {
-        [k: string]: string | ChildFieldConfig;
-      };
-      [k: string]: any;
-    }[];
-  };
-  /**
-   * Crawl depth from the seed URL for sync handlers that walk a site's link graph (currently civics — see opuspopuli#669). 0 (default) = no crawl, fetch only the seed. N = N hops from seed. Crawls are scoped to same host + same path prefix as the seed, HTML responses only.
-   */
-  crawlDepth?: number;
-  /**
-   * Cap on total pages a crawler will visit per sync run regardless of crawlDepth. Defaults to 20. Each page costs one LLM call, so this bounds runtime + token spend.
-   */
-  crawlMaxPages?: number;
-  /**
-   * Per-source override for the LLM maxTokens generation cap. Useful when a source needs a much longer or shorter output than its siblings (e.g., a 150-term glossary needs ~32000; a short bio prompt finishes well under 2000). Overrides the sync handler's hardcoded default.
-   */
-  llmMaxTokens?: number;
-  /**
-   * Per-source override for the LLM provider request timeout (milliseconds). Useful when a single source legitimately runs much longer than the platform-wide default — civics-glossary extraction on qwen3.5:9b can take 15-20 min, while bio gen finishes in 2 min on the same hardware. Overrides the provider's constructor-configured default.
-   */
-  llmRequestTimeoutMs?: number;
-};
 export type BulkDownloadConfig = {
   [k: string]: any;
 } & {
@@ -343,9 +48,18 @@ export type BulkDownloadConfig = {
    */
   lobColumns?: [string, ...string[]];
   /**
-   * For a publisher that rotates files by weekday: replace {weekday} in url with the three-letter day (Mon..Sun) of the newest file, in the source's timezone. The file for a day is published at this local time (HH:MM); before it, the previous day's file is the newest. The pubinfo export publishes pubinfo_daily_<Day>.zip at about 21:23 Pacific, so '21:30'. Identity for skip and resume uses the url as written, not the resolved one, so the rotating name does not reset them.
+   * For a publisher that rotates its export by weekday. The file fetched is name, with {weekday} replaced by the three-letter day (Mon..Sun) of the newest file in the source's timezone, resolved against url (the directory it is published in). The url stays the source's identity for skip and resume, so the rotating name does not reset them.
    */
-  publishedAfter?: string;
+  rotatingFile?: {
+    /**
+     * File name carrying {weekday}, e.g. pubinfo_daily_{weekday}.zip. No path.
+     */
+    name: string;
+    /**
+     * Local time (HH:MM) a day's file exists from. Before it, the previous day's file is the newest. pubinfo publishes at about 21:23 Pacific, so '21:30'.
+     */
+    publishedAfter: string;
+  };
   /**
    * Number of header lines to skip
    */
@@ -561,6 +275,153 @@ export interface DeclarativeRegionConfig {
    */
   bioTrimPatterns?: string[];
   boundarySources?: BoundarySourcesConfig;
+}
+export interface DataSourceConfig {
+  /**
+   * URL to fetch data from
+   */
+  url: string;
+  /**
+   * What type of content this source provides. Daily journals / meeting minutes go under 'meetings' with sourceType=pdf_archive — the consumer partitions by sourceType internally. 'civics' marks a source of region governmental structure, process, and vocabulary; the civics-ingest handler scrapes it and uses the private prompt-service to extract structured shape (chambers, measure types, lifecycle stages with status patterns, glossary) plus a plain-language rewrite for laypeople. Verbatim source text and the AI rewrite are stored together — never one without the other. 'bills' marks a source of individual legislative bills (AB, SB, ACA, SCA, etc.): either an official legislature website, which the bills-ingest handler crawls from the seed URL extracting one Bill record per detail page, or (sourceType=bulk_download) one table of a legislature's published database export. See opuspopuli#686.
+   */
+  dataType:
+    | 'propositions'
+    | 'meetings'
+    | 'representatives'
+    | 'campaign_finance'
+    | 'lobbying'
+    | 'civics'
+    | 'bills'
+    | 'county_thresholds';
+  /**
+   * Natural language description of what to find/extract
+   */
+  contentGoal: string;
+  /**
+   * Sub-category for grouping (e.g., 'Assembly', 'Senate')
+   */
+  category?: string;
+  /**
+   * Hints to help the AI find the right content
+   */
+  hints?: string[];
+  /**
+   * Override rate limit for this specific source
+   */
+  rateLimitOverride?: number;
+  /**
+   * IANA zone for wall-clock times the source prints with no offset (e.g. a hearing at '5pm'). Defaults to the region's timezone; set it only for a source that publishes in another zone.
+   */
+  timezone?: string;
+  /**
+   * Query parameters set at fetch time to a date relative to today, as YYYY-MM-DD in the source's timezone. Each value is a day offset, e.g. { "startDate": "-30d", "endDate": "+60d" }. For a calendar that lists only the dates its query names. The url stays the key the source is cached and tracked under.
+   */
+  dateQueryParams?: {
+    [k: string]: string;
+  };
+  /**
+   * 5-field cron expression (minute hour dom month dow) controlling how often this source is synced. The worker applies a deterministic per-source minute offset at registration time to spread load across gov hosts — the minute field you specify is the base, not the exact fire time. Omit to inherit the global daily fallback. Common patterns: '0 2 * * *' daily at 2 AM, '0 2 * * 0' weekly on Sunday, '0 * * * *' hourly.
+   */
+  syncCadence?: string;
+  /**
+   * 5-field cron expression for a periodic full status-page sweep of all bills (dataType='bills', page sources only). Runs forceStatusRecheck=true, which skips the cheap status-page comparison and sends every existing bill on to full extraction. Extraction still skips a bill whose text page reports an unchanged Date Published, so a status change with no new text is not caught by this sweep (opuspopuli docs/plans/bills-phase-b.md, B1). Per-source minute offset is applied like syncCadence. Typical: '0 2 * * 0' weekly Sunday 2 AM. See #689.
+   */
+  statusScanCadence?: string;
+  /**
+   * For a bulk bills source that carries an official status column: each status value the source publishes, mapped to where it leaves the bill. 'active' can still move and is shown in the personalized feed; 'enacted' finished successfully (chaptered into law, or an adopted resolution); 'dead' died, failed or was vetoed. A status missing from the map is logged and the bill keeps its stored lifecycle rather than being guessed. Replaces status-string patterns for regions whose source publishes structured status.
+   */
+  billStatusLifecycle?: {
+    [k: string]: 'active' | 'enacted' | 'dead';
+  };
+  /**
+   * Bills only. A bill that is no longer active becomes cold this many days after its last action; dead bills are cold at once. Cold bills are not summarized in the batch pass and get their summary on first read instead. Default 180.
+   */
+  coldAfterDays?: number;
+  /**
+   * Source type determines the extraction strategy (default: html_scrape). 'pdf_archive' selects the listing-walk + per-PDF-extract pipeline: the URL is a paginated listing page that links to a series of dated PDF documents, each fetched and parsed (text only at V1) into one Minutes record.
+   */
+  sourceType?: 'html_scrape' | 'bulk_download' | 'api' | 'pdf' | 'pdf_archive';
+  bulk?: BulkDownloadConfig;
+  api?: ApiSourceConfig;
+  pdf?: PdfSourceConfig;
+  pdfArchive?: PdfArchiveConfig;
+  billDiscovery?: BillDiscoveryConfig;
+  linkDiscovery?: LinkDiscoveryConfig;
+  /**
+   * Detail page extraction plan: maps domain field names to CSS selectors (string) or structured array configs (object). Supports dot notation and '|attr:name' suffix.
+   */
+  detailFields?: {
+    [k: string]: string | StructuredFieldConfig;
+  };
+  /**
+   * A second per-item page to fetch, for content the primary detail page does not carry (#1383). A representative's committees and offices are on the chamber roster detail page while their biography is on the member's own caucus site; this is additive because repointing the detail URL at the biography would lose the roster fields. Selector-only: a miss produces nothing and warns rather than dumping page text into the field.
+   */
+  secondaryDetail?: {
+    /**
+     * Item field holding the base URL, dot-notated (e.g. 'contactInfo.website'), resolved AFTER primary detail extraction. An item missing this field is skipped silently — a representative with no website is not an error.
+     */
+    urlFrom: string;
+    /**
+     * Path segment appended to that URL (e.g. 'biography'). Joined with exactly one '/' whether or not the base URL ends in one — both forms occur in live data.
+     */
+    urlSuffix?: string;
+    /**
+     * Selectors applied to the secondary page, same shape as detailFields. May only FILL fields the primary extraction left empty; a secondary page can never overwrite primary data.
+     */
+    fields: {
+      [k: string]: string | StructuredFieldConfig;
+    };
+  };
+  /**
+   * Explicit extraction selectors that bypass AI structural analysis entirely. Use when the page structure is known and stable, or when the local LLM consistently generates wrong selectors.
+   */
+  staticManifest?: {
+    containerSelector: string;
+    itemSelector: string;
+    fieldMappings: {
+      fieldName: string;
+      selector: string;
+      extractionMethod: string;
+      /**
+       * For extractionMethod='composite': builds this field from values already extracted for the same item, using {fieldName} placeholders with optional formatters ({field:date|lower|upper|slug|trim}) and dot paths. Referenced fields must be declared earlier in fieldMappings; if any placeholder resolves to nothing the whole field is dropped rather than emitting a half-built key. Use it when the discriminating value sits once per page (an election date in a heading) and the rest is per item — e.g. "california-sonoma-{electionDate:date}-measure-{measureLetter:lower}". HTML counterpart of BulkDownloadConfig.compositeKey; see opuspopuli#1164.
+       */
+      template?: string;
+      /**
+       * Read this field from the item's nearest ancestor matching this selector, instead of from the item. For a value printed once per group of items, e.g. a calendar that heads each day's hearings with the date so no hearing carries its own. Takes precedence over scope; an item with no such ancestor is a miss for this field.
+       */
+      closest?: string;
+      attribute?: string;
+      regexPattern?: string;
+      regexGroup?: number;
+      transform?: {};
+      required: boolean;
+      defaultValue?: string;
+      scope?: 'item' | 'container';
+      /**
+       * For extractionMethod='structured': child field selectors. Each value is a string shortcut or a ChildFieldConfig object.
+       */
+      children?: {
+        [k: string]: string | ChildFieldConfig;
+      };
+      [k: string]: any;
+    }[];
+  };
+  /**
+   * Crawl depth from the seed URL for sync handlers that walk a site's link graph (currently civics — see opuspopuli#669). 0 (default) = no crawl, fetch only the seed. N = N hops from seed. Crawls are scoped to same host + same path prefix as the seed, HTML responses only.
+   */
+  crawlDepth?: number;
+  /**
+   * Cap on total pages a crawler will visit per sync run regardless of crawlDepth. Defaults to 20. Each page costs one LLM call, so this bounds runtime + token spend.
+   */
+  crawlMaxPages?: number;
+  /**
+   * Per-source override for the LLM maxTokens generation cap. Useful when a source needs a much longer or shorter output than its siblings (e.g., a 150-term glossary needs ~32000; a short bio prompt finishes well under 2000). Overrides the sync handler's hardcoded default.
+   */
+  llmMaxTokens?: number;
+  /**
+   * Per-source override for the LLM provider request timeout (milliseconds). Useful when a single source legitimately runs much longer than the platform-wide default — civics-glossary extraction on qwen3.5:9b can take 15-20 min, while bio gen finishes in 2 min on the same hardware. Overrides the provider's constructor-configured default.
+   */
+  llmRequestTimeoutMs?: number;
 }
 export interface ApiSourceConfig {
   /**
