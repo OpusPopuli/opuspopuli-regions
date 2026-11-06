@@ -806,7 +806,7 @@
           "In Floor Process": "active",
           "Pending Referral": "active",
           "In Desk Process": "active",
-          "Passed": "active",
+          "Passed": "enacted",
           "Chaptered": "enacted",
           "Died": "dead",
           "Vetoed": "dead",
@@ -817,7 +817,7 @@
           "The California Legislature publishes its legislative database as pubinfo_daily_<Day>.zip at about 21:23 Pacific, rotating by weekday. downloads.leginfo.legislature.ca.gov has no robots.txt and exists for bulk download; leginfo.legislature.ca.gov itself disallows all automated access (robots.txt, 2026-11-06), so the bill pages are no longer scraped.",
           "Schema: pubinfo_load.zip (capublic.sql) and pubinfo_Readme.pdf on the same host. Every .dat is tab-delimited, one record per line, text in backticks, NULL for no value, with no header row.",
           "bill_id is the session, session number, measure type and number with no separators: 202520260AB1165. It is the bill's externalId.",
-          "current_status 'Passed' means passed both houses and awaiting the Governor: still active. 'Chaptered' is law. 'Died', 'Vetoed', 'Failed' and 'Failed Passage in Committee' are terminal.",
+          "current_status 'Passed' appears only on single-house resolutions (HR, SR) and means adopted: finished, so enacted. A bill awaiting the Governor reads 'In Floor Process' with measure_state 'Enrolled'. 'Chaptered' is law. 'Died', 'Vetoed', 'Failed' and 'Failed Passage in Committee' are terminal.",
           "The file carries the current session only. When a new session convenes its bills appear here and the closed session's bills stop changing."
         ]
       },
@@ -1150,7 +1150,11 @@
             "long_description": "longDescription"
           },
           "publishedAfter": "21:30",
-          "compositeKey": ["session_year", "location_code"]
+          "compositeKey": [
+            "session_year",
+            "location_code",
+            "consent_calendar_code"
+          ]
         }
       },
       {

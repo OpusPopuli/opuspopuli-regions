@@ -24,7 +24,7 @@ export type DataSourceConfig = {
    */
   url: string;
   /**
-   * What type of content this source provides. Daily journals / meeting minutes go under 'meetings' with sourceType=pdf_archive — the consumer partitions by sourceType internally. 'civics' marks a source of region governmental structure, process, and vocabulary; the civics-ingest handler scrapes it and uses the private prompt-service to extract structured shape (chambers, measure types, lifecycle stages with status patterns, glossary) plus a plain-language rewrite for laypeople. Verbatim source text and the AI rewrite are stored together — never one without the other. 'bills' marks a source of individual legislative bills (AB, SB, ACA, SCA, etc.) scraped from an official legislature website; the bills-ingest handler BFS-crawls from the seed URL and extracts one Bill record per detail page. See opuspopuli#686.
+   * What type of content this source provides. Daily journals / meeting minutes go under 'meetings' with sourceType=pdf_archive — the consumer partitions by sourceType internally. 'civics' marks a source of region governmental structure, process, and vocabulary; the civics-ingest handler scrapes it and uses the private prompt-service to extract structured shape (chambers, measure types, lifecycle stages with status patterns, glossary) plus a plain-language rewrite for laypeople. Verbatim source text and the AI rewrite are stored together — never one without the other. 'bills' marks a source of individual legislative bills (AB, SB, ACA, SCA, etc.): either an official legislature website, which the bills-ingest handler crawls from the seed URL extracting one Bill record per detail page, or (sourceType=bulk_download) one table of a legislature's published database export. See opuspopuli#686.
    */
   dataType:
     | 'propositions'
@@ -70,7 +70,7 @@ export type DataSourceConfig = {
    */
   statusScanCadence?: string;
   /**
-   * For a bulk bills source that carries an official status column: each status value the source publishes, mapped to where it leaves the bill. 'active' can still move and is shown in the personalized feed; 'enacted' passed (chaptered); 'dead' died, failed or was vetoed. A status missing from the map is logged and the bill keeps its stored lifecycle rather than being guessed. Replaces status-string patterns for regions whose source publishes structured status.
+   * For a bulk bills source that carries an official status column: each status value the source publishes, mapped to where it leaves the bill. 'active' can still move and is shown in the personalized feed; 'enacted' finished successfully (chaptered into law, or an adopted resolution); 'dead' died, failed or was vetoed. A status missing from the map is logged and the bill keeps its stored lifecycle rather than being guessed. Replaces status-string patterns for regions whose source publishes structured status.
    */
   billStatusLifecycle?: {
     [k: string]: 'active' | 'enacted' | 'dead';
@@ -170,7 +170,7 @@ export type DataSourceConfig = {
    */
   url: string;
   /**
-   * What type of content this source provides. Daily journals / meeting minutes go under 'meetings' with sourceType=pdf_archive — the consumer partitions by sourceType internally. 'civics' marks a source of region governmental structure, process, and vocabulary; the civics-ingest handler scrapes it and uses the private prompt-service to extract structured shape (chambers, measure types, lifecycle stages with status patterns, glossary) plus a plain-language rewrite for laypeople. Verbatim source text and the AI rewrite are stored together — never one without the other. 'bills' marks a source of individual legislative bills (AB, SB, ACA, SCA, etc.) scraped from an official legislature website; the bills-ingest handler BFS-crawls from the seed URL and extracts one Bill record per detail page. See opuspopuli#686.
+   * What type of content this source provides. Daily journals / meeting minutes go under 'meetings' with sourceType=pdf_archive — the consumer partitions by sourceType internally. 'civics' marks a source of region governmental structure, process, and vocabulary; the civics-ingest handler scrapes it and uses the private prompt-service to extract structured shape (chambers, measure types, lifecycle stages with status patterns, glossary) plus a plain-language rewrite for laypeople. Verbatim source text and the AI rewrite are stored together — never one without the other. 'bills' marks a source of individual legislative bills (AB, SB, ACA, SCA, etc.): either an official legislature website, which the bills-ingest handler crawls from the seed URL extracting one Bill record per detail page, or (sourceType=bulk_download) one table of a legislature's published database export. See opuspopuli#686.
    */
   dataType:
     | 'propositions'
@@ -216,7 +216,7 @@ export type DataSourceConfig = {
    */
   statusScanCadence?: string;
   /**
-   * For a bulk bills source that carries an official status column: each status value the source publishes, mapped to where it leaves the bill. 'active' can still move and is shown in the personalized feed; 'enacted' passed (chaptered); 'dead' died, failed or was vetoed. A status missing from the map is logged and the bill keeps its stored lifecycle rather than being guessed. Replaces status-string patterns for regions whose source publishes structured status.
+   * For a bulk bills source that carries an official status column: each status value the source publishes, mapped to where it leaves the bill. 'active' can still move and is shown in the personalized feed; 'enacted' finished successfully (chaptered into law, or an adopted resolution); 'dead' died, failed or was vetoed. A status missing from the map is logged and the bill keeps its stored lifecycle rather than being guessed. Replaces status-string patterns for regions whose source publishes structured status.
    */
   billStatusLifecycle?: {
     [k: string]: 'active' | 'enacted' | 'dead';

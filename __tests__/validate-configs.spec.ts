@@ -47,6 +47,50 @@ describe('Region config validation', () => {
     expect(keys.length).toBe(unique.size);
   });
 
+  it.each(jsonFiles)(
+    '%s names only columns its explicit bulk headers declare',
+    (file) => {
+      // The consumer warns and drops a mapped column it cannot find, so a
+      // typo here loses that field from every row while the load succeeds.
+      type Bulk = {
+        headers?: string[];
+        columnMappings?: Record<string, string>;
+        compositeKey?: string[];
+        lobColumns?: string[];
+        filters?: Record<string, string>;
+      };
+      const config = JSON.parse(readFileSync(join(regionsDir, file), 'utf-8'));
+      const unknown = (config.config.dataSources as { bulk?: Bulk }[])
+        .filter((ds) => ds.bulk?.headers?.length)
+        .flatMap(({ bulk }) => {
+          const headers = new Set(bulk!.headers);
+          return [
+            ...Object.keys(bulk!.columnMappings ?? {}),
+            ...(bulk!.compositeKey ?? []),
+            ...(bulk!.lobColumns ?? []),
+            ...Object.keys(bulk!.filters ?? {}),
+          ].filter((col) => !headers.has(col));
+        });
+      expect(unknown).toEqual([]);
+    },
+  );
+
+  it.each(jsonFiles)('%s maps every lob column to a field', (file) => {
+    // A lob column that is not mapped is resolved and then thrown away.
+    type Bulk = {
+      columnMappings?: Record<string, string>;
+      lobColumns?: string[];
+    };
+    const config = JSON.parse(readFileSync(join(regionsDir, file), 'utf-8'));
+    const unmapped = (config.config.dataSources as { bulk?: Bulk }[]).flatMap(
+      ({ bulk }) =>
+        (bulk?.lobColumns ?? []).filter(
+          (col) => !(col in (bulk?.columnMappings ?? {})),
+        ),
+    );
+    expect(unmapped).toEqual([]);
+  });
+
   describe('cross-file hierarchy assertions', () => {
     type RawConfig = {
       name: string;
