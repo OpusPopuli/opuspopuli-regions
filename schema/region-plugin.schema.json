@@ -302,11 +302,25 @@
       "type": "object",
       "required": ["url", "dataType", "contentGoal"],
       "additionalProperties": false,
+      "allOf": [
+        {
+          "$comment": "A url is a plain uri unless the source rotates its file by weekday (bulk.publishedAfter), when it is an RFC 6570 template carrying {weekday}. Kept to that one case so every other url stays strictly validated.",
+          "if": {
+            "required": ["bulk"],
+            "properties": { "bulk": { "required": ["publishedAfter"] } }
+          },
+          "then": {
+            "properties": {
+              "url": { "format": "uri-template", "pattern": "\\{weekday\\}" }
+            }
+          },
+          "else": { "properties": { "url": { "format": "uri" } } }
+        }
+      ],
       "properties": {
         "url": {
           "type": "string",
-          "format": "uri",
-          "description": "URL to fetch data from"
+          "description": "URL to fetch data from. A plain URL, except on a bulk source with publishedAfter, where it carries {weekday}."
         },
         "dataType": {
           "type": "string",
@@ -363,7 +377,21 @@
         "statusScanCadence": {
           "type": "string",
           "pattern": "^[^ ]+ [^ ]+ [^ ]+ [^ ]+ [^ ]+$",
-          "description": "5-field cron expression for a periodic full status-page sweep of all bills (dataType='bills' only). Runs forceStatusRecheck=true — bypasses the needsStatusRecheck flag and the sourcePublishedAt skip to catch governor actions and off-session changes the journal linker can't see. Per-source minute offset is applied like syncCadence. Typical: '0 2 * * 0' weekly Sunday 2 AM. See #689."
+          "description": "5-field cron expression for a periodic full status-page sweep of all bills (dataType='bills', page sources only). Runs forceStatusRecheck=true, which skips the cheap status-page comparison and sends every existing bill on to full extraction. Extraction still skips a bill whose text page reports an unchanged Date Published, so a status change with no new text is not caught by this sweep (opuspopuli docs/plans/bills-phase-b.md, B1). Per-source minute offset is applied like syncCadence. Typical: '0 2 * * 0' weekly Sunday 2 AM. See #689."
+        },
+        "billStatusLifecycle": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "string",
+            "enum": ["active", "enacted", "dead"]
+          },
+          "description": "For a bulk bills source that carries an official status column: each status value the source publishes, mapped to where it leaves the bill. 'active' can still move and is shown in the personalized feed; 'enacted' passed (chaptered); 'dead' died, failed or was vetoed. A status missing from the map is logged and the bill keeps its stored lifecycle rather than being guessed. Replaces status-string patterns for regions whose source publishes structured status."
+        },
+        "coldAfterDays": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Bills only. A bill that is no longer active becomes cold this many days after its last action; dead bills are cold at once. Cold bills are not summarized in the batch pass and get their summary on first read instead. Default 180."
         },
         "sourceType": {
           "type": "string",
@@ -556,6 +584,13 @@
             "not": { "required": ["csv"] }
           },
           "then": { "required": ["columnMappings"] }
+        },
+        {
+          "$comment": "A .lob cell names another entry in the same ZIP, so lobColumns has nothing to resolve against in a bare tsv or csv.",
+          "if": { "required": ["lobColumns"] },
+          "then": {
+            "properties": { "format": { "enum": ["zip_tsv", "zip_csv"] } }
+          }
         }
       ],
       "additionalProperties": false,
@@ -572,6 +607,31 @@
         "delimiter": {
           "type": "string",
           "description": "Column delimiter override"
+        },
+        "quoteChar": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1,
+          "description": "Character that may wrap a cell, stripped from both ends (default '\"'). The California Legislature's pubinfo export wraps text cells in a backtick."
+        },
+        "nullToken": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Literal cell value that means 'no value' and is read as empty, e.g. 'NULL' in the pubinfo export. Without it the word itself would be stored as data."
+        },
+        "lobColumns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "uniqueItems": true,
+          "description": "Columns whose cell names another file inside the same ZIP that holds the cell's real content (pubinfo writes bill text to BILL_VERSION_TBL_<n>.lob and puts that name in the row). The named file's content replaces the cell. The names are renumbered on every export, so a row's identity hash covers the content, not the name."
+        },
+        "publishedAfter": {
+          "type": "string",
+          "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$",
+          "description": "For a publisher that rotates files by weekday: replace {weekday} in url with the three-letter day (Mon..Sun) of the newest file, in the source's timezone. The file for a day is published at this local time (HH:MM); before it, the previous day's file is the newest. The pubinfo export publishes pubinfo_daily_<Day>.zip at about 21:23 Pacific, so '21:30'. Identity for skip and resume uses the url as written, not the resolved one, so the rotating name does not reset them."
         },
         "headerLines": {
           "type": "integer",

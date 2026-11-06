@@ -753,31 +753,405 @@
         ]
       },
       {
-        "url": "https://leginfo.legislature.ca.gov/faces/billSearchClient.xhtml?author=All&lawCode=All&session_year=20252026&house=Both",
+        "url": "https://downloads.leginfo.legislature.ca.gov/pubinfo_daily_{weekday}.zip",
         "dataType": "bills",
         "syncCadence": "0 2 * * *",
-        "statusScanCadence": "0 2 * * 0",
-        "category": "Legislature",
-        "contentGoal": "Discover bill status pages for the current California legislative session (both chambers). Each search result row links to a bill status page — follow those links and extract one structured Bill record per page: bill number, session year, measure type code (AB/ACA/ACR/AJR/HR/SB/SCA/SCR/SJR/SR), full title, subject, current status string, last action, last action date, fiscal impact summary, full-text URL, primary author name, co-author names, committee names, and any available roll-call vote data (member name, chamber, vote date, position, motion text).",
-        "billDiscovery": {
-          "navLinkPattern": "/faces/billNavClient\\.xhtml\\?bill_id=([^\"&\\s]+)",
-          "statusPageTemplate": "/faces/billStatusClient.xhtml?bill_id={bill_id}",
-          "votesPageTemplate": "/faces/billVotesClient.xhtml?bill_id={bill_id}",
-          "textPageTemplate": "/faces/billTextClient.xhtml?bill_id={bill_id}"
+        "sourceType": "bulk_download",
+        "category": "pubinfo:BILL_TBL",
+        "contentGoal": "One row per bill in the current session: its official status, chapter number and location. Read as data; this is the authoritative status for the bill lifecycle.",
+        "bulk": {
+          "format": "zip_tsv",
+          "filePattern": "BILL_TBL.dat",
+          "headers": [
+            "bill_id",
+            "session_year",
+            "session_num",
+            "measure_type",
+            "measure_num",
+            "measure_state",
+            "chapter_year",
+            "chapter_type",
+            "chapter_session_num",
+            "chapter_num",
+            "latest_bill_version_id",
+            "active_flg",
+            "trans_uid",
+            "trans_update",
+            "current_location",
+            "current_secondary_loc",
+            "current_house",
+            "current_status",
+            "days_31st_in_print"
+          ],
+          "quoteChar": "`",
+          "nullToken": "NULL",
+          "columnMappings": {
+            "bill_id": "externalId",
+            "session_year": "sessionYear",
+            "measure_type": "measureType",
+            "measure_num": "measureNum",
+            "measure_state": "measureState",
+            "chapter_year": "chapterYear",
+            "chapter_num": "chapterNum",
+            "latest_bill_version_id": "latestBillVersionId",
+            "current_location": "currentLocation",
+            "current_house": "currentHouse",
+            "current_status": "currentStatus"
+          },
+          "publishedAfter": "21:30"
+        },
+        "coldAfterDays": 180,
+        "billStatusLifecycle": {
+          "In Committee Process": "active",
+          "In Floor Process": "active",
+          "Pending Referral": "active",
+          "In Desk Process": "active",
+          "Passed": "active",
+          "Chaptered": "enacted",
+          "Died": "dead",
+          "Vetoed": "dead",
+          "Failed": "dead",
+          "Failed Passage in Committee": "dead"
         },
         "hints": [
-          "CURRENT SESSION: 2025-2026 — update the session_year URL param and this hint at the start of each new two-year legislative session",
-          "Emit sessionYear as '2025-2026' — update alongside the CURRENT SESSION hint above",
-          "leginfo bill_id format: {4-digit start year}{4-digit end year}0{MeasureType}{Number} — the '0' after the session years is always present as a revision prefix. Examples: AB 1 → 202520260AB1, SB 500 → 202520260SB500",
-          "Crawl path: search page (depth 0) → billNavClient.xhtml per bill (depth 1) → billStatusClient.xhtml + billVotesClient.xhtml (depth 2)",
-          "billStatusClient.xhtml — primary bill data: title, subject, author, co-authors, status, last action, fiscal impact, full-text link, committee referral history",
-          "billVotesClient.xhtml — roll-call votes only: member names, positions (AYE/NOE/NV/ABS/EXC), and motion text",
-          "Skip without extracting: billNavClient.xhtml (navigation hub), billHistoryClient.xhtml (history timeline), billAnalysisClient.xhtml (PDF links), billCompareClient.xhtml, billVersionsCompareClient.xhtml, billSearchClient.xhtml",
-          "Vote position symbols on billVotesClient.xhtml: AYE or Y = yes | NOE or N = no | NV = no_vote | ABS = absent | EXC = excused",
-          "Author and co-author names appear after 'Author:' and 'Coauthors:' labels on the status page — plain text, no party or district suffix",
-          "Committee referrals in history: 'Referred to Com. on JUDICIARY' → committee name is 'JUDICIARY'. Include each committee once.",
-          "Full text URL pattern: /faces/billTextClient.xhtml?bill_id={bill_id}"
+          "The California Legislature publishes its legislative database as pubinfo_daily_<Day>.zip at about 21:23 Pacific, rotating by weekday. downloads.leginfo.legislature.ca.gov has no robots.txt and exists for bulk download; leginfo.legislature.ca.gov itself disallows all automated access (robots.txt, 2026-11-06), so the bill pages are no longer scraped.",
+          "Schema: pubinfo_load.zip (capublic.sql) and pubinfo_Readme.pdf on the same host. Every .dat is tab-delimited, one record per line, text in backticks, NULL for no value, with no header row.",
+          "bill_id is the session, session number, measure type and number with no separators: 202520260AB1165. It is the bill's externalId.",
+          "current_status 'Passed' means passed both houses and awaiting the Governor: still active. 'Chaptered' is law. 'Died', 'Vetoed', 'Failed' and 'Failed Passage in Committee' are terminal.",
+          "The file carries the current session only. When a new session convenes its bills appear here and the closed session's bills stop changing."
         ]
+      },
+      {
+        "url": "https://downloads.leginfo.legislature.ca.gov/pubinfo_daily_{weekday}.zip",
+        "dataType": "bills",
+        "syncCadence": "0 2 * * *",
+        "sourceType": "bulk_download",
+        "category": "pubinfo:BILL_VERSION_TBL",
+        "contentGoal": "One row per published version of a bill: its subject (the bill's title), fiscal flags and full text. The lowest version_num is the current version.",
+        "bulk": {
+          "format": "zip_tsv",
+          "filePattern": "BILL_VERSION_TBL.dat",
+          "headers": [
+            "bill_version_id",
+            "bill_id",
+            "version_num",
+            "bill_version_action_date",
+            "bill_version_action",
+            "request_num",
+            "subject",
+            "vote_required",
+            "appropriation",
+            "fiscal_committee",
+            "local_program",
+            "substantive_changes",
+            "urgency",
+            "taxlevy",
+            "bill_xml",
+            "active_flg",
+            "trans_uid",
+            "trans_update"
+          ],
+          "quoteChar": "`",
+          "nullToken": "NULL",
+          "columnMappings": {
+            "bill_version_id": "externalId",
+            "bill_id": "billId",
+            "version_num": "versionNum",
+            "bill_version_action_date": "billVersionActionDate",
+            "bill_version_action": "billVersionAction",
+            "subject": "subject",
+            "vote_required": "voteRequired",
+            "appropriation": "appropriation",
+            "fiscal_committee": "fiscalCommittee",
+            "local_program": "localProgram",
+            "urgency": "urgency",
+            "taxlevy": "taxlevy",
+            "bill_xml": "billXml"
+          },
+          "publishedAfter": "21:30",
+          "lobColumns": ["bill_xml"]
+        }
+      },
+      {
+        "url": "https://downloads.leginfo.legislature.ca.gov/pubinfo_daily_{weekday}.zip",
+        "dataType": "bills",
+        "syncCadence": "0 2 * * *",
+        "sourceType": "bulk_download",
+        "category": "pubinfo:BILL_VERSION_AUTHORS_TBL",
+        "contentGoal": "Authors and co-authors of each bill version, with the primary author flagged.",
+        "bulk": {
+          "format": "zip_tsv",
+          "filePattern": "BILL_VERSION_AUTHORS_TBL.dat",
+          "headers": [
+            "bill_version_id",
+            "type",
+            "house",
+            "name",
+            "contribution",
+            "committee_members",
+            "active_flg",
+            "trans_uid",
+            "trans_update",
+            "primary_author_flg"
+          ],
+          "quoteChar": "`",
+          "nullToken": "NULL",
+          "columnMappings": {
+            "bill_version_id": "billVersionId",
+            "type": "type",
+            "house": "house",
+            "name": "name",
+            "contribution": "contribution",
+            "primary_author_flg": "primaryAuthorFlg"
+          },
+          "publishedAfter": "21:30",
+          "compositeKey": [
+            "bill_version_id",
+            "type",
+            "house",
+            "name",
+            "contribution"
+          ]
+        }
+      },
+      {
+        "url": "https://downloads.leginfo.legislature.ca.gov/pubinfo_daily_{weekday}.zip",
+        "dataType": "bills",
+        "syncCadence": "0 2 * * *",
+        "sourceType": "bulk_download",
+        "category": "pubinfo:BILL_HISTORY_TBL",
+        "contentGoal": "Every recorded action on every bill, dated. The newest action is the bill's last action.",
+        "bulk": {
+          "format": "zip_tsv",
+          "filePattern": "BILL_HISTORY_TBL.dat",
+          "headers": [
+            "bill_id",
+            "bill_history_id",
+            "action_date",
+            "action",
+            "trans_uid",
+            "trans_update_dt",
+            "action_sequence",
+            "action_code",
+            "action_status",
+            "primary_location",
+            "secondary_location",
+            "ternary_location",
+            "end_status"
+          ],
+          "quoteChar": "`",
+          "nullToken": "NULL",
+          "columnMappings": {
+            "bill_history_id": "externalId",
+            "bill_id": "billId",
+            "action_date": "actionDate",
+            "action": "action",
+            "action_sequence": "actionSequence",
+            "action_code": "actionCode",
+            "action_status": "actionStatus"
+          },
+          "publishedAfter": "21:30"
+        }
+      },
+      {
+        "url": "https://downloads.leginfo.legislature.ca.gov/pubinfo_daily_{weekday}.zip",
+        "dataType": "bills",
+        "syncCadence": "0 2 * * *",
+        "sourceType": "bulk_download",
+        "category": "pubinfo:BILL_SUMMARY_VOTE_TBL",
+        "contentGoal": "One row per roll call: where it was taken, the motion, and the tally.",
+        "bulk": {
+          "format": "zip_tsv",
+          "filePattern": "BILL_SUMMARY_VOTE_TBL.dat",
+          "headers": [
+            "bill_id",
+            "location_code",
+            "vote_date_time",
+            "vote_date_seq",
+            "motion_id",
+            "ayes",
+            "noes",
+            "abstain",
+            "vote_result",
+            "trans_uid",
+            "trans_update",
+            "file_item_num",
+            "file_location",
+            "display_lines",
+            "session_date"
+          ],
+          "quoteChar": "`",
+          "nullToken": "NULL",
+          "columnMappings": {
+            "bill_id": "billId",
+            "location_code": "locationCode",
+            "vote_date_time": "voteDateTime",
+            "vote_date_seq": "voteDateSeq",
+            "motion_id": "motionId",
+            "ayes": "ayes",
+            "noes": "noes",
+            "abstain": "abstain",
+            "vote_result": "voteResult"
+          },
+          "publishedAfter": "21:30",
+          "compositeKey": [
+            "bill_id",
+            "location_code",
+            "vote_date_time",
+            "vote_date_seq",
+            "motion_id"
+          ]
+        }
+      },
+      {
+        "url": "https://downloads.leginfo.legislature.ca.gov/pubinfo_daily_{weekday}.zip",
+        "dataType": "bills",
+        "syncCadence": "0 2 * * *",
+        "sourceType": "bulk_download",
+        "category": "pubinfo:BILL_DETAIL_VOTE_TBL",
+        "contentGoal": "How each legislator voted on each roll call.",
+        "bulk": {
+          "format": "zip_tsv",
+          "filePattern": "BILL_DETAIL_VOTE_TBL.dat",
+          "headers": [
+            "bill_id",
+            "location_code",
+            "legislator_name",
+            "vote_date_time",
+            "vote_date_seq",
+            "vote_code",
+            "motion_id",
+            "trans_uid",
+            "trans_update",
+            "member_order",
+            "session_date",
+            "speaker"
+          ],
+          "quoteChar": "`",
+          "nullToken": "NULL",
+          "columnMappings": {
+            "bill_id": "billId",
+            "location_code": "locationCode",
+            "legislator_name": "legislatorName",
+            "vote_date_time": "voteDateTime",
+            "vote_date_seq": "voteDateSeq",
+            "vote_code": "voteCode",
+            "motion_id": "motionId"
+          },
+          "publishedAfter": "21:30",
+          "compositeKey": [
+            "bill_id",
+            "location_code",
+            "legislator_name",
+            "vote_date_time",
+            "vote_date_seq",
+            "motion_id"
+          ]
+        }
+      },
+      {
+        "url": "https://downloads.leginfo.legislature.ca.gov/pubinfo_daily_{weekday}.zip",
+        "dataType": "bills",
+        "syncCadence": "0 2 * * *",
+        "sourceType": "bulk_download",
+        "category": "pubinfo:BILL_MOTION_TBL",
+        "contentGoal": "The text of each motion a roll call was taken on.",
+        "bulk": {
+          "format": "zip_tsv",
+          "filePattern": "BILL_MOTION_TBL.dat",
+          "headers": ["motion_id", "motion_text", "trans_uid", "trans_update"],
+          "quoteChar": "`",
+          "nullToken": "NULL",
+          "columnMappings": {
+            "motion_id": "externalId",
+            "motion_text": "motionText"
+          },
+          "publishedAfter": "21:30"
+        }
+      },
+      {
+        "url": "https://downloads.leginfo.legislature.ca.gov/pubinfo_daily_{weekday}.zip",
+        "dataType": "bills",
+        "syncCadence": "0 2 * * *",
+        "sourceType": "bulk_download",
+        "category": "pubinfo:LEGISLATOR_TBL",
+        "contentGoal": "Legislators by session and district, with the name form roll calls use, to link votes to representatives.",
+        "bulk": {
+          "format": "zip_tsv",
+          "filePattern": "LEGISLATOR_TBL.dat",
+          "headers": [
+            "district",
+            "session_year",
+            "legislator_name",
+            "house_type",
+            "author_name",
+            "first_name",
+            "last_name",
+            "middle_initial",
+            "name_suffix",
+            "name_title",
+            "web_name_title",
+            "party",
+            "active_flg",
+            "trans_uid",
+            "trans_update",
+            "active_legislator"
+          ],
+          "quoteChar": "`",
+          "nullToken": "NULL",
+          "columnMappings": {
+            "district": "district",
+            "session_year": "sessionYear",
+            "legislator_name": "legislatorName",
+            "house_type": "houseType",
+            "author_name": "authorName",
+            "first_name": "firstName",
+            "last_name": "lastName",
+            "party": "party"
+          },
+          "publishedAfter": "21:30",
+          "compositeKey": [
+            "session_year",
+            "district",
+            "house_type",
+            "legislator_name"
+          ]
+        }
+      },
+      {
+        "url": "https://downloads.leginfo.legislature.ca.gov/pubinfo_daily_{weekday}.zip",
+        "dataType": "bills",
+        "syncCadence": "0 2 * * *",
+        "sourceType": "bulk_download",
+        "category": "pubinfo:LOCATION_CODE_TBL",
+        "contentGoal": "What each location code names: a chamber floor or a committee.",
+        "bulk": {
+          "format": "zip_tsv",
+          "filePattern": "LOCATION_CODE_TBL.dat",
+          "headers": [
+            "session_year",
+            "location_code",
+            "location_type",
+            "consent_calendar_code",
+            "description",
+            "long_description",
+            "active_flg",
+            "trans_uid",
+            "trans_update",
+            "inactive_file_flg"
+          ],
+          "quoteChar": "`",
+          "nullToken": "NULL",
+          "columnMappings": {
+            "session_year": "sessionYear",
+            "location_code": "locationCode",
+            "location_type": "locationType",
+            "description": "description",
+            "long_description": "longDescription"
+          },
+          "publishedAfter": "21:30",
+          "compositeKey": ["session_year", "location_code"]
+        }
       },
       {
         "url": "https://www.assembly.ca.gov/resources/legislative-process",
