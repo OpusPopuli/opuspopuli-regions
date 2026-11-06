@@ -570,15 +570,14 @@
             "not": { "required": ["csv"] }
           },
           "then": { "required": ["columnMappings"] }
-        },
-        {
-          "$comment": "A .lob cell names another entry in the same ZIP, so lobColumns has nothing to resolve against in a bare tsv or csv.",
-          "if": { "required": ["lobColumns"] },
-          "then": {
-            "properties": { "format": { "enum": ["zip_tsv", "zip_csv"] } }
-          }
         }
       ],
+      "dependencies": {
+        "lobColumns": {
+          "$comment": "A .lob cell names another entry in the same ZIP, so lobColumns has nothing to resolve against in a bare tsv or csv.",
+          "properties": { "format": { "enum": ["zip_tsv", "zip_csv"] } }
+        }
+      },
       "additionalProperties": false,
       "properties": {
         "format": {

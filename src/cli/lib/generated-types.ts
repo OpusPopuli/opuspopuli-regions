@@ -19,8 +19,6 @@
 export type BulkDownloadConfig = {
   [k: string]: any;
 } & {
-  [k: string]: any;
-} & {
   /**
    * File format
    */
