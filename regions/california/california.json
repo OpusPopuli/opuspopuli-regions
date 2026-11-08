@@ -970,6 +970,47 @@
         "dataType": "bills",
         "syncCadence": "0 2 * * *",
         "sourceType": "bulk_download",
+        "category": "pubinfo:COMMITTEE_HEARING_TBL",
+        "contentGoal": "Every committee hearing of every bill, dated, by committee location code. A bill heard in a committee was referred to it.",
+        "bulk": {
+          "format": "zip_tsv",
+          "filePattern": "COMMITTEE_HEARING_TBL.dat",
+          "headers": [
+            "bill_id",
+            "committee_type",
+            "committee_nr",
+            "hearing_date",
+            "location_code",
+            "trans_uid",
+            "trans_update_date"
+          ],
+          "quoteChar": "`",
+          "nullToken": "NULL",
+          "columnMappings": {
+            "bill_id": "billId",
+            "committee_type": "committeeType",
+            "committee_nr": "committeeNr",
+            "hearing_date": "hearingDate",
+            "location_code": "locationCode",
+            "trans_update_date": "transUpdateDate"
+          },
+          "compositeKey": [
+            "bill_id",
+            "location_code",
+            "hearing_date",
+            "trans_update_date"
+          ],
+          "rotatingFile": {
+            "name": "pubinfo_daily_{weekday}.zip",
+            "publishedAfter": "21:30"
+          }
+        }
+      },
+      {
+        "url": "https://downloads.leginfo.legislature.ca.gov/",
+        "dataType": "bills",
+        "syncCadence": "0 2 * * *",
+        "sourceType": "bulk_download",
         "category": "pubinfo:BILL_SUMMARY_VOTE_TBL",
         "contentGoal": "One row per roll call: where it was taken, the motion, and the tally.",
         "bulk": {
