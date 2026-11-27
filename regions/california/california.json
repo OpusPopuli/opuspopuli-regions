@@ -12,10 +12,15 @@
     "stateCode": "CA",
     "boundarySources": {
       "ocdIdPrefix": "ocd-division/country:us/state:ca",
+      "displayProjection": 3310,
       "tigerLayers": [
         {
           "layer": "State_County/MapServer",
           "layerName": "Counties",
+          "display": {
+            "url": "https://tigerweb.geo.census.gov/arcgis/rest/services/Generalized_ACS2025/State_County/MapServer",
+            "layerName": "Counties 500K"
+          },
           "outFields": "GEOID,NAME",
           "jurisdictionType": "COUNTY",
           "level": "COUNTY",
@@ -34,6 +39,10 @@
         {
           "layer": "Legislative/MapServer",
           "layerName": "119th Congressional Districts",
+          "display": {
+            "url": "https://tigerweb.geo.census.gov/arcgis/rest/services/Generalized_ACS2025/Legislative/MapServer",
+            "layerName": "119th Congressional Districts 500K"
+          },
           "outFields": "GEOID,NAME,CD119",
           "jurisdictionType": "CONGRESSIONAL_DISTRICT",
           "level": "FEDERAL",
@@ -45,6 +54,10 @@
         {
           "layer": "Legislative/MapServer",
           "layerName": "2024 State Legislative Districts - Upper",
+          "display": {
+            "url": "https://tigerweb.geo.census.gov/arcgis/rest/services/Generalized_ACS2025/Legislative/MapServer",
+            "layerName": "2024 State Legislative Districts - Upper 500K"
+          },
           "outFields": "GEOID,NAME,SLDU",
           "jurisdictionType": "STATE_SENATE_DISTRICT",
           "level": "STATE",
@@ -57,6 +70,10 @@
         {
           "layer": "Legislative/MapServer",
           "layerName": "2024 State Legislative Districts - Lower",
+          "display": {
+            "url": "https://tigerweb.geo.census.gov/arcgis/rest/services/Generalized_ACS2025/Legislative/MapServer",
+            "layerName": "2024 State Legislative Districts - Lower 500K"
+          },
           "outFields": "GEOID,NAME,SLDL",
           "jurisdictionType": "STATE_ASSEMBLY_DISTRICT",
           "level": "STATE",

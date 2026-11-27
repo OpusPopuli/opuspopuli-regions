@@ -140,6 +140,12 @@
           "items": { "$ref": "#/definitions/TigerLayerConfig" },
           "description": "US Census TIGER/Line layers to ingest as jurisdictions. Each entry maps one ArcGIS MapServer layer to a JurisdictionType. Omit the field entirely when the region has no TIGER coverage — do not pass an empty array (the schema rejects it to prevent silent typos that strip the configured layers)."
         },
+        "displayProjection": {
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 999999,
+          "description": "EPSG code of the projected coordinate system the consumer draws this region's maps in, e.g. 3310 (California Albers). Equal-area and local to the region, so shapes keep their true proportions and areas measured for best-effort checks are real. Required for the consumer to build map shapes; omit and no shapes are built (boundaries still load)."
+        },
         "geoportalLayers": {
           "type": "array",
           "minItems": 1,
@@ -234,6 +240,27 @@
         "nameTemplate": {
           "type": "string",
           "description": "Template for the persisted jurisdiction name (NOT for OCD-ID composition). Supports ${name}, ${district}, ${stateCode}. The ${name} value is substituted verbatim (case + whitespace preserved). Defaults to ${name} when omitted."
+        },
+        "display": {
+          "$ref": "#/definitions/DisplayLayerConfig"
+        }
+      }
+    },
+    "DisplayLayerConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "layerName"],
+      "description": "A second, display-only geometry for the same features: drawn on maps, never used to place an address in a district. Typically the Census cartographic (generalised, shoreline-clipped) version of a TIGER layer. Full TIGER polygons run offshore and fill bays, so a map drawn from them misplaces the coast, and a county's own district plan, which follows the shore, measures short against them. Features are matched to the parent layer's rows by the parent's fipsField and fipsPrefix, and fetched with the parent's `where`.",
+      "properties": {
+        "url": {
+          "type": "string",
+          "pattern": "^https://",
+          "description": "ArcGIS MapServer SERVICE root of the display layer, e.g. 'https://tigerweb.geo.census.gov/arcgis/rest/services/Generalized_ACS2025/State_County/MapServer'."
+        },
+        "layerName": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Exact layer NAME within that service, resolved like TigerLayerConfig.layerName, e.g. 'Counties 500K'."
         }
       }
     },

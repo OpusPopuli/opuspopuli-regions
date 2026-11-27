@@ -232,3 +232,76 @@ describe('BoundarySourcesConfig schema (#804)', () => {
     });
   });
 });
+
+describe('display geometry for maps (opuspopuli#1475)', () => {
+  const countyLayer = (display: unknown) => ({
+    layer: 'State_County/MapServer',
+    layerName: 'Counties',
+    outFields: 'GEOID,NAME',
+    jurisdictionType: 'COUNTY',
+    level: 'COUNTY',
+    nameField: 'NAME',
+    display,
+  });
+  const validate = (boundarySources: unknown) =>
+    validateRegionFile(withBoundary(boundarySources), schemaPath).valid;
+
+  it('accepts a display layer and a display projection', () => {
+    expect(
+      validate({
+        ocdIdPrefix: 'prefix',
+        displayProjection: 3310,
+        tigerLayers: [
+          countyLayer({
+            url: 'https://tigerweb.example.gov/arcgis/rest/services/Generalized/State_County/MapServer',
+            layerName: 'Counties 500K',
+          }),
+        ],
+      }),
+    ).toBe(true);
+  });
+
+  it('rejects a display layer without a name', () => {
+    expect(
+      validate({
+        ocdIdPrefix: 'prefix',
+        tigerLayers: [countyLayer({ url: 'https://example.gov/MapServer' })],
+      }),
+    ).toBe(false);
+  });
+
+  it('rejects a display layer that is not HTTPS', () => {
+    expect(
+      validate({
+        ocdIdPrefix: 'prefix',
+        tigerLayers: [
+          countyLayer({ url: 'file:///srv/MapServer', layerName: 'X' }),
+        ],
+      }),
+    ).toBe(false);
+  });
+
+  it('rejects unknown display properties', () => {
+    expect(
+      validate({
+        ocdIdPrefix: 'prefix',
+        tigerLayers: [
+          countyLayer({
+            url: 'https://example.gov/MapServer',
+            layerName: 'X',
+            srid: 3310,
+          }),
+        ],
+      }),
+    ).toBe(false);
+  });
+
+  it.each([['3310'], [3310.5], [4]])(
+    'rejects a display projection of %p',
+    (displayProjection) => {
+      expect(validate({ ocdIdPrefix: 'prefix', displayProjection })).toBe(
+        false,
+      );
+    },
+  );
+});

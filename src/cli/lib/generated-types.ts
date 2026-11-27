@@ -648,6 +648,10 @@ export interface BoundarySourcesConfig {
    */
   tigerLayers?: [TigerLayerConfig, ...TigerLayerConfig[]];
   /**
+   * EPSG code of the projected coordinate system the consumer draws this region's maps in, e.g. 3310 (California Albers). Equal-area and local to the region, so shapes keep their true proportions and areas measured for best-effort checks are real. Required for the consumer to build map shapes; omit and no shapes are built (boundaries still load).
+   */
+  displayProjection?: number;
+  /**
    * Region-specific ArcGIS FeatureServer endpoints — typically state geoportals serving boundary data Census TIGER doesn't cover (fire districts, water districts, transit districts, etc.). Omit when unused — empty arrays are rejected (see tigerLayers note).
    *
    * @minItems 1
@@ -700,6 +704,20 @@ export interface TigerLayerConfig {
    * Template for the persisted jurisdiction name (NOT for OCD-ID composition). Supports ${name}, ${district}, ${stateCode}. The ${name} value is substituted verbatim (case + whitespace preserved). Defaults to ${name} when omitted.
    */
   nameTemplate?: string;
+  display?: DisplayLayerConfig;
+}
+/**
+ * A second, display-only geometry for the same features: drawn on maps, never used to place an address in a district. Typically the Census cartographic (generalised, shoreline-clipped) version of a TIGER layer. Full TIGER polygons run offshore and fill bays, so a map drawn from them misplaces the coast, and a county's own district plan, which follows the shore, measures short against them. Features are matched to the parent layer's rows by the parent's fipsField and fipsPrefix, and fetched with the parent's `where`.
+ */
+export interface DisplayLayerConfig {
+  /**
+   * ArcGIS MapServer SERVICE root of the display layer, e.g. 'https://tigerweb.geo.census.gov/arcgis/rest/services/Generalized_ACS2025/State_County/MapServer'.
+   */
+  url: string;
+  /**
+   * Exact layer NAME within that service, resolved like TigerLayerConfig.layerName, e.g. 'Counties 500K'.
+   */
+  layerName: string;
 }
 /**
  * One arbitrary ArcGIS FeatureServer layer for jurisdictions Census TIGER doesn't cover. Same placeholder rules as TigerLayerConfig.
