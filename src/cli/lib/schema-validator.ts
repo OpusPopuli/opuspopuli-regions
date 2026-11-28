@@ -2,6 +2,7 @@ import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { displayLayerClashes } from './display-layers.js';
 
 export type ValidationResult =
   | { valid: true }
@@ -49,7 +50,11 @@ export function validateRegionFile(
 ): ValidationResult {
   const validate = getValidator(schemaPath ?? defaultSchemaPath());
   const valid = validate(data);
-  if (valid) return { valid: true };
+  if (valid) {
+    // Rules across array items, which JSON Schema can't state.
+    const clashes = displayLayerClashes([data]);
+    return clashes.length ? { valid: false, errors: clashes } : { valid: true };
+  }
   return {
     valid: false,
     errors: (validate.errors ?? []).map(

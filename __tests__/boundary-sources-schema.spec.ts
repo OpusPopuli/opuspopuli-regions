@@ -305,3 +305,44 @@ describe('display geometry for maps (opuspopuli#1475)', () => {
     },
   );
 });
+
+describe('display layers of one type need distinct prefixes (opuspopuli#1475)', () => {
+  const countyLayer = (fipsPrefix?: string, layerName = 'Counties 500K') => ({
+    layer: 'State_County/MapServer',
+    layerName: 'Counties',
+    outFields: 'GEOID,NAME',
+    jurisdictionType: 'COUNTY',
+    level: 'COUNTY',
+    nameField: 'NAME',
+    ...(fipsPrefix !== undefined && { fipsPrefix }),
+    display: { url: 'https://tigerweb.example.gov/MapServer', layerName },
+  });
+  const validate = (tigerLayers: unknown[]) =>
+    validateRegionFile(
+      withBoundary({ ocdIdPrefix: 'prefix', tigerLayers }),
+      schemaPath,
+    );
+
+  it('accepts distinct, non-overlapping prefixes', () => {
+    expect(
+      validate([countyLayer('east-'), countyLayer('west-', 'West')]).valid,
+    ).toBe(true);
+  });
+
+  it('rejects an unprefixed display layer beside a prefixed one of the same type', () => {
+    const result = validate([countyLayer(), countyLayer('east-', 'East')]);
+    expect(result.valid).toBe(false);
+    expect(!result.valid && result.errors[0]).toMatch(/claim the same rows/);
+  });
+
+  it('rejects one prefix nested in another', () => {
+    expect(
+      validate([countyLayer('a-'), countyLayer('a-b-', 'Nested')]).valid,
+    ).toBe(false);
+  });
+
+  it('ignores a layer without a display source', () => {
+    const plain = { ...countyLayer('x-'), display: undefined };
+    expect(validate([countyLayer(), plain]).valid).toBe(true);
+  });
+});
