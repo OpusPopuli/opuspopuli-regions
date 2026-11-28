@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { walkJsonFiles } from './helpers';
 import { validateRegionFile } from '../src/cli/lib/schema-validator';
+import { displayLayerClashes } from '../src/cli/lib/display-layers';
 
 const schemaPath = join(__dirname, '..', 'schema', 'region-plugin.schema.json');
 const regionsDir = join(__dirname, '..', 'regions');
@@ -114,6 +115,20 @@ describe('Region config validation', () => {
         readFileSync(join(regionsDir, f), 'utf-8'),
       );
       return c.config.fipsCode?.length === 5 && !!c.config.parentRegionId;
+    });
+
+    it('no two display layers of one type claim the same rows across a state and its counties', () => {
+      const states = allConfigs.filter((c) => !c.config.parentRegionId);
+      // Every descendant, not just direct children: the consumer loads every
+      // enabled plugin under a state together.
+      const descendantsOf = (id: string): RawConfig[] =>
+        allConfigs
+          .filter((c) => c.config.parentRegionId === id)
+          .flatMap((c) => [c, ...descendantsOf(c.config.regionId)]);
+      const clashes = states.flatMap((state) =>
+        displayLayerClashes([state, ...descendantsOf(state.config.regionId)]),
+      );
+      expect(clashes).toEqual([]);
     });
 
     it.each(subRegionFiles)(
